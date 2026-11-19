@@ -1236,7 +1236,7 @@ function render(){
   let pill='<span class="pill wait">Simulating 1,000 markets…</span>';
   if(mcState){const r=mcState.rate,c=r>=0.85?'good':r>=0.7?'warn':'bad';pill='<span class="pill '+c+'">'+(c==='good'?'✓ On track':c==='warn'?'! Borderline':'✕ At risk')+' · '+Math.round(r*100)+'% of simulated markets last</span>'}
   let headline;
-  if(base.shortReal<1){const last=names.map((n,i)=>end.alive[i]?n+' would be '+end.age[i]:null).filter(Boolean);headline='The money lasts to age '+P.map(p=>p.lifeExp).join(' and ')+'. The plan ends in '+end.Y+(last.length&&P.length>1?', when '+last.join(' and '):'')+', leaving '+money(end.total/end.fe)+' in today\'s dollars (about '+money(end.total)+' in '+end.Y+' dollars).'}
+  if(base.shortReal<1){const last=names.map((n,i)=>end.alive[i]?n+' would be '+end.age[i]:null).filter(Boolean);headline=(P.length>1?'The money lasts for both of you: '+P.map((p,i)=>names[i]+' to age '+p.lifeExp).join(', ')+'.':'The money lasts to age '+P[0].lifeExp+'.')+' The plan ends in '+end.Y+(last.length&&P.length>1?', when '+last.join(' and '):'')+', leaving '+money(end.total/end.fe)+' in today\'s dollars (about '+money(end.total)+' in '+end.Y+' dollars).'}
   else{const r=rows.find(x=>x.Y===base.firstShort);const who=names.map((n,i)=>r.alive[i]?n+' is '+r.age[i]:null).filter(Boolean);headline='The money runs short in '+base.firstShort+(who.length?', when '+who.join(' and '):'')+'.'}
   document.getElementById('verdict').innerHTML='<div class="row">'+pill+hb('verdict')+'</div><div class="big">'+esc(headline)+'</div><div class="note">'+esc(STRATS[strat])+' · '+full(cfg.spend)+' a year of spending in today\'s dollars, starting when the first of you retires.'+(cfg.ssCutOn?' Includes a '+cfg.ssCutPct+'% Social Security cut from '+cfg.ssCutYear+'.':'')+' This is your plan as entered; the What if… tests below don\'t change it unless you click Apply.</div>';
   // stats
@@ -1883,7 +1883,7 @@ function buildPdf(jsPDF){
   txt('Prepared for '+names.join(' and ')+'  ·  '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+'  ·  money in '+unit,M,y);y+=26;
   // ----- verdict box
   const end=base.end;
-  const head=base.shortReal<1?'The money lasts to age '+P.map(p=>p.lifeExp).join(' and ')+', leaving '+money(end.total/end.fe)+" in today's dollars.":'The money runs short in '+base.firstShort+'.';
+  const head=base.shortReal<1?'The money lasts '+(P.length>1?'for both of you ('+P.map((p,i)=>(p.name||'Person '+(i+1))+' to age '+p.lifeExp).join(', ')+')':'to age '+P[0].lifeExp)+', leaving '+money(end.total/end.fe)+" in today's dollars.":'The money runs short in '+base.firstShort+'.';
   const rate=mcState?mcState.rate:null;
   const vcol=rate==null?INK2:rate>=.85?GOOD:rate>=.7?[154,91,0]:BAD;
   const vlab=rate==null?'':(rate>=.85?'ON TRACK':rate>=.7?'BORDERLINE':'AT RISK')+'  ·  '+Math.round(rate*100)+'% of 1,000 simulated markets last';
