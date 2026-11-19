@@ -2238,7 +2238,7 @@ const HELP={
   penSurvPct:'The share your spouse keeps after your death. It depends on the payout option you pick at retirement: single-life (0%) pays the most each month; 50%, 75% or 100% joint-and-survivor options pay less but protect your spouse.',
   /* accounts */
   cTrad:'All pre-tax 401(k), 403(b) and traditional IRA balances for both of you combined.',
-  cOwner:'Required withdrawals start at 73 (born 1951 to 1959) or 75 (born 1960 or later), based on the account owner\'s age. This only matters if you\'re several years apart in age.',
+  cOwner:()=>{const ra=RULES.rmd.ages;return 'Required withdrawals start at '+ra[1][1]+' (born '+ra[1][0]+' to '+(ra[0][0]-1)+') or '+ra[0][1]+' (born '+ra[0][0]+' or later), based on the account owner\'s age. When you\'re several years apart, each IRA starts its withdrawals in a different year, and the second one can cause a jump in tax.'},
   cash:'Checking, savings, money market and CDs. It earns your "Cash interest" rate.',
   brokerage:'Taxable investment accounts. Only the gain part of a sale is taxed, at capital-gains rates, and heirs inherit the gains tax-free.',
   gainPct:'How much of the account is growth above what you paid. Look for "unrealized gain" on your statement and divide by the account value. An account built over 20 to 30 years is often 40% to 60% gain.',
@@ -2251,7 +2251,7 @@ const HELP={
   /* conversions and taxes */
   workConvTarget:'Roth conversions while you\'re both still working. Rule of thumb: convert only when today\'s tax rate is lower than the rate the money would pay later. For high earners, converting to the top of the 24% bracket is often the sweet spot; going into 32% rarely pays off.',
   convTarget:'Conversions once either of you retires. <b>0% gains line</b> means: convert as much as fits while your capital gains stay tax-free. Filling the 12% or 22% bracket converts more. Converting so much that the IRA is empty early can waste low brackets later, when Social Security alone leaves room.',
-  convUntil:'The last year to convert, by the older spouse\'s age. Required withdrawals start at 73 or 75, and Medicare premiums (IRMAA) look at income from two years earlier, from age 63.',
+  convUntil:()=>'The last year to convert, by the older spouse\'s age. Required withdrawals start at '+RULES.rmd.ages[1][1]+' or '+RULES.rmd.ages[0][1]+'. If the younger spouse\'s withdrawals start later, converting until just before then shrinks that IRA too. Medicare premiums look at income from two years earlier, from age 63.',
   stateNow:'Your state of residence. Rates are simplified for incomes around $100k to $300k; the note below the fields shows the rules used. Moving to a no-tax state in retirement often means converting less before the move and more after.',
   heirTax:'The tax rate your heirs would pay on inherited IRA money. Most non-spouse heirs must empty an inherited IRA within 10 years, often in their peak earning years. Benchmark: 22% to 32%. Roth and brokerage money is valued tax-free.',
   seniorExt:()=>'The extra '+full(RULES.senior.amount)+' deduction per person 65 and over runs through '+RULES.senior.lastYear+' under current law. Tick this to assume Congress extends it.',
