@@ -444,10 +444,10 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
           <div id="wiRes-sscut"></div>
         </div>
         <div id="wi-k401" class="wiPane" hidden>
-          <p class="note" style="margin:0">Pre-tax 401(k) saving lowers tax now but grows the IRA that required withdrawals come from later. Roth saving costs tax now and is tax-free later. This compares your choices while you work. Pay covers living costs either way: extra tax on Roth saving comes from cash or brokerage, and pay you don't contribute is saved in brokerage. Employer match always goes in pre-tax.</p>
+          <p class="note" style="margin:0">Should your own 401(k) contributions go in pre-tax or as Roth? Pre-tax 401(k) saving lowers tax now but grows the IRA that required withdrawals come from later. Roth saving costs tax now and is tax-free later. This compares your choices while you work. Pay covers living costs either way: extra tax on Roth saving comes from cash or brokerage, and pay you don't contribute is saved in brokerage. Employer match always goes in pre-tax.</p>
           <div class="fields">
             <label class="f">Whose 401(k)<select id="wiKWho"><option value="both">Both of you</option><option value="0">Person 1 only</option><option value="1">Person 2 only</option></select></label>
-            <label class="f">Switch to Roth from age<input type="number" id="wiKAge" step="1"></label>
+            <label class="f">Or switch to Roth at age<span class="h">a future age, to test switching later</span><input type="number" id="wiKAge" step="1"></label>
           </div>
           <div id="wiRes-k401"></div>
         </div>
@@ -1117,7 +1117,7 @@ var WI={
       var oo=o.key==='plan'?{}:{k401:{who:who,mode:o.key==='rothFrom'?'roth':o.key,fromAge:o.key==='rothFrom'?fromAge:0}};
       var dr=simulate(cfg,Object.assign({strategy:st},oo)),rr=dr.rmdStartRow!==null?dr.rows[dr.rmdStartRow]:null;
       var lo=0,hi=3;for(var it=0;it<12;it++){var m=(lo+hi)/2;if(mcRate(cfg,st,Rs,Object.assign({spendScale:m},oo))>=.85)lo=m;else hi=m}
-      return {key:o.key,rate:mcRate(cfg,st,R,oo),safe:lo,legacy:dr.legacy,tax:dr.taxReal,short:dr.shortReal,iraRmd:rr?rr.tradStart/rr.fi:0,rmd1:rr?rr.rmd/rr.fi:0,rmdY:rr?rr.Y:null,
+      var y0=dr.rows[0];return {key:o.key,tax0:y0?(y0.fed+y0.state)/y0.fi:0,rate:mcRate(cfg,st,R,oo),safe:lo,legacy:dr.legacy,tax:dr.taxReal,short:dr.shortReal,iraRmd:rr?rr.tradStart/rr.fi:0,rmd1:rr?rr.rmd/rr.fi:0,rmdY:rr?rr.Y:null,
         roth:dr.end?dr.end.roth/dr.end.fe:0}})}},
   /* Roth conversion choices for one year: that year's tax, rates and the lifetime effect of each amount */
   convYear:function(cfg,Y,amounts,tops0){
@@ -1699,14 +1699,15 @@ const WIR={
   k401(res,cfg){const el=document.getElementById('wiRes-k401');
     if(res.none){el.innerHTML='<p class="note" style="margin:0">No one chosen is still working with a 401(k) contribution. Enter a contribution % and a retirement age in the future to use this.</p>';return}
     const who=S.couple?(S.wiKWho||'both'):'0',P=cfg.couple?cfg.p:[cfg.p[0]],nm=who==='both'?(S.couple?'both of you':'you'):(P[+who].name||'Person '+(+who+1));
-    const L={plan:'Your plan as entered',pre:'All pre-tax',roth:'All Roth, starting now',rothFrom:'Pre-tax, then Roth from age '+S.wiKAge,match:'Only up to the employer match',stop:'Stop contributing (no match)'};
+    const L={plan:'Your plan as entered',pre:'Keep contributing, all pre-tax',roth:'Keep contributing, switch to the Roth 401(k) now',rothFrom:'Keep contributing pre-tax, switch to Roth at '+S.wiKAge,match:'Contribute only enough for the match',stop:'Stop contributing (match lost too)'};
     const base=res.rows[0],sg=v=>Math.abs(v)<500?'same':(v>0?'+':'−')+money(Math.abs(v));
     const best=res.rows.filter(r=>r.short<1).reduce((a,r)=>r.legacy>a.legacy?r:a,base);
-    let h='<p class="wihead">'+esc('401(k) choices for '+nm+'. '+(best.key==='plan'?'Your plan as entered leaves the most to heirs.':L[best.key]+' leaves the most to heirs: '+sg(best.legacy-base.legacy)+' vs your plan.'))+'</p>'+
-      '<div class="scroll"><table><tr><th style="text-align:left">Choice</th><th>Lasts in markets</th><th>Safe spending</th><th>Lifetime tax</th><th>IRA when withdrawals start</th><th>First required withdrawal</th><th>Left to heirs</th><th></th></tr>';
+    let h='<p class="wihead">'+esc('401(k) choices for '+nm+'. '+(best.key==='plan'?'Your plan as entered leaves the most to heirs.':'Best for heirs: '+L[best.key].charAt(0).toLowerCase()+L[best.key].slice(1)+' ('+sg(best.legacy-base.legacy)+' vs your plan, after all taxes).'))+'</p>'+
+      '<p class="note" style="margin:0">"Roth 401(k)" means the same contribution % goes into the Roth option of your 401(k) instead of pre-tax. You keep the full employer match (it goes in pre-tax). You give up today\'s tax deduction, shown in <b>Tax this year</b>, and that tax is paid from your savings. In return, the money comes out tax-free later and your required withdrawals are smaller.</p>'+
+      '<div class="scroll"><table><tr><th style="text-align:left">Choice</th><th>Tax this year</th><th>Lasts in markets</th><th>Safe spending</th><th>Lifetime tax</th><th>IRA when withdrawals start</th><th>First required withdrawal</th><th>Left to heirs</th><th></th></tr>';
     res.rows.forEach(r=>{const ap=r.key==='plan'?'':'<button type="button" class="btn sm" data-apply-k401="'+r.key+'">Apply</button>';
-      h+='<tr class="'+(r===best?'mark':'')+'"><td style="font-family:var(--body);text-align:left">'+esc(L[r.key])+'</td><td>'+ratePill(r.rate)+'</td><td>'+money(cfg.spend*r.safe)+'</td><td>'+(r===base?money(r.tax):sg(r.tax-base.tax))+'</td><td>'+money(r.iraRmd)+'</td><td>'+money(r.rmd1)+'</td><td>'+(r===base?money(r.legacy):sg(r.legacy-base.legacy))+'</td><td>'+ap+'</td></tr>'});
-    h+='</table></div><p class="note" style="margin:0">Today\'s dollars. Required withdrawals start at '+rmdAge(birthYear(P[0]))+' for '+(P[0].name||'Person 1')+'. Roth wins when your tax rate in retirement (including required withdrawals, Social Security and the Medicare surcharge) will be as high as now; pre-tax wins when it will be lower. "Only up to the match" assumes the employer matches dollar for dollar up to the match %. Contributions are capped at the IRS limit plus catch-up for your age, and catch-up is Roth when your pay last year was over '+full(RULES.limits.rothCatchUpThr)+' (in '+RULES.limits.year+', set by "Catch-up must be Roth" for each person).</p>';
+      h+='<tr class="'+(r===best?'mark':'')+'"><td style="font-family:var(--body);text-align:left">'+esc(L[r.key])+'</td><td>'+(r===base?money(r.tax0):sg(r.tax0-base.tax0))+'</td><td>'+ratePill(r.rate)+'</td><td>'+money(cfg.spend*r.safe)+'</td><td>'+(r===base?money(r.tax):sg(r.tax-base.tax))+'</td><td>'+money(r.iraRmd)+'</td><td>'+money(r.rmd1)+'</td><td>'+(r===base?money(r.legacy):sg(r.legacy-base.legacy))+'</td><td>'+ap+'</td></tr>'});
+    h+='</table></div><p class="note" style="margin:0">Today\'s dollars. Required withdrawals start at '+rmdAge(birthYear(P[0]))+' for '+(P[0].name||'Person 1')+'. Roth wins when your tax rate in retirement (including required withdrawals, Social Security and the Medicare surcharge) will be as high as now; pre-tax wins when it will be lower. "Contribute only enough for the match" assumes the employer matches dollar for dollar up to the match %. Contributions are capped at the IRS limit plus catch-up for your age, and catch-up is Roth when your pay last year was over '+full(RULES.limits.rothCatchUpThr)+' (in '+RULES.limits.year+', set by "Catch-up must be Roth" for each person).</p>';
     el.innerHTML=h},
   sscut(res,cfg){document.getElementById('wiRes-sscut').innerHTML='<p class="wihead">'+esc('Social Security cut by '+S.wiSsPct+'% from '+S.wiSsYear+(cfg.ssCutOn?' (your plan already includes a cut of '+cfg.ssCutPct+'% from '+cfg.ssCutYear+'; this compares against no cut)':'')+'.')+'</p>'+(cfg.ssCutOn&&cfg.ssCutYear===S.wiSsYear&&cfg.ssCutPct===S.wiSsPct?'<p class="note" style="margin:0">This cut is already part of your plan.</p>':'<div><button type="button" class="btn" data-apply-sscut="'+S.wiSsYear+','+S.wiSsPct+'">Apply: build this cut into my plan</button></div>')+compareTiles(res,cfg)+
     '<p class="note" style="margin:0">You would receive about '+full(res.ssLost)+' less Social Security over the plan, in today\'s dollars. You can also switch this on or off under Market &amp; growth assumptions ("Assume a Social Security cut in my plan").</p>'},
