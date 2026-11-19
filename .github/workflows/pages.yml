@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Rules check (41 hand-worked cases)
+      - name: Rules check (hand-worked cases)
         run: node tests/check-rules.js
       - name: Build the standalone page
         run: node tools/build-pages.js
