@@ -1486,16 +1486,16 @@ function drawYearConv(){
   const box=document.getElementById('yConv');if(!LAST||!box)return;
   if(S.lens!=='year'){yConvCache.key=null;return}
   const rows=LAST.base.rows,N=Math.min(rows.length,8),r=rows[Math.min(S.yearIdx||0,N-1)],Y=r.Y,set=S.convYears&&S.convYears[Y]!=null;
-  if(strat!=='smart'){box.innerHTML='<h3>Roth conversion for '+Y+'</h3><p class="note" style="margin:0">Roth conversions are part of the "'+STRATS.smart+'" plan. Choose it at the top of the Plan view to set a conversion for '+Y+' and see its tax.</p>';return}
+  if(strat!=='smart'){box.dataset.y='';box.innerHTML='<h3>Roth conversion for '+Y+'</h3><p class="note" style="margin:0">Roth conversions are part of the "'+STRATS.smart+'" plan. Choose it at the top of the Plan view to set a conversion for '+Y+' and see its tax.</p>';return}
   if(S.yConvFor!==Y){S.yConvFor=Y;S.yConvAmt=Math.round(r.conv/1000)*1000}
   const amt=Math.max(0,S.yConvAmt||0),key=JSON.stringify([S,Y,amt]);
   const tkey=JSON.stringify([S,Y].map((v,i)=>i?v:Object.assign({},v,{yConvAmt:0})));if(yConvCache.tkey!==tkey){yConvCache.tkey=tkey;yConvCache.tops=WI.convTops(S,Y);yConvCache.key=null}
   if(yConvCache.key!==key){yConvCache.key=key;yConvCache.res=WI.convYear(S,Y,[amt],yConvCache.tops)}
-  const res=yConvCache.res;if(!res){box.innerHTML='';return}
+  const res=yConvCache.res;if(!res){box.dataset.y='';box.innerHTML='';return}
   const z=res.rows[0],tax=x=>x.fed+x.state,lbl=x=>x.ask===0?'No conversion':(x.top===9?'Largest possible':x.top?'Fill the '+Math.round(RATES[x.top]*100)+'% bracket':'')+(x.ask===amt?(x.top?' · your amount':'Your amount'):'');
   const anyIr=res.rows.some(x=>Math.abs(x.irmaaReal-z.irmaaReal)>50),warn=[];
-  let h='<h3>Roth conversion for '+Y+'</h3><p class="note" style="margin:0">'+(set?'Your plan converts the amount you chose for '+Y+'.':'Your plan\'s conversion rule gives '+full(r.conv)+' in '+Y+'.')+' Try an amount to see its tax. Amounts are in '+Y+' dollars; the tax must be paid from cash above your floor or from brokerage, not from the IRA. Conversions in other years still follow your rule.</p>'+
-    '<div class="fields"><label class="f">Convert in '+Y+'<span class="h">'+Y+' dollars</span><input type="number" id="yConvAmt" step="5000" value="'+amt+'"></label></div>'+
+  const head='<h3>Roth conversion for '+Y+'</h3><div class="fields"><label class="f">Convert in '+Y+'<span class="h">'+Y+' dollars</span><input type="number" id="yConvAmt" step="5000" min="0" value="'+amt+'"></label></div><div id="yConvBody" style="display:grid;gap:10px"></div>';
+  let h='<p class="note" style="margin:0">'+(set?'Your plan converts the amount you chose for '+Y+'.':'Your plan\'s conversion rule gives '+full(r.conv)+' in '+Y+'.')+' Try an amount to see its tax. Amounts are in '+Y+' dollars; the tax must be paid from cash above your floor or from brokerage, not from the IRA. Conversions in other years still follow your rule.</p>'+
     '<div class="scroll"><table><tr><th style="text-align:left">Choice</th><th>Convert</th><th>Tax in '+Y+'</th><th>Extra tax</th><th>Tax on this slice</th><th>Top federal bracket</th>'+(anyIr?'<th>Medicare surcharge later</th>':'')+'<th>Lifetime tax</th><th>Left to heirs</th></tr>';
   res.rows.forEach((x,i)=>{const p=i?res.rows[i-1]:null,dC=p?x.conv-p.conv:0,slice=p&&dC>1?(tax(x)-tax(p))/dC:null,ex=tax(x)-tax(z),avg=x.conv>1?ex/x.conv:null;
     const sg=v=>Math.abs(v)<500?'same':(v>0?'+':'−')+money(Math.abs(v));
@@ -1507,10 +1507,12 @@ function drawYearConv(){
   h+='</table></div><p class="note" style="margin:0"><b>Extra tax</b> is what converting adds to '+Y+'\'s federal and state tax (in brackets: as a share of the conversion). <b>Tax on this slice</b> is the rate on the dollars between this row and the one above; it can be higher than the bracket because converting can also make more Social Security taxable, reduce a deduction, or push capital gains from brokerage sales out of the 0% rate. <b>Lifetime tax</b> and <b>Left to heirs</b> (after their tax on any IRA left) compare with no conversion in '+Y+', in today\'s dollars'+(anyIr?'; <b>Medicare surcharge later</b> is the extra premium from income two years on':'')+'. Of these choices, '+esc(lbl(best).toLowerCase()||full(best.conv))+' ('+full(best.conv)+') leaves the most to heirs.</p>'+
     warn.map(w=>'<p class="note" style="margin:0;color:var(--warn,inherit)">'+esc(w)+'</p>').join('')+
     '<div style="display:flex;gap:8px;flex-wrap:wrap">'+(set&&S.convYears[Y]===amt?'':'<button type="button" class="btn" id="yConvUse">Use '+full(amt)+' for '+Y+' in my plan</button>')+(set?'<button type="button" class="btn" id="yConvReset">Go back to the plan\'s rule for '+Y+'</button>':'')+'</div>';
-  const had=document.activeElement&&document.activeElement.id==='yConvAmt',pos=had?document.activeElement.selectionStart:null;
-  box.innerHTML=h;
-  const inp=document.getElementById('yConvAmt');if(had){inp.focus();try{inp.setSelectionRange(pos,pos)}catch(e){}}
-  inp.oninput=()=>{S.yConvAmt=num(inp.value);clearTimeout(yConvTimer);yConvTimer=setTimeout(drawYearConv,400)};
+  /* keep the input box in place while typing; refresh only what's below it */
+  let inp=document.getElementById('yConvAmt');
+  if(!inp||box.dataset.y!==String(Y)){box.innerHTML=head;box.dataset.y=String(Y);inp=document.getElementById('yConvAmt');
+    inp.oninput=()=>{S.yConvAmt=num(inp.value);clearTimeout(yConvTimer);yConvTimer=setTimeout(drawYearConv,400)}}
+  else if(document.activeElement!==inp&&num(inp.value)!==amt)inp.value=amt;
+  document.getElementById('yConvBody').innerHTML=h;
   const u=document.getElementById('yConvUse');if(u)u.onclick=()=>{S.convYears=Object.assign({},S.convYears||{});S.convYears[Y]=amt;touched()};
   const b=document.getElementById('yConvReset');if(b)b.onclick=()=>{S.convYears=Object.assign({},S.convYears);delete S.convYears[Y];S.yConvFor=null;touched()};
 }
