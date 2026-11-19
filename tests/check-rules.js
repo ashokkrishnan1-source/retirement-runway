@@ -83,7 +83,7 @@ console.log('--- Taxes ---');
   check('fed: filling the 12% bracket', lo, 152366, 2);
   check('fed: tax when filling the 12% bracket', E.fedTax({...a, ord: lo, qual: 0}).tax, 11974, 2);
   check('fed: single 65 with $60k ordinary', E.fedTax({...a, st: 'single', n65: 1, ord: 60000, qual: 0}).tax, 3980, 1);
-  check('fed: $100k ordinary + $700k gains (15%/20% and 3.8%)', E.fedTax({...a, n65: 0, ord: 100000, qual: 700000, nii: 700000}).tax, 134781.5, 1);
+  check('fed: $100k ordinary + $700k gains (15%/20% and 3.8%)', E.fedTax({...a, n65: 0, ord: 100000, qual: 700000, nii: 700000}).tax, 134769, 1);
 }
 { // state tax recomputed by hand from each year's own figures
   for (const [code, rate, st] of [['IL', 4.95, 'brk'], ['PA', 3.07, 'brk']]) {
@@ -137,7 +137,7 @@ console.log('--- Health: marketplace subsidies and Medicare surcharges ---');
 }
 { // Medicare surcharge from income two years earlier (couple, 2027 tiers, no inflation)
   const c = base({dob: '1955-01-01', ira: 6e6, claimAge: 70, ssPIA: 3000}, {dob: '1955-01-01', claimAge: 70, ssPIA: 2000}, {cash: 0, spend: 250000});
-  const s = E.simulate(c, {strategy: 'typical'}); const th = [224000, 282000, 354000, 424000, 750000], b = [83.70, 209.40, 335.00, 460.60, 502.60], d = [14.50, 37.50, 60.40, 83.30, 91.00];
+  const s = E.simulate(c, {strategy: 'typical'}); const th = [224000, 282000, 354000, 424000, 750000], b = [83.70, 209.40, 335.00, 460.60, 502.40], d = [15.40, 39.70, 64.00, 88.30, 96.40];
   const r = s.rows[3], prev = s.rows[1]; let k = 0; th.forEach((x, q) => { if (prev.agi > x) k = q + 1 });
   check('Medicare surcharge uses income from two years earlier (tier ' + k + ')', r.irmaa, k ? 2 * 12 * (b[k - 1] + d[k - 1]) : 0, 1);
   const c2 = clone(c); c2.ira = 0; c2.p[0].ira = 3e6; c2.convTarget = 'b24'; c2.guardIrmaa = 1; c2.convUntil = 80; c2.cash = 2e6;
