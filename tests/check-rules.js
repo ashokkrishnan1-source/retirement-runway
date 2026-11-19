@@ -246,6 +246,11 @@ console.log('--- Engine audit fixes ---');
   const z = {strategy: 'brk', returns: new Array(60).fill(0)};
   const a = E.simulate(c, z).rows[0], g = E.simulate(Object.assign(clone(c), {giving: 20000}), z).rows[0];
   check('QCD while working: wealth not lower than without giving', g.total - a.total > -1 ? 1 : 0, 1, 0); }
+console.log('--- Spending vs heirs ---');
+{ const r = E.WI.trade(clone(EX), 'smart'), p = r.pts;
+  check('trade-off: heirs fall as spending rises', p.every((x, i) => !i || x.legacy <= p[i - 1].legacy + 1) ? 1 : 0, 1, 0);
+  check('trade-off: spending steps of 10% from 70%', Math.round(p[1].spend - p[0].spend), Math.round(EX.spend * 0.1), 1);
+  check('trade-off: each point at least as good as the plan at that spending (100%)', p[3].legacy >= E.simulate(clone(EX), {strategy: 'smart'}).legacy - 1 ? 1 : 0, 1, 0); }
 console.log('--- Best plan search ---');
 { const r = E.WI.best(clone(EX), 'smart'), cur = r.rows[0], b = r.rows.find(x => x.tag === 'best1'), lo = r.rows.find(x => x.tag === 'lowtax');
   check('best plan: first row is the current plan', cur.tag === 'current' ? 1 : 0, 1, 0);
@@ -272,7 +277,7 @@ console.log('--- Keeping figures current ---');
   const i = html.indexOf('<script id="engine">'), j = html.indexOf('</script>', i), ui = html.slice(0, i) + html.slice(j);
   const vals = new Set(); (function walk(o) { for (const k in o) { const v = o[k]; if (typeof v === 'number' && v >= 1000) vals.add(v); else if (v && typeof v === 'object') walk(v) } })(E.RULES);
   // Known figures that are NOT tax rules but happen to equal a RULES value (sample data, market benchmarks).
-  const ALLOW = [/spending $/, /average retired worker gets about $/, /often costs \$?[0-9,]* ?(to )?$/, /it is often \$?[0-9,]* ?(to )?$/, /spending $/, /check federal tax on $/];
+  const ALLOW = [/spending $/, /average retired worker gets about $/, /often costs \$?[0-9,]* ?(to )?$/, /it is often \$?[0-9,]* ?(to )?$/, /spending $/, /check federal tax on $/, /Each extra $/ /* spending step in the trade-off chart, not a rule */];
   const hits = []; const re = /\$([0-9]{1,3}(?:,[0-9]{3})+)/g; let m;
   while ((m = re.exec(ui))) { const n = +m[1].replace(/,/g, ''), before = ui.slice(Math.max(0, m.index - 40), m.index).replace(/\s+/g, ' ');
     if (vals.has(n) && !ALLOW.some(a => a.test(before))) hits.push('$' + m[1] + ' near "' + before + '"') }

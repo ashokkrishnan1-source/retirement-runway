@@ -156,6 +156,11 @@ details.explain .how{margin-top:10px}
 .wiPane[hidden]{display:none}
 #wiTabs{width:100%}
 #wiTabs button{flex:1 1 auto}
+.tradechart{width:100%;height:auto;display:block;touch-action:pan-y}
+.tradechart text{font:11px var(--body);fill:var(--fg2)}
+.tradechart .zl{font-weight:600;fill:var(--fg)}
+.tradeinfo{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px}
+.tradeinfo .big2{font:600 15px/1.3 var(--display)}
 .wihead{font:600 16px/1.3 var(--display);text-wrap:balance;margin:0}
 td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
 .how{display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--fg2);max-width:84ch}
@@ -378,6 +383,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
         <div class="toggle" role="group" aria-label="What-if calculators" id="wiTabs">
           <button type="button" data-w="spend" aria-pressed="true">We spend it all</button>
           <button type="button" data-w="best" aria-pressed="false">Find the best plan</button>
+          <button type="button" data-w="trade" aria-pressed="false">Spending vs heirs</button>
           <button type="button" data-w="early" aria-pressed="false">Retire earlier?</button>
           <button type="button" data-w="shock" aria-pressed="false">Bad market timing</button>
           <button type="button" data-w="ltc" aria-pressed="false">Long-term care</button>
@@ -393,6 +399,10 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
         <div id="wi-best" class="wiPane" hidden>
           <p class="note" style="margin:0">Searches hundreds of combinations of your Roth conversion settings (while working, in retirement, from 63, last year to convert) and Social Security claiming ages, for the plan that leaves the most to heirs after all taxes: the tax you pay over your lifetime plus the tax heirs pay on any IRA left. Each finalist is checked in 300 simulated markets so it doesn't lower your chance of the money lasting. Spending, savings and retirement ages stay as you set them. Takes a few seconds.</p>
           <div id="wiRes-best"></div>
+        </div>
+        <div id="wi-trade" class="wiPane" hidden>
+          <p class="note" style="margin:0">Each point is a different yearly spending level, with the Roth conversion settings that leave the most to heirs at that level, so tax waste is as low as it can be everywhere on the curve. The background shows how often the money lasts in 200 simulated markets. Hover, tap or use the slider to explore; Apply sets that spending and those settings. Takes 10 to 20 seconds.</p>
+          <div id="wiRes-trade"></div>
         </div>
         <div id="wi-spend" class="wiPane">
           <p class="note" style="margin:0" id="wiIntro"></p>
@@ -1124,6 +1134,23 @@ var WI={
     else g.push(ages.map(function(a){var s=simulate(cfg,{strategy:st,claim:[a]});return {leg:s.legacy,short:s.shortReal}}));
     return {ages:ages,grid:g}},
   lump:function(cfg,st,type,amt,year){var o={lump:{}};o.lump[year]=type==='out'?-amt:amt;return compareWI(cfg,st,o)},
+  /* Spending vs heirs: for a range of yearly spending, the most tax-efficient conversion settings and what is left to heirs */
+  trade:function(cfg,st){
+    var P=cfg.couple?cfg.p:[cfg.p[0]],B=P.map(birthYear),nowA=P.map(function(p,i){return START_YEAR-B[i]});
+    var oi=B.length>1&&B[1]<B[0]?1:0,working=P.some(function(p,i){return nowA[i]<p.retireAge});
+    var until=[cfg.convUntil];P.forEach(function(p,i){until.push(B[i]+rmdAge(B[i])-1-B[oi])});until=until.filter(function(a,i,arr){return a>=nowA[oi]&&arr.indexOf(a)===i});
+    var W=working?['none','b22','b24','b32']:[cfg.workConvTarget||'none'],T=['zero','b12','b22','b24'],C=['same','zero','irmaa1'];
+    var R=makePaths(cfg,200,simLen(cfg,'smart')),pts=[],m=0.7;
+    for(var k=0;k<14;k++,m+=0.1){var best=null;
+      W.forEach(function(w){T.forEach(function(t){C.forEach(function(c6){until.forEach(function(u){
+        var c=JSON.parse(JSON.stringify(cfg));c.workConvTarget=w;c.convTarget=t;c.conv63=c6;c.convUntil=u;var sm=simulate(c,{strategy:'smart',spendScale:m});
+        var sc=sm.legacy-sm.shortReal*10;if(!best||sc>best.sc)best={sc:sc,c:c,sm:sm}})})})});
+      var rate=mcRate(best.c,'smart',R,{spendScale:m});
+      pts.push({m:Math.round(m*100)/100,spend:cfg.spend*m,legacy:best.sm.legacy,tax:best.sm.taxReal,short:best.sm.shortReal,rate:rate,
+        set:{workConvTarget:best.c.workConvTarget,convTarget:best.c.convTarget,conv63:best.c.conv63,convUntil:best.c.convUntil}});
+      if(rate<0.45&&k>=4)break}
+    var mine=simulate(cfg,{strategy:'smart'});
+    return {pts:pts,mine:{spend:cfg.spend,legacy:mine.legacy,tax:mine.taxReal,rate:mcRate(cfg,'smart',R)}}},
   /* Best plan: search conversion settings and Social Security ages for the most left to heirs after all taxes
      (your lifetime tax plus heirs' tax on any IRA left), keeping the chance the money lasts about where it is. */
   best:function(cfg,st){
@@ -1640,7 +1667,7 @@ document.getElementById('lens-health').addEventListener('click',e=>{const b=e.ta
 /* ---------- what-if tabs ---------- */
 const wiCache={};
 function wiKey(k){return JSON.stringify([LAST&&LAST.cfg,strat,wiArgs(k)])}
-const WI6=['best','early','shock','ltc','curve','ss','lump','sscut','k401','after63'];
+const WI6=['trade','best','early','shock','ltc','curve','ss','lump','sscut','k401','after63'];
 function ensureWI(onProgress){
   const need=WI6.filter(k=>!(wiCache[k]&&wiCache[k].key===wiKey(k)));
   if(!need.length||!LAST)return Promise.resolve();
@@ -1692,6 +1719,8 @@ function wiSummaries(cfg){
     out.push({title:'Best Social Security ages',lines:['Best: '+(P.length>1?names[0]+' at '+A[bi]+', '+names[1]+' at '+A[bj]:'claim at '+A[bj])+', leaving '+full(bc.leg)+' to heirs after tax (today\'s $). Current choice: '+P.map(p=>p.claimAge).join(' and ')+'.'],
       head:P.length>1?[names[0]+' (down) / '+names[1]+' (across)'].concat(A.map(String)):['Claim at'].concat(A.map(String)),
       body:P.length>1?r.grid.map((row,i)=>[String(A[i])].concat(row.map(x=>x.short>0?'short':money(x.leg)))):[['Left to heirs'].concat(r.grid[0].map(x=>x.short>0?'short':money(x.leg)))],small:true})}
+  r=c('trade');
+  if(r&&r.pts)out.push({title:'Spending vs heirs',lines:r.pts.map(p=>full(Math.round(p.spend/1000)*1000)+' a year: lasts in '+Math.round(p.rate*100)+'% of markets, heirs '+money(p.legacy)+', lifetime tax '+money(p.tax)+' (today\'s $)')});
   r=c('best');
   if(r&&r.rows){const T={current:'Your plan now',best1:'Best',best2:'Runner-up',best3:'Third',lowtax:'Lowest tax you pay'};out.push({title:'Find the best plan',lines:r.rows.map(x=>T[x.tag]+': heirs '+money(x.legacy)+', total tax '+money(x.total)+' (you '+money(x.tax)+', heirs '+money(x.heirTax)+'), lasts in '+Math.round(x.rate*100)+'% of markets; conversions '+x.set.workConvTarget+'/'+x.set.convTarget+'/'+x.set.conv63+' until '+x.set.convUntil+', Social Security at '+x.set.claim.join(' and '))})}
   r=c('after63');
@@ -1704,12 +1733,12 @@ function wiSummaries(cfg){
   if(r)out.push(Object.assign({title:'Windfall or big expense',lines:[(cfg.wiLumpType!=='out'?full(cfg.wiLumpAmt)+' arriving':'A '+full(cfg.wiLumpAmt)+' expense')+' in '+cfg.wiLumpYear+'.']},cmp(r)));
   return out;
 }
-const WIK=['spend','best','early','shock','ltc','curve','ss','lump','sscut','k401','after63'];
+const WIK=['spend','trade','best','early','shock','ltc','curve','ss','lump','sscut','k401','after63'];
 const wiDirty={};let wiW=null,wiReq=0;
 function wiShow(){const t=S.wiTab||'spend';document.querySelectorAll('#wiTabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.w===t));WIK.forEach(k=>{document.getElementById('wi-'+k).hidden=k!==t})}
 document.querySelectorAll('#wiTabs button').forEach(b=>b.onclick=()=>{S.wiTab=b.dataset.w;save();wiShow();if(S.wiTab!=='spend'&&wiDirty[S.wiTab]!==false)wiRun(S.wiTab)});
 const C63={same:'Same targets as before 63',zero:'The 0% capital-gains line',b12:'Top of the 12% bracket',b22:'Top of the 22% bracket',irmaa1:'Just under the first Medicare surcharge',irmaa2:'Just under the second Medicare surcharge'};
-function wiArgs(k){return k==='after63'||k==='best'?[]:k==='k401'?[S.couple?(S.wiKWho||'both'):'0',S.wiKAge]:k==='sscut'?[S.wiSsYear,S.wiSsPct]:k==='early'?[S.couple?(S.wiEarlyWho||'both'):'both',S.wiEarlyBest!==false]:k==='shock'?[S.wiDrop]:k==='ltc'?[S.wiLtcCost,S.wiLtcYears,S.wiLtcAge,+S.wiLtcWho]:k==='curve'?[S.wiBonus,S.wiBonusUntil,S.wiCutPct,S.wiCutAge]:k==='lump'?[S.wiLumpType,S.wiLumpAmt,S.wiLumpYear]:[]}
+function wiArgs(k){return k==='after63'||k==='best'||k==='trade'?[]:k==='k401'?[S.couple?(S.wiKWho||'both'):'0',S.wiKAge]:k==='sscut'?[S.wiSsYear,S.wiSsPct]:k==='early'?[S.couple?(S.wiEarlyWho||'both'):'both',S.wiEarlyBest!==false]:k==='shock'?[S.wiDrop]:k==='ltc'?[S.wiLtcCost,S.wiLtcYears,S.wiLtcAge,+S.wiLtcWho]:k==='curve'?[S.wiBonus,S.wiBonusUntil,S.wiCutPct,S.wiCutAge]:k==='lump'?[S.wiLumpType,S.wiLumpAmt,S.wiLumpYear]:[]}
 function wiRun(k){
   if(!LAST||k==='spend')return;const el=document.getElementById('wiRes-'+k);el.innerHTML='<p class="note">Calculating…</p>';
   const id=++wiReq, cfg=LAST.cfg, st=strat, args=wiArgs(k), key=wiKey(k);
@@ -1766,6 +1795,49 @@ const WIR={
     if(P.length>1){h+='<tr><th>'+esc(names[0])+' ↓ · '+esc(names[1])+' →</th>'+A.map(a=>'<th>'+a+'</th>').join('')+'</tr>';res.grid.forEach((r,i)=>{h+='<tr><td>'+A[i]+'</td>'+r.map((c,j)=>cell(c,i===bi&&j===bj,i===ci&&j===cj)).join('')+'</tr>'})}
     else{h+='<tr><th>Claim at</th>'+A.map(a=>'<th>'+a+'</th>').join('')+'</tr><tr><td>Left to heirs</td>'+res.grid[0].map((c,j)=>cell(c,j===bj,j===ci)).join('')+'</tr>'}
     document.getElementById('wiRes-ss').innerHTML=h+'</table></div><p class="note" style="margin:0">Green is the best pair; the blue outline is your current choice. Claiming later also protects the survivor, who keeps the larger of your two checks. Health and family longevity matter too: if either of you expects a shorter life, earlier claiming gains ground.</p>'},
+  trade(res,cfg){const el=document.getElementById('wiRes-trade');
+    if(strat!=='smart'){el.innerHTML='<p class="note" style="margin:0">This uses the "'+STRATS.smart+'" plan. Choose it at the top of the Plan view, then come back.</p>';return}
+    const pts=res.pts;if(!pts.length){el.innerHTML='';return}
+    const zone=r=>r>=.85?['good','Safe','✓']:r>=.7?['warn','Caution','!']:['bad','Risky','✕'];
+    const sweet=pts.filter(p=>p.rate>=.85).reduce((a,p)=>!a||p.spend>a.spend?p:a,null);
+    const near=pts.reduce((a,p)=>Math.abs(p.spend-res.mine.spend)<Math.abs(a.spend-res.mine.spend)?p:a,pts[0]);
+    const W=Math.max(300,Math.min(760,el.clientWidth||700)),H=Math.round(W<480?260:300),L=W<480?44:56,Rm=14,T=26,Bm=36;
+    const xs=pts.map(p=>p.spend),x0=Math.min(...xs),x1=Math.max(...xs),ystep=niceStep((Math.max(...pts.map(p=>p.legacy),res.mine.legacy)||1)/4),ymax=Math.ceil((Math.max(...pts.map(p=>p.legacy),res.mine.legacy)*1.04||1)/ystep)*ystep;
+    const X=v=>L+(v-x0)/((x1-x0)||1)*(W-L-Rm),Y=v=>T+(1-Math.max(0,v)/ymax)*(H-T-Bm);
+    let g='';
+    /* safety zones behind the curve, labelled (not colour alone) */
+    pts.forEach((p,i)=>{const a=i?(X(pts[i-1].spend)+X(p.spend))/2:L,b=i<pts.length-1?(X(p.spend)+X(pts[i+1].spend))/2:W-Rm;g+='<rect x="'+a+'" y="'+T+'" width="'+(b-a)+'" height="'+(H-T-Bm)+'" fill="var(--'+zone(p.rate)[0]+'-bg)"/>'});
+    let zs=[];pts.forEach((p,i)=>{const z=zone(p.rate)[1];if(!zs.length||zs[zs.length-1].z!==z)zs.push({z,a:X(p.spend),b:X(p.spend)});else zs[zs.length-1].b=X(p.spend)});
+    zs.forEach(z=>{const c=(z.a+z.b)/2;g+='<text class="zl" x="'+Math.max(L+20,Math.min(W-Rm-20,c))+'" y="'+(T-9)+'" text-anchor="middle">'+z.z+'</text>'});
+    for(let v=0;v<=ymax+1;v+=ystep){const y=Y(v);g+='<line x1="'+L+'" x2="'+(W-Rm)+'" y1="'+y+'" y2="'+y+'" stroke="var(--line)" stroke-width="1"/><text x="'+(L-6)+'" y="'+(y+4)+'" text-anchor="end">'+money(v)+'</text>'}
+    const step=niceStep((x1-x0)/(W<480?4:6)||1);for(let v=Math.ceil(x0/step)*step;v<=x1+1;v+=step)g+='<text x="'+X(v)+'" y="'+(H-Bm+16)+'" text-anchor="middle">'+money(v)+'</text>';
+    g+='<text x="'+((L+W-Rm)/2)+'" y="'+(H-4)+'" text-anchor="middle">Yearly spending (today\'s $)</text>';
+    g+='<polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" points="'+pts.map(p=>X(p.spend)+','+Y(p.legacy)).join(' ')+'"/>';
+    pts.forEach((p,i)=>{g+='<circle cx="'+X(p.spend)+'" cy="'+Y(p.legacy)+'" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>'});
+    const mx=X(res.mine.spend),my=Y(res.mine.legacy);
+    const same=sweet&&Math.abs(sweet.spend-res.mine.spend)<500;
+    if(sweet){const sx=X(sweet.spend),sy=Y(sweet.legacy);g+='<circle cx="'+sx+'" cy="'+sy+'" r="9" fill="none" stroke="var(--good)" stroke-width="2.5"/><text x="'+sx+'" y="'+(sy-14)+'" text-anchor="middle" class="zl">'+(same?'You\'re at the sweet spot':'Sweet spot')+'</text>'}
+    g+='<rect x="'+(mx-6)+'" y="'+(my-6)+'" width="12" height="12" transform="rotate(45 '+mx+' '+my+')" fill="var(--surface)" stroke="var(--fg)" stroke-width="2"/>'+(same?'':'<text x="'+mx+'" y="'+(my+20)+'" text-anchor="middle" class="zl">You now</text>');
+    g+='<line id="trCross" x1="0" x2="0" y1="'+T+'" y2="'+(H-Bm)+'" stroke="var(--fg2)" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/><circle id="trDot" r="7" fill="none" stroke="var(--fg)" stroke-width="2" visibility="hidden"/>';
+    const sp=sweet?'The sweet spot is about <b>'+full(Math.round(sweet.spend/1000)*1000)+' a year</b>: the most you can spend while the money still lasts in at least 85% of simulated markets, leaving about '+money(sweet.legacy)+' to heirs after tax.':'No spending level shown lasts in 85% of simulated markets.';
+    const slope=pts.length>1?(pts[0].legacy-pts[pts.length-1].legacy)/((pts[pts.length-1].spend-pts[0].spend)/10000):0;
+    let h='<p class="wihead">'+sp+'</p>'+
+      '<svg class="tradechart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Chart of what is left to heirs at each yearly spending level, with safety zones">'+g+'<rect id="trHit" x="'+L+'" y="'+T+'" width="'+(W-L-Rm)+'" height="'+(H-T-Bm)+'" fill="transparent" style="cursor:crosshair"/></svg>'+
+      '<label class="f">Explore a spending level<input type="range" id="trSlider" min="0" max="'+(pts.length-1)+'" step="1" value="'+pts.indexOf(sweet||near)+'"></label>'+
+      '<div class="tradeinfo" id="trInfo" aria-live="polite"></div>'+
+      '<p class="note" style="margin:0">Each extra $10,000 a year of spending leaves heirs about '+money(slope)+' less, after tax (averaged over the range). Green means the money lasts in 85% or more of simulated markets, amber 70% to 85%, red under 70%. Social Security ages stay as you set them; use "Find the best plan" to tune those too.</p>'+
+      '<details><summary>Show as a table</summary><div class="scroll"><table><tr><th>Yearly spending</th><th>Lasts in markets</th><th>Left to heirs</th><th>Lifetime tax</th></tr>'+pts.map(p=>'<tr class="'+(p===sweet?'mark':'')+'"><td>'+full(Math.round(p.spend/1000)*1000)+'</td><td>'+ratePill(p.rate)+'</td><td>'+money(p.legacy)+'</td><td>'+money(p.tax)+'</td></tr>').join('')+'</table></div></details>';
+    el.innerHTML=h;
+    const svg=el.querySelector('svg'),cross=el.querySelector('#trCross'),dot=el.querySelector('#trDot'),info=el.querySelector('#trInfo'),sl=el.querySelector('#trSlider');
+    const show=i=>{const p=pts[i],z=zone(p.rate),cx=X(p.spend),cy=Y(p.legacy);cross.setAttribute('x1',cx);cross.setAttribute('x2',cx);cross.setAttribute('visibility','visible');dot.setAttribute('cx',cx);dot.setAttribute('cy',cy);dot.setAttribute('visibility','visible');sl.value=i;
+      const z2=p.set,dl=p.legacy-res.mine.legacy;
+      info.innerHTML='<div class="big2">'+full(Math.round(p.spend/1000)*1000)+' a year → '+money(p.legacy)+' to heirs after tax</div>'+
+        '<div><span class="pill '+z[0]+'">'+z[2]+' '+z[1]+' · lasts in '+Math.round(p.rate*100)+'% of markets</span></div>'+
+        '<div class="note" style="margin:0">Lifetime tax '+money(p.tax)+' · vs your plan now: '+(Math.abs(p.spend-res.mine.spend)<500?'same spending':(p.spend>res.mine.spend?'+':'−')+money(Math.abs(p.spend-res.mine.spend))+' a year')+', heirs '+(Math.abs(dl)<500?'same':(dl>0?'+':'−')+money(Math.abs(dl)))+'. Best settings here: '+esc((cfg.couple&&z2.workConvTarget!=='none'?WTARGETS[z2.workConvTarget]+'; ':'')+'in retirement, '+TARGETS[z2.convTarget].toLowerCase()+'; from 63, '+C63[z2.conv63].charAt(0).toLowerCase()+C63[z2.conv63].slice(1)+'; convert until '+z2.convUntil)+'.</div>'+
+        '<div><button type="button" class="btn" data-apply-trade="'+i+'">Apply '+full(Math.round(p.spend/1000)*1000)+' a year and these settings</button></div>'};
+    const pick=ev=>{const r=svg.getBoundingClientRect(),vx=(ev.clientX-r.left)*W/r.width;let bi=0,bd=1e9;pts.forEach((p,i)=>{const d=Math.abs(X(p.spend)-vx);if(d<bd){bd=d;bi=i}});show(bi)};
+    el.querySelector('#trHit').addEventListener('pointermove',pick);el.querySelector('#trHit').addEventListener('pointerdown',pick);
+    sl.oninput=()=>show(+sl.value);show(+sl.value)},
   best(res,cfg){const el=document.getElementById('wiRes-best');
     if(strat!=='smart'){el.innerHTML='<p class="note" style="margin:0">The search uses the "'+STRATS.smart+'" plan. Choose it at the top of the Plan view, then come back.</p>';return}
     const P=cfg.couple?cfg.p:[cfg.p[0]],nm=P.map((p,i)=>p.name||'Person '+(i+1)),cur=res.rows[0],sg=v=>Math.abs(v)<500?'same':(v>0?'+':'−')+money(Math.abs(v));
@@ -1812,6 +1884,7 @@ document.getElementById('whatif').addEventListener('click',e=>{const b=e.target.
   else if(b.dataset.applyAges){const a=b.dataset.applyAges.split(',').map(Number);a.forEach((v,i)=>{S.p[i].retireAge=v});msg='Applied retirement ages: '+a.map((v,i)=>(S.p[i].name||'Person '+(i+1))+' at '+v).join(', ')+'.';
     if(b.dataset.applyConv){const [w,t]=b.dataset.applyConv.split('|');S.workConvTarget=w;S.convTarget=t;msg+=' Conversions: '+WTARGETS[w].toLowerCase()+'; in retirement, '+TARGETS[t].toLowerCase()+'.'}}
   else if(b.dataset.applySs){const a=b.dataset.applySs.split(',').map(Number);a.forEach((v,i)=>{S.p[i].claimAge=v});msg='Applied Social Security ages: '+a.map((v,i)=>(S.p[i].name||'Person '+(i+1))+' at '+v).join(', ')+'.'}
+  else if(b.dataset.applyTrade){const c=wiCache.trade&&wiCache.trade.res,p=c&&c.pts[+b.dataset.applyTrade];if(p){S.spend=Math.round(p.spend/1000)*1000;Object.assign(S,p.set);msg='Applied spending of '+full(S.spend)+' a year with its best conversion settings.'}}
   else if(b.dataset.applyBest){const c=wiCache.best&&wiCache.best.res,x=c&&c.rows[+b.dataset.applyBest];if(x){const z=x.set;S.workConvTarget=z.workConvTarget;S.convTarget=z.convTarget;S.conv63=z.conv63;S.convUntil=z.convUntil;z.claim.forEach((a,i)=>{S.p[i].claimAge=a});msg='Applied the '+(x.tag==='lowtax'?'lowest-tax':'best')+' plan settings: conversions and Social Security ages.'}}
   else if(b.dataset.applyC63){S.conv63=b.dataset.applyC63;msg='From 63, conversions now go up to: '+C63[S.conv63].charAt(0).toLowerCase()+C63[S.conv63].slice(1)+'.'}
   else if(b.dataset.applyK401){const k=b.dataset.applyK401,who=S.couple?(S.wiKWho||'both'):'0',ix=who==='both'?(S.couple?[0,1]:[0]):[+who];
