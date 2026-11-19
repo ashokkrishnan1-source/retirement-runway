@@ -1198,7 +1198,7 @@ function render(){
   let pill='<span class="pill wait">Simulating 1,000 markets…</span>';
   if(mcState){const r=mcState.rate,c=r>=0.85?'good':r>=0.7?'warn':'bad';pill='<span class="pill '+c+'">'+(c==='good'?'✓ On track':c==='warn'?'! Borderline':'✕ At risk')+' · '+Math.round(r*100)+'% of simulated markets last</span>'}
   let headline;
-  if(base.shortReal<1)headline='The money lasts to age '+P.map(p=>p.lifeExp).join(' and ')+', leaving '+money(end.total/end.fe)+' in today\'s dollars (about '+money(end.total)+' in '+end.Y+' dollars).';
+  if(base.shortReal<1){const last=names.map((n,i)=>end.alive[i]?n+' would be '+end.age[i]:null).filter(Boolean);headline='The money lasts to age '+P.map(p=>p.lifeExp).join(' and ')+'. The plan ends in '+end.Y+(last.length&&P.length>1?', when '+last.join(' and '):'')+', leaving '+money(end.total/end.fe)+' in today\'s dollars (about '+money(end.total)+' in '+end.Y+' dollars).'}
   else{const r=rows.find(x=>x.Y===base.firstShort);const who=names.map((n,i)=>r.alive[i]?n+' is '+r.age[i]:null).filter(Boolean);headline='The money runs short in '+base.firstShort+(who.length?', when '+who.join(' and '):'')+'.'}
   document.getElementById('verdict').innerHTML='<div class="row">'+pill+hb('verdict')+'</div><div class="big">'+esc(headline)+'</div><div class="note">'+esc(STRATS[strat])+' · '+full(cfg.spend)+' a year of spending in today\'s dollars, starting when the first of you retires. This is your plan as entered; the What if… tests below don\'t change it unless you click Apply.</div>';
   // stats
