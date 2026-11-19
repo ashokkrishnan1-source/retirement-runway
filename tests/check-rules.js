@@ -190,6 +190,30 @@ console.log('--- Conversion chosen for one year ---');
   check('fill the 12% bracket: $1,000 more goes over', r2.ordT > r2.br[1] ? 1 : 0, 1, 0);
   const d = clone(EX); d.cash = 0; d.cashFloor = 0; d.brokerage = 0; d.convYears = {}; d.convYears[Y] = 100000;
   check('chosen conversion shrinks to $0 when no cash or brokerage can pay its tax', row(E.simulate(d, {strategy: 'smart'}), Y).conv, 0, 0); }
+console.log('--- 401(k): limits, Roth share, Roth catch-up ---');
+{ // 2027 limits: 25,500 base; 8,500 catch-up from 50; 11,750 at 60-63; Roth catch-up if prior-year pay > 155,000
+  const w = (dob, inc, pct, extra) => base(Object.assign({dob, income: inc, retireAge: 70, k401Pct: pct}, extra || {}), null, {wage: 0, rCash: 0});
+  const r = (c, o) => E.simulate(c, Object.assign({strategy: 'brk'}, o || {})).rows[0];
+  check('401(k) capped at 25,500 at 45 (300k x 20%)', r(w('1982-01-01', 300000, 20)).ordWage, 300000 - 25500, 1);
+  check('401(k) cap 25,500 + 11,750 at 61 (catch-up No)', r(w('1966-01-01', 300000, 20, {catchUpRoth: 'no'})).ordWage, 300000 - 37250, 1);
+  check('age 55, pay 200k: catch-up 8,500 must be Roth', r(w('1972-01-01', 200000, 20)).ordWage, 200000 - 25500, 1);
+  check('age 55, pay 200k, catch-up set to No: all 34,000 pre-tax', r(w('1972-01-01', 200000, 20, {catchUpRoth: 'no'})).ordWage, 200000 - 34000, 1);
+  check('age 55, pay 150k (under 155k): catch-up pre-tax', r(w('1972-01-01', 150000, 20)).ordWage, 150000 - 30000, 1);
+  check('Roth share 100%: no deduction', r(w('1982-01-01', 200000, 10, {k401RothPct: 100})).ordWage, 200000, 1);
+  check('Roth share from age 50 not yet at 45', r(w('1982-01-01', 200000, 10, {k401RothPct: 100, k401RothAge: 50})).ordWage, 180000, 1);
+  // stop contributing, zero returns: brokerage gains the 20,000 not contributed less the extra tax on it
+  const c = w('1982-01-01', 200000, 10), z = {returns: new Array(60).fill(0)};
+  const a = r(c, z), b = r(c, Object.assign({k401: {who: 'both', mode: 'stop'}}, z));
+  const tx = o => E.fedTax({Y: 2027, st: 'single', n65: 0, ss: 0, ix: 1, seniorExt: false, ord: o, qual: 0, nii: 0}).tax;
+  check('stop: deduction gone', b.ordWage, 200000, 1);
+  check('stop: brokerage gets pay not contributed, after tax', b.brk - a.brk, 20000 - (tx(200000) - tx(180000)), 2);
+  const d = r(c, Object.assign({k401: {who: 'both', mode: 'roth'}}, z));
+  check('Roth: extra tax paid from savings', a.cash + a.brk - d.cash - d.brk, tx(200000) - tx(180000), 2);
+  check('Roth: contribution goes to Roth', d.roth - a.roth, 20000, 2); }
+{ // one retired, one working: the not-contributed pay is counted once (it already flows through the year's cash)
+  const c = base({dob: '1982-01-01', income: 200000, retireAge: 70, k401Pct: 10}, {dob: '1962-01-01', retireAge: 0}, {wage: 0, rCash: 0});
+  const z = {strategy: 'brk', returns: new Array(60).fill(0)}, a = E.simulate(c, z).rows[0], b = E.simulate(c, Object.assign({k401: {who: 'both', mode: 'stop'}}, z)).rows[0];
+  check('stop with spouse retired: savings rise by pay not contributed less its tax, once', (b.cash + b.brk) - (a.cash + a.brk), 20000 - (b.fed + b.state - a.fed - a.state), 2); }
 console.log('--- Keeping figures current ---');
 { // Every tax/benefit figure must come from RULES. Flag any "$12,345"-style figure in the page or UI script
   // (outside the engine) that equals a RULES value, since it would go stale at the yearly update.
