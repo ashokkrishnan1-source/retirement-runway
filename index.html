@@ -266,6 +266,8 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
           <label class="f">Heirs' tax rate %<span class="h">on inherited IRA money</span><input type="number" id="heirTax" step="1"></label>
           <label class="chk" id="guardAcaWrap"><input type="checkbox" id="guardAca"> Keep income under the marketplace subsidy limit in years before 65</label>
           <label class="f wide">Keep income under the Medicare surcharge<span class="h">applies to conversions from age 63, since Medicare looks back two years</span><select id="guardIrmaa"><option value="0">No limit</option><option value="1">Below the first surcharge</option><option value="2">Below the second surcharge</option><option value="3">Below the third surcharge</option></select></label>
+          <label class="f wide">From age 63, convert up to<span class="h">Medicare premiums look at income from two years earlier</span><select id="conv63"><option value="same">Same as above</option><option value="zero">The 0% capital-gains line</option><option value="b12">Top of the 12% bracket</option><option value="b22">Top of the 22% bracket</option><option value="irmaa1">Just under the first Medicare surcharge</option><option value="irmaa2">Just under the second Medicare surcharge</option></select></label>
+          <div class="note wide" id="conv63Note" style="margin:0"></div>
           <label class="chk"><input type="checkbox" id="seniorExt"> Assume the <span id="seniorTxt">senior deduction is extended</span></label>
         </div>
       </div>
@@ -373,6 +375,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
           <button type="button" data-w="lump" aria-pressed="false">Windfall or big expense</button>
           <button type="button" data-w="sscut" aria-pressed="false">Social Security cut</button>
           <button type="button" data-w="k401" aria-pressed="false">401(k): pre-tax or Roth</button>
+          <button type="button" data-w="after63" aria-pressed="false">Conversions after 63</button>
         </div>
         <p class="note" style="margin:0">Each calculator tests a change on a copy of your plan, so the headline above stays the same. Where a result can become part of your plan, an <b>Apply</b> button appears.</p>
         <div class="banner" id="wiApplied" hidden></div>
@@ -447,6 +450,10 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
             <label class="f">Switch to Roth from age<input type="number" id="wiKAge" step="1"></label>
           </div>
           <div id="wiRes-k401"></div>
+        </div>
+        <div id="wi-after63" class="wiPane" hidden>
+          <p class="note" style="margin:0" id="wiA63Intro"></p>
+          <div id="wiRes-after63"></div>
         </div>
       </div>
 
@@ -524,7 +531,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
           <div id="howTaxes"></div>
           <div><b>The three plans.</b> <i>Typical</i> spends cash above your floor, then pays the bills from the IRA. <i>Brokerage first</i> spends cash above your floor, then brokerage, then IRA, then Roth. <i>Brokerage first + conversions</i> can also convert while you're both still working, up to a bracket or a fixed amount, with the extra tax paid from cash above your floor, then brokerage. Once either of you retires, it adds a Roth conversion every year sized to your chosen limit, through the age you pick. While a spouse still works, their wages already fill the low brackets, so only the 22% or 24% limits convert much in those years. Conversion tax is paid from cash above your floor, then from brokerage (including tax on any gains from selling shares). If those can't cover it, the tool converts less: it never uses IRA or Roth money, or your cash floor, to pay conversion tax.</div>
           <div><b>Brokerage gains.</b> Only the gain part of a sale is taxed. Your cost basis is tracked year by year, so the gain share rises as the account grows.</div>
-          <div><b>Social Security.</b> Enter the monthly benefit at full retirement age from ssa.gov/myaccount, in today's dollars. Claiming early cuts it (about 30% at 62); waiting adds 8% a year to 70. A spouse gets the larger of their own or half the other's, once the other has claimed. After a death, the survivor gets the larger of their own benefit or a survivor benefit. The survivor benefit is the deceased's actual check if they had claimed (at least 82.5% of their full-age amount); 100% of their full-age amount if they died before full retirement age without claiming; or that plus the delayed credits earned up to death if they died later without claiming. A survivor can start survivor benefits from 60 at 71.5%, rising to 100% at their own full retirement age. If you claim before full retirement age while still working, the earnings test withholds $1 of benefits for every $2 of pay above <span id="etLimTxt">the yearly limit</span>, including benefits a spouse receives on that worker's record, and those months are credited back at full retirement age. 401(k) contributions are capped at the IRS limit plus the catch-up for your age; you can split them between pre-tax and Roth, and catch-up contributions are Roth when last year's pay was over the IRS limit. When Roth saving or smaller contributions change your take-home pay, the difference is saved in (or paid from) cash and brokerage, since pay covers living costs. Benefits are paid in full as scheduled unless you tick "Assume a Social Security cut in my plan" (or test one in the what-if). A cut is modeled as a flat percentage off every benefit, own, spousal and survivor, from the year you choose, for life; a real fix could instead protect current retirees, phase in, or raise taxes rather than cut benefits.</div>
+          <div><b>Social Security.</b> Enter the monthly benefit at full retirement age from ssa.gov/myaccount, in today's dollars. Claiming early cuts it (about 30% at 62); waiting adds 8% a year to 70. A spouse gets the larger of their own or half the other's, once the other has claimed. After a death, the survivor gets the larger of their own benefit or a survivor benefit. The survivor benefit is the deceased's actual check if they had claimed (at least 82.5% of their full-age amount); 100% of their full-age amount if they died before full retirement age without claiming; or that plus the delayed credits earned up to death if they died later without claiming. A survivor can start survivor benefits from 60 at 71.5%, rising to 100% at their own full retirement age. If you claim before full retirement age while still working, the earnings test withholds $1 of benefits for every $2 of pay above <span id="etLimTxt">the yearly limit</span>, including benefits a spouse receives on that worker's record, and those months are credited back at full retirement age. From 63 you can set a lower conversion target ("From age 63, convert up to"), applied once anyone is within two years of Medicare. 401(k) contributions are capped at the IRS limit plus the catch-up for your age; you can split them between pre-tax and Roth, and catch-up contributions are Roth when last year's pay was over the IRS limit. When Roth saving or smaller contributions change your take-home pay, the difference is saved in (or paid from) cash and brokerage, since pay covers living costs. Benefits are paid in full as scheduled unless you tick "Assume a Social Security cut in my plan" (or test one in the what-if). A cut is modeled as a flat percentage off every benefit, own, spousal and survivor, from the year you choose, for life; a real fix could instead protect current retirees, phase in, or raise taxes rather than cut benefits.</div>
           <div><b>Pensions.</b> Enter the yearly amount your plan statement shows when payments begin, the starting age, any yearly increase (many private pensions have none, so they lose buying power over time), and the share your spouse keeps after your death (often 0%, 50% or 100%, depending on the payout option you choose). Pensions are taxed as ordinary income and fill the low brackets before IRA withdrawals or conversions.</div>
           <div><b>RMDs.</b> Start at <span id="rmdAgesTxt">73 or 75, depending on your birth year</span>, using the IRS Uniform Lifetime Table. Extra RMD money is reinvested in brokerage.</div>
           <div><b>State taxes.</b> Pick your state now and in retirement. The tool uses each state's 2026 rules in simplified form (reviewed November 2026): its brackets in the range most retirees fall in, whether and above what income it taxes Social Security, and its main exclusion for IRA and 401(k) income, including income limits and whether Roth conversions qualify (for example, Pennsylvania and Illinois exempt retirement income entirely). City and county taxes are skipped, except average county tax in Indiana and Maryland. Typing your own rate replaces the brackets with that flat rate.</div>
@@ -870,7 +877,7 @@ function simulate(cfg,opt){
     var IR=RULES.irmaa, medN=0;for(i=0;i<n;i++){if(alive[i]&&age[i]>=65)medN++}
     function irmaaTier(agi,status,ix){var th=IR[status==='mfj'?'mfj':'single'],k=0;for(var q=0;q<th.length;q++){if(agi>th[q]*ix)k=q+1}return k}
     function irmaaCost(k){return k>0?medN*12*(IR.bSur[k-1]+IR.dSur[k-1])*fi*ixRules:0}
-    var prior=t>=2?rows[t-2]:null, irmaaK=prior?irmaaTier(prior.agi,prior.st,prior.fi*ixRules):null;
+    var prior=t>=2?rows[t-2]:null, irmaaK=prior?irmaaTier(prior.agi,prior.st,fi*ixRules):null;
     function acaPct(x){var a=A.pct,lo=0;for(var q=0;q<a.length;q++){if(x<=a[q][0]){var w=a[q][0]-lo;return a[q][1]+(a[q][2]-a[q][1])*(w>0?(x-lo)/w:0)}lo=a[q][0]}return 1e9}
 
     function stateTax(r,qualX,trX,convX){
@@ -925,11 +932,15 @@ function simulate(cfg,opt){
       return res;
     }
     var guardIrmaaOn=false;for(i=0;i<n;i++){if(alive[i]&&age[i]+2>=65&&age[i]+2<=P[i].lifeExp)guardIrmaaOn=true}
+    /* from 63 (Medicare looks back two years), an optional lower conversion target: a bracket, the 0% line, or just under a Medicare tier */
+    var c63=guardIrmaaOn&&cfg.conv63&&cfg.conv63!=='same'?cfg.conv63:null;
+    var gT=c63==='irmaa1'?(cfg.guardIrmaa>0?Math.min(cfg.guardIrmaa,1):1):c63==='irmaa2'?(cfg.guardIrmaa>0?Math.min(cfg.guardIrmaa,2):2):cfg.guardIrmaa;
+    var t63=c63?(c63.indexOf('irmaa')===0?'none':c63):null;
     function convTarget(tgt){return function(ordB,qual,d){
       var maxC=Math.max(0,tradTot-d.trad-d.tradPen);
       var ok=function(C){var r=taxFor(ordB+C,qual);
         if(cfg.guardAca&&acaN>0&&r.magiA>A.cliff*fpl-1)return false;
-        if(cfg.guardIrmaa>0&&guardIrmaaOn&&r.agi>IR[st==='mfj'?'mfj':'single'][cfg.guardIrmaa-1]*fi*ixRules*Math.pow(1+inf,2)-1)return false;
+        if(gT>0&&guardIrmaaOn&&r.agi>IR[st==='mfj'?'mfj':'single'][gT-1]*fi*ixRules*Math.pow(1+inf,2)-1)return false;
         if(tgt==='none')return true;
         if(tgt==='zero')return r.taxable<=r.l0-1;var lim=r.br[tgt==='b12'?1:tgt==='b22'?2:tgt==='b24'?3:4];return r.ordT<=lim-1};
       if(!(maxC>0)||!ok(0))return 0;if(ok(maxC))return maxC;
@@ -951,10 +962,11 @@ function simulate(cfg,opt){
       /* working years: take-home pay covers living costs and the tax on wages; only extra costs and conversion tax come from savings */
       Rbase=taxFor(base0,div,0,0);
       var wt=ovr!=null?'over':strat==='smart'&&olderAge<=cfg.convUntil?(cfg.workConvTarget||'none'):'none';
+      if(t63&&wt!=='none'&&wt!=='over')wt=t63;
       var needW=function(tp){return extraNeed+Math.max(0,tp-(Rbase.tax+Rbase.state+Rbase.hc))};
       /* conversion size is set on the year's base income (bracket targets don't depend on how the tax is paid) */
       var WC0=wt==='none'?0:wt==='over'?Math.min(tradTot,ovr):(wt==='fixed'?Math.min(tradTot,(cfg.workConvAmt||0)*fi):convTarget(wt)(base0,div,{trad:0,tradPen:0}));
-      if(WC0>0&&wt==='fixed'&&(cfg.guardAca||cfg.guardIrmaa>0))WC0=Math.min(WC0,convTarget('none')(base0,div,{trad:0,tradPen:0}));
+      if(WC0>0&&wt==='fixed'&&(cfg.guardAca||gT>0))WC0=Math.min(WC0,convTarget('none')(base0,div,{trad:0,tradPen:0}));
       var fixedFn=function(cap){return function(ordB,qual,d){return Math.max(0,Math.min(cap,WC0,tradTot-d.trad-d.tradPen))}};
       if(WC0<=0&&extraNeed<=0){res={d:{cash:0,brk:0,trad:0,roth:0,tradPen:0,floor:0},gains:0,conv:0,R:Rbase,need:0,short:0}}
       else{
@@ -967,7 +979,7 @@ function simulate(cfg,opt){
     }else{
       var ovrFn=function(cap){return function(o,q,d){return Math.max(0,Math.min(cap,ovr,tradTot-d.trad-d.tradPen))}};
       res=ovr!=null?fitConv(function(tp){return spendNeed+extraNeed+tp-inflow},ovr>0?ovrFn(ovr):null,ovrFn):
-        fitConv(function(tp){return spendNeed+extraNeed+tp-inflow},canConvert?convTarget(target):null,function(cap){return function(o,q,d){return Math.min(cap,convTarget(target)(o,q,d))}});
+        fitConv(function(tp){return spendNeed+extraNeed+tp-inflow},canConvert?convTarget(t63||target):null,function(cap){return function(o,q,d){return Math.min(cap,convTarget(t63||target)(o,q,d))}});
       if(res.need<0){brk+=-res.need;basis+=-res.need}
     }
     /* take-home pay differs from all-pre-tax 401(k) saving at the entered rate: Roth deferrals cost tax now, smaller
@@ -1082,6 +1094,13 @@ var WI={
     else g.push(ages.map(function(a){var s=simulate(cfg,{strategy:st,claim:[a]});return {leg:s.legacy,short:s.shortReal}}));
     return {ages:ages,grid:g}},
   lump:function(cfg,st,type,amt,year){var o={lump:{}};o.lump[year]=type==='out'?-amt:amt;return compareWI(cfg,st,o)},
+  /* Roth conversions from 63: compare keeping the plan's targets with tapering to a lower level */
+  after63:function(cfg,st){
+    var R=makePaths(cfg,250,simLen(cfg,st)),Rs=R.slice(0,100);
+    return {rows:['same','zero','b12','b22','irmaa1','irmaa2'].map(function(k){var c=JSON.parse(JSON.stringify(cfg));c.conv63=k;
+      var dr=simulate(c,{strategy:st}),conv63=0,conv0=0;dr.rows.forEach(function(r){var o=Math.max.apply(null,r.age.filter(function(a,i){return r.alive[i]}));if(o>=63)conv63+=r.conv/r.fi;else conv0+=r.conv/r.fi});
+      var lo=0,hi=3;for(var it=0;it<12;it++){var m=(lo+hi)/2;if(mcRate(c,st,Rs,{spendScale:m})>=.85)lo=m;else hi=m}
+      return {key:k,rate:mcRate(c,st,R),safe:lo,legacy:dr.legacy,tax:dr.taxReal,irmaa:dr.irmaaReal||0,conv0:conv0,conv63:conv63,short:dr.shortReal}})}},
   /* 401(k) choices while working: pre-tax, Roth, Roth from an age, only up to the match, or stop */
   k401:function(cfg,st,who,fromAge){
     var P=cfg.couple?cfg.p:[cfg.p[0]],idx=P.map(function(p,i){return i}).filter(function(i){return who==='both'||String(i)===String(who)});
@@ -1149,7 +1168,7 @@ const EXAMPLE={
   cash:100000,brokerage:900000,brokerageSave:0,gainPct:50,divYield:1.5,cashFloor:50000,
   spend:150000,health:12000,survivorPct:70,
   giving:0,yearIdx:0,healthMode:'fixed',acaPrem:15000,guardAca:false,guardIrmaa:0,lens:'plan',
-  convYears:{},ssCutOn:false,ssCutYear:2033,ssCutPct:22,wiSsPreset:'oasi',wiKWho:'both',wiKAge:55,wiSsYear:2033,wiSsPct:22,
+  convYears:{},conv63:'same',ssCutOn:false,ssCutYear:2033,ssCutPct:22,wiSsPreset:'oasi',wiKWho:'both',wiKAge:55,wiSsYear:2033,wiSsPct:22,
   wiTarget:0,wiTab:'spend',wiEarlyWho:'both',wiEarlyBest:true,wiDrop:30,wiLtcCost:110000,wiLtcYears:3,wiLtcAge:85,wiLtcWho:0,wiBonus:30000,wiBonusUntil:75,wiCutPct:20,wiCutAge:85,wiLumpType:'in',wiLumpAmt:250000,wiLumpYear:2035,workConvTarget:'none',workConvAmt:100000,convTarget:'zero',convUntil:74,stateNow:'FL',stateRet:'same',moveYear:0,stateTax:0,stateTaxRet:0,heirTax:24,seniorExt:false,
   rPre:6,rPost:6,sd:12,rCash:3,infl:2.75,wage:3,cola:2.5
 };
@@ -1210,6 +1229,7 @@ function bindGlobals(){
   const ct=document.getElementById('convTarget');ct.value=S.convTarget;ct.onchange=()=>{S.convTarget=ct.value;touched()};
   const co=document.getElementById('cOwner');co.value=S.cOwner||'even';co.onchange=()=>{S.cOwner=co.value;touched()};
   const se=document.getElementById('seniorExt');se.checked=!!S.seniorExt;se.onchange=()=>{S.seniorExt=se.checked;touched()};
+  const c63=document.getElementById('conv63');c63.value=S.conv63||'same';c63.onchange=()=>{S.conv63=c63.value;touched()};
   const sc=document.getElementById('ssCutOn');sc.checked=!!S.ssCutOn;sc.onchange=()=>{S.ssCutOn=sc.checked;syncToggles();touched()};
   const cp=document.getElementById('wiSsPreset');cp.value=S.wiSsPreset||'oasi';cp.onchange=()=>{S.wiSsPreset=cp.value;const T=RULES.ssTrust;
     if(cp.value==='oasi'){S.wiSsYear=T.oasiYear;S.wiSsPct=100-T.oasiPayable}else if(cp.value==='combined'){S.wiSsYear=T.combinedYear;S.wiSsPct=100-T.combinedPayable}
@@ -1333,6 +1353,7 @@ function render(){
   drawWhatIf();
   drawHealth();
   drawYear();
+  drawConv63Note();
   drawLegacy();
   showLens();
   drawBuilding();
@@ -1344,6 +1365,18 @@ function render(){
 }
 
 /* ---------- This year lens ---------- */
+/* ---------- conversion timing note (Roth conversion plan): most conversions before 63 ---------- */
+function drawConv63Note(){
+  const el=document.getElementById('conv63Note'),intro=document.getElementById('wiA63Intro');if(!el||!LAST)return;
+  const I=RULES.irmaa,line=full(I.mfj[0])+' for a couple ('+full(I.single[0])+' single) in '+I.year;
+  if(intro)intro.textContent='Medicare premiums at 65 are set from income at 63. This compares what to do from 63: keep your conversion targets, or taper to the 0% line, the 12% or 22% bracket, or just under a Medicare surcharge line (from '+line+'). Each row checks 250 simulated markets.';
+  const sim=LAST.sims.smart,older=r=>Math.max.apply(null,r.age.filter((a,i)=>r.alive[i]));
+  let b0=0,b63=0,hit=0;sim.rows.forEach((r,t)=>{if(older(r)>=63){b63+=r.conv/r.fi;const l=sim.rows[t+2];if(r.conv>1&&l&&l.irmaaK>0)hit++}else b0+=r.conv/r.fi});
+  let h='<b>Timing tip:</b> do most Roth conversions <b>before 63</b>. Medicare sets your premiums at 65 from your income at 63, so from 63 it usually pays to keep income just under a surcharge line (from '+line+') and convert less. Converting too little can backfire, though: a large IRA means large required withdrawals later.';
+  if(b0+b63>1)h+=' In the conversion plan: about '+money(b0)+' converted before 63 and '+money(b63)+' from 63 (today\'s $)'+(sim.irmaaReal>1?', with about '+money(sim.irmaaReal)+' of Medicare surcharges over your lifetime':'')+'.';
+  if(hit)h+=' <span style="color:var(--warn)">Conversions from 63 push income over a surcharge line in '+hit+' year'+(hit>1?'s':'')+'.</span> Compare choices in What if → "Conversions after 63".';
+  el.innerHTML=h}
+
 /* ---------- This year: choose the year's Roth conversion and see its tax ---------- */
 let yConvCache={key:null,res:null,tkey:null,tops:null}, yConvTimer=null;
 function drawYearConv(){
@@ -1529,7 +1562,7 @@ document.getElementById('lens-health').addEventListener('click',e=>{const b=e.ta
 /* ---------- what-if tabs ---------- */
 const wiCache={};
 function wiKey(k){return JSON.stringify([LAST&&LAST.cfg,strat,wiArgs(k)])}
-const WI6=['early','shock','ltc','curve','ss','lump','sscut','k401'];
+const WI6=['early','shock','ltc','curve','ss','lump','sscut','k401','after63'];
 function ensureWI(onProgress){
   const need=WI6.filter(k=>!(wiCache[k]&&wiCache[k].key===wiKey(k)));
   if(!need.length||!LAST)return Promise.resolve();
@@ -1581,6 +1614,8 @@ function wiSummaries(cfg){
     out.push({title:'Best Social Security ages',lines:['Best: '+(P.length>1?names[0]+' at '+A[bi]+', '+names[1]+' at '+A[bj]:'claim at '+A[bj])+', leaving '+full(bc.leg)+' to heirs after tax (today\'s $). Current choice: '+P.map(p=>p.claimAge).join(' and ')+'.'],
       head:P.length>1?[names[0]+' (down) / '+names[1]+' (across)'].concat(A.map(String)):['Claim at'].concat(A.map(String)),
       body:P.length>1?r.grid.map((row,i)=>[String(A[i])].concat(row.map(x=>x.short>0?'short':money(x.leg)))):[['Left to heirs'].concat(r.grid[0].map(x=>x.short>0?'short':money(x.leg)))],small:true})}
+  r=c('after63');
+  if(r&&r.rows)out.push({title:'Roth conversions after 63',lines:r.rows.map(x=>C63[x.key]+': '+money(x.conv0)+' converted before 63, '+money(x.conv63)+' from 63; lifetime tax '+money(x.tax)+', Medicare surcharges '+money(x.irmaa)+', heirs '+money(x.legacy)+' (today\'s $)')});
   r=c('k401');
   if(r&&r.rows){const L={plan:'Plan as entered',pre:'All pre-tax',roth:'All Roth',rothFrom:'Roth from age '+cfg.wiKAge,match:'Up to the match',stop:'Stop'};out.push({title:'401(k): pre-tax or Roth',lines:r.rows.map(x=>L[x.key]+': lasts in '+Math.round(x.rate*100)+'% of markets, lifetime tax '+money(x.tax)+', IRA when withdrawals start '+money(x.iraRmd)+', heirs '+money(x.legacy)+' (today\'s $)')})}
   r=c('sscut');
@@ -1589,11 +1624,12 @@ function wiSummaries(cfg){
   if(r)out.push(Object.assign({title:'Windfall or big expense',lines:[(cfg.wiLumpType!=='out'?full(cfg.wiLumpAmt)+' arriving':'A '+full(cfg.wiLumpAmt)+' expense')+' in '+cfg.wiLumpYear+'.']},cmp(r)));
   return out;
 }
-const WIK=['spend','early','shock','ltc','curve','ss','lump','sscut','k401'];
+const WIK=['spend','early','shock','ltc','curve','ss','lump','sscut','k401','after63'];
 const wiDirty={};let wiW=null,wiReq=0;
 function wiShow(){const t=S.wiTab||'spend';document.querySelectorAll('#wiTabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.w===t));WIK.forEach(k=>{document.getElementById('wi-'+k).hidden=k!==t})}
 document.querySelectorAll('#wiTabs button').forEach(b=>b.onclick=()=>{S.wiTab=b.dataset.w;save();wiShow();if(S.wiTab!=='spend'&&wiDirty[S.wiTab]!==false)wiRun(S.wiTab)});
-function wiArgs(k){return k==='k401'?[S.couple?(S.wiKWho||'both'):'0',S.wiKAge]:k==='sscut'?[S.wiSsYear,S.wiSsPct]:k==='early'?[S.couple?(S.wiEarlyWho||'both'):'both',S.wiEarlyBest!==false]:k==='shock'?[S.wiDrop]:k==='ltc'?[S.wiLtcCost,S.wiLtcYears,S.wiLtcAge,+S.wiLtcWho]:k==='curve'?[S.wiBonus,S.wiBonusUntil,S.wiCutPct,S.wiCutAge]:k==='lump'?[S.wiLumpType,S.wiLumpAmt,S.wiLumpYear]:[]}
+const C63={same:'Same targets as before 63',zero:'The 0% capital-gains line',b12:'Top of the 12% bracket',b22:'Top of the 22% bracket',irmaa1:'Just under the first Medicare surcharge',irmaa2:'Just under the second Medicare surcharge'};
+function wiArgs(k){return k==='after63'?[]:k==='k401'?[S.couple?(S.wiKWho||'both'):'0',S.wiKAge]:k==='sscut'?[S.wiSsYear,S.wiSsPct]:k==='early'?[S.couple?(S.wiEarlyWho||'both'):'both',S.wiEarlyBest!==false]:k==='shock'?[S.wiDrop]:k==='ltc'?[S.wiLtcCost,S.wiLtcYears,S.wiLtcAge,+S.wiLtcWho]:k==='curve'?[S.wiBonus,S.wiBonusUntil,S.wiCutPct,S.wiCutAge]:k==='lump'?[S.wiLumpType,S.wiLumpAmt,S.wiLumpYear]:[]}
 function wiRun(k){
   if(!LAST||k==='spend')return;const el=document.getElementById('wiRes-'+k);el.innerHTML='<p class="note">Calculating…</p>';
   const id=++wiReq, cfg=LAST.cfg, st=strat, args=wiArgs(k), key=wiKey(k);
@@ -1650,6 +1686,16 @@ const WIR={
     if(P.length>1){h+='<tr><th>'+esc(names[0])+' ↓ · '+esc(names[1])+' →</th>'+A.map(a=>'<th>'+a+'</th>').join('')+'</tr>';res.grid.forEach((r,i)=>{h+='<tr><td>'+A[i]+'</td>'+r.map((c,j)=>cell(c,i===bi&&j===bj,i===ci&&j===cj)).join('')+'</tr>'})}
     else{h+='<tr><th>Claim at</th>'+A.map(a=>'<th>'+a+'</th>').join('')+'</tr><tr><td>Left to heirs</td>'+res.grid[0].map((c,j)=>cell(c,j===bj,j===ci)).join('')+'</tr>'}
     document.getElementById('wiRes-ss').innerHTML=h+'</table></div><p class="note" style="margin:0">Green is the best pair; the blue outline is your current choice. Claiming later also protects the survivor, who keeps the larger of your two checks. Health and family longevity matter too: if either of you expects a shorter life, earlier claiming gains ground.</p>'},
+  after63(res,cfg){const el=document.getElementById('wiRes-after63');
+    if(strat!=='smart'){el.innerHTML='<p class="note" style="margin:0">Roth conversions are part of the "'+STRATS.smart+'" plan. Choose it at the top of the Plan view to compare.</p>';return}
+    const base=res.rows[0],cur=res.rows.find(r=>r.key===(cfg.conv63||'same'))||base,sg=v=>Math.abs(v)<500?'same':(v>0?'+':'−')+money(Math.abs(v));
+    const best=res.rows.filter(r=>r.short<1).reduce((a,r)=>r.legacy>a.legacy?r:a,base);
+    let h='<p class="wihead">'+esc(best.key===(cfg.conv63||'same')?C63[best.key]+' (your setting) leaves the most to heirs.':C63[best.key]+' leaves the most to heirs: '+sg(best.legacy-cur.legacy)+' vs your setting.')+'</p>'+
+      '<div class="scroll"><table><tr><th style="text-align:left">From 63, convert up to</th><th>Converted before 63</th><th>Converted from 63</th><th>Lasts in markets</th><th>Safe spending</th><th>Lifetime tax</th><th>Medicare surcharges</th><th>Left to heirs</th><th></th></tr>';
+    res.rows.forEach(r=>{const mine=r.key===(cfg.conv63||'same');
+      h+='<tr class="'+(r===best?'mark':'')+'"><td style="font-family:var(--body);text-align:left">'+esc(C63[r.key])+(mine?' (yours)':'')+'</td><td>'+money(r.conv0)+'</td><td>'+money(r.conv63)+'</td><td>'+ratePill(r.rate)+'</td><td>'+money(cfg.spend*r.safe)+'</td><td>'+money(r.tax)+'</td><td>'+money(r.irmaa)+'</td><td>'+money(r.legacy)+'</td><td>'+(mine?'':'<button type="button" class="btn sm" data-apply-c63="'+r.key+'">Apply</button>')+'</td></tr>'});
+    h+='</table></div><p class="note" style="margin:0">Today\'s dollars, by the older spouse\'s age. Medicare surcharges are the lifetime total. Tapering after 63 avoids surcharges, but converting too little can leave a large IRA whose required withdrawals push you into higher brackets and surcharges later anyway. The table weighs both.</p>';
+    el.innerHTML=h},
   k401(res,cfg){const el=document.getElementById('wiRes-k401');
     if(res.none){el.innerHTML='<p class="note" style="margin:0">No one chosen is still working with a 401(k) contribution. Enter a contribution % and a retirement age in the future to use this.</p>';return}
     const who=S.couple?(S.wiKWho||'both'):'0',P=cfg.couple?cfg.p:[cfg.p[0]],nm=who==='both'?(S.couple?'both of you':'you'):(P[+who].name||'Person '+(+who+1));
@@ -1674,6 +1720,7 @@ document.getElementById('whatif').addEventListener('click',e=>{const b=e.target.
   else if(b.dataset.applyAges){const a=b.dataset.applyAges.split(',').map(Number);a.forEach((v,i)=>{S.p[i].retireAge=v});msg='Applied retirement ages: '+a.map((v,i)=>(S.p[i].name||'Person '+(i+1))+' at '+v).join(', ')+'.';
     if(b.dataset.applyConv){const [w,t]=b.dataset.applyConv.split('|');S.workConvTarget=w;S.convTarget=t;msg+=' Conversions: '+WTARGETS[w].toLowerCase()+'; in retirement, '+TARGETS[t].toLowerCase()+'.'}}
   else if(b.dataset.applySs){const a=b.dataset.applySs.split(',').map(Number);a.forEach((v,i)=>{S.p[i].claimAge=v});msg='Applied Social Security ages: '+a.map((v,i)=>(S.p[i].name||'Person '+(i+1))+' at '+v).join(', ')+'.'}
+  else if(b.dataset.applyC63){S.conv63=b.dataset.applyC63;msg='From 63, conversions now go up to: '+C63[S.conv63].charAt(0).toLowerCase()+C63[S.conv63].slice(1)+'.'}
   else if(b.dataset.applyK401){const k=b.dataset.applyK401,who=S.couple?(S.wiKWho||'both'):'0',ix=who==='both'?(S.couple?[0,1]:[0]):[+who];
     ix.forEach(i=>{const p=S.p[i];if(k==='pre'){p.k401RothPct=0;p.k401RothAge=0}else if(k==='roth'){p.k401RothPct=100;p.k401RothAge=0}else if(k==='rothFrom'){p.k401RothPct=100;p.k401RothAge=S.wiKAge}else if(k==='match'){p.k401Pct=Math.min(p.k401Pct,p.matchPct)}else if(k==='stop'){p.k401Pct=0;p.matchPct=0}});
     msg={pre:'401(k) contributions set to all pre-tax.',roth:'401(k) contributions set to all Roth.',rothFrom:'401(k) contributions switch to Roth from age '+S.wiKAge+'.',match:'401(k) contributions set to the match %.',stop:'401(k) contributions and match set to 0.'}[k]}
@@ -1935,7 +1982,7 @@ function buildReport(){
   if(cfg.combined)g.push(['401(k) & IRA, combined',full(cfg.cTrad)],['Roth, combined',full(cfg.cRoth)],['Retirement accounts mostly in',cfg.cOwner==='even'?'split evenly':(cfg.p[cfg.cOwner==='p0'?0:1].name)]);
   g.push(['Cash',full(cfg.cash)],['Brokerage',full(cfg.brokerage)],['Gain share of brokerage',cfg.gainPct+'%'],['Dividend yield',cfg.divYield+'%'],['Added to brokerage / yr',full(cfg.brokerageSave)],['Cash floor',full(cfg.cashFloor)],
     ['Annual spending',full(cfg.spend)],['Health cover before 65',full(cfg.health)],['Spending after first death',cfg.survivorPct+'%'],
-    ['Conversions while working',WTARGETS[cfg.workConvTarget||'none']+(cfg.workConvTarget==='fixed'?' ('+full(cfg.workConvAmt)+')':'')],['Conversion limit in retirement',TARGETS[cfg.convTarget]],...(cfg.convYears&&Object.keys(cfg.convYears).length?[['Conversions chosen for specific years',Object.keys(cfg.convYears).sort().map(y=>y+': '+full(cfg.convYears[y])).join(', ')]]:[]),['Last year to convert (age)',String(cfg.convUntil)],['State now',(STATES[cfg.stateNow]||[''])[0]+' ('+cfg.stateTax+'%)'],['State in retirement',cfg.stateRet&&cfg.stateRet!=='same'?STATES[cfg.stateRet][0]+' ('+cfg.stateTaxRet+'%), moving '+(cfg.moveYear?'in '+cfg.moveYear:'when the first of you retires'):'same'],['Heirs\' tax rate',cfg.heirTax+'%'],['Senior deduction extended',cfg.seniorExt?'yes':'no'],
+    ['Conversions while working',WTARGETS[cfg.workConvTarget||'none']+(cfg.workConvTarget==='fixed'?' ('+full(cfg.workConvAmt)+')':'')],['Conversion limit in retirement',TARGETS[cfg.convTarget]],['From age 63, convert up to',C63[cfg.conv63||'same']],...(cfg.convYears&&Object.keys(cfg.convYears).length?[['Conversions chosen for specific years',Object.keys(cfg.convYears).sort().map(y=>y+': '+full(cfg.convYears[y])).join(', ')]]:[]),['Last year to convert (age)',String(cfg.convUntil)],['State now',(STATES[cfg.stateNow]||[''])[0]+' ('+cfg.stateTax+'%)'],['State in retirement',cfg.stateRet&&cfg.stateRet!=='same'?STATES[cfg.stateRet][0]+' ('+cfg.stateTaxRet+'%), moving '+(cfg.moveYear?'in '+cfg.moveYear:'when the first of you retires'):'same'],['Heirs\' tax rate',cfg.heirTax+'%'],['Senior deduction extended',cfg.seniorExt?'yes':'no'],
     ['Return before / in retirement',cfg.rPre+'% / '+cfg.rPost+'%'],['Volatility',cfg.sd+'%'],['Cash interest',cfg.rCash+'%'],['Inflation',cfg.infl+'%'],['Pay raises',cfg.wage+'%'],['SS COLA',cfg.cola+'%']);
   md+='\n'+mdTable(['Setting','Value'],g);
   md+='\n## Summary ('+STRATS[strat]+')\n\n';
@@ -2103,7 +2150,7 @@ function buildPdf(jsPDF){
   table([''].concat(names),pf.map(f=>[f[1]].concat(P.map(p=>fmtP(f[0],p[f[0]])))));
   const g=[];
   if(cfg.combined)g.push(['401(k) & IRA, combined',full(cfg.cTrad)],['Roth, combined',full(cfg.cRoth)]);
-  g.push(['Cash',full(cfg.cash)],['Brokerage',full(cfg.brokerage)],['Gain share of brokerage',cfg.gainPct+'%'],['Dividend yield',cfg.divYield+'%'],['Cash floor',full(cfg.cashFloor)],['Annual spending (today\'s $)',full(cfg.spend)],['Health cover before 65',full(cfg.health)],['Spending after first death',cfg.survivorPct+'%'],['Conversions while working',WTARGETS[cfg.workConvTarget||'none']+(cfg.workConvTarget==='fixed'?' ('+full(cfg.workConvAmt)+')':'')],['Conversion limit in retirement',TARGETS[cfg.convTarget]],...(cfg.convYears&&Object.keys(cfg.convYears).length?[['Conversions chosen for specific years',Object.keys(cfg.convYears).sort().map(y=>y+': '+full(cfg.convYears[y])).join(', ')]]:[]),['Last year to convert (age)',String(cfg.convUntil)],['State now',(STATES[cfg.stateNow]||[''])[0]+' ('+cfg.stateTax+'%)'],['State in retirement',cfg.stateRet&&cfg.stateRet!=='same'?STATES[cfg.stateRet][0]+' ('+cfg.stateTaxRet+'%), moving '+(cfg.moveYear?'in '+cfg.moveYear:'when the first of you retires'):'same'],['Heirs\' tax rate',cfg.heirTax+'%'],['Returns before / in retirement',cfg.rPre+'% / '+cfg.rPost+'%'],['Inflation',cfg.infl+'%'],['Social Security COLA',cfg.cola+'%']);
+  g.push(['Cash',full(cfg.cash)],['Brokerage',full(cfg.brokerage)],['Gain share of brokerage',cfg.gainPct+'%'],['Dividend yield',cfg.divYield+'%'],['Cash floor',full(cfg.cashFloor)],['Annual spending (today\'s $)',full(cfg.spend)],['Health cover before 65',full(cfg.health)],['Spending after first death',cfg.survivorPct+'%'],['Conversions while working',WTARGETS[cfg.workConvTarget||'none']+(cfg.workConvTarget==='fixed'?' ('+full(cfg.workConvAmt)+')':'')],['Conversion limit in retirement',TARGETS[cfg.convTarget]],['From age 63, convert up to',C63[cfg.conv63||'same']],...(cfg.convYears&&Object.keys(cfg.convYears).length?[['Conversions chosen for specific years',Object.keys(cfg.convYears).sort().map(y=>y+': '+full(cfg.convYears[y])).join(', ')]]:[]),['Last year to convert (age)',String(cfg.convUntil)],['State now',(STATES[cfg.stateNow]||[''])[0]+' ('+cfg.stateTax+'%)'],['State in retirement',cfg.stateRet&&cfg.stateRet!=='same'?STATES[cfg.stateRet][0]+' ('+cfg.stateTaxRet+'%), moving '+(cfg.moveYear?'in '+cfg.moveYear:'when the first of you retires'):'same'],['Heirs\' tax rate',cfg.heirTax+'%'],['Returns before / in retirement',cfg.rPre+'% / '+cfg.rPost+'%'],['Inflation',cfg.infl+'%'],['Social Security COLA',cfg.cola+'%']);
   table(['Setting','Value'],g);
   // ----- ledger
   doc.addPage('letter','landscape');W=792;y=M;
@@ -2167,6 +2214,7 @@ const HELP={
   wage:'Yearly pay raises. Benchmark: about 3% a year on average, often less late in a career.',
   cola:'Yearly Social Security increase. It follows inflation; the 20-year average is about 2.6%.',
   giving:()=>'What you give to charity each year, as part of your spending. From 70\u00bd the tool gives it straight from your IRA (a qualified charitable distribution, up to about '+full(RULES.qcd.limit)+' a person a year in '+RULES.qcd.year+'): it counts toward required withdrawals and isn\'t taxed. Before that it\'s paid like any other spending.',
+  conv63:()=>'Medicare premiums at 65 are set by your income at 63, so conversions from 63 can add a surcharge (from '+full(RULES.irmaa.mfj[0])+' of income for a couple, '+full(RULES.irmaa.single[0])+' single, in '+RULES.irmaa.year+'). A common approach: do most conversions before 63, then convert less. "Just under the first Medicare surcharge" converts as much as fits below that line; the 0% line or the 12% bracket converts less. Compare them in What if → "Conversions after 63".',
   k401RothPct:()=>'Share of your own 401(k) contributions that go in as Roth (after tax) instead of pre-tax. Roth costs tax now but is tax-free later, and it isn\'t counted for required withdrawals. The employer match is treated as pre-tax. Leave at 0 if you contribute pre-tax. Compare in What if → "401(k): pre-tax or Roth".',
   k401RothAge:'Age at which the Roth share above starts. 0 means it applies now. Example: 55 to keep saving pre-tax until 55, then switch to Roth.',
   catchUpRoth:()=>'From age 50 you can put extra into a 401(k) (a catch-up contribution). Since 2026, if last year\'s wages from the same employer were over the limit ('+full(RULES.limits.rothCatchUpThr)+' for '+RULES.limits.year+', based on '+(RULES.limits.year-1)+' pay), the catch-up must go in as Roth. "Work it out" uses your income here and assumes you had the same job last year. Choose No if you joined your employer partway through last year and earned less than the limit there, or Yes if your plan has told you it must be Roth.',
@@ -2197,7 +2245,7 @@ function addHelpButtons(){
   const add=(el,k,atEnd)=>{if(!el||el.querySelector('.hlp'))return;const t=document.createElement('span');t.innerHTML=hb(k);const b=t.firstChild;
     if(atEnd||!el.firstChild||el.firstChild.nodeType!==3){el.appendChild(b);return}
     const lt=document.createElement('span');lt.className='lt';el.insertBefore(lt,el.firstChild);lt.appendChild(lt.nextSibling);lt.appendChild(b)};
-  ['ssCutYear','ssCutPct','cTrad','cOwner','cash','brokerage','gainPct','divYield','brokerageSave','cashFloor','spend','giving','healthMode','health','acaPrem','survivorPct','guardIrmaa','workConvTarget','convTarget','convUntil','stateNow','heirTax','rPre','rPost','sd','rCash','infl','wage','cola','wiTarget'].forEach(id=>{const i=document.getElementById(id);if(i)add(i.closest('label'),id)});
+  ['ssCutYear','ssCutPct','cTrad','cOwner','cash','brokerage','gainPct','divYield','brokerageSave','cashFloor','spend','giving','healthMode','health','acaPrem','survivorPct','guardIrmaa','conv63','workConvTarget','convTarget','convUntil','stateNow','heirTax','rPre','rPost','sd','rCash','infl','wage','cola','wiTarget'].forEach(id=>{const i=document.getElementById(id);if(i)add(i.closest('label'),id)});
   add(document.getElementById('seniorExt')&&document.getElementById('seniorExt').closest('label'),'seniorExt',true);
   add(document.getElementById('guardAca').closest('label'),'guardAca',true);
   add(document.getElementById('ssCutOn').closest('label'),'ssCutOn',true);

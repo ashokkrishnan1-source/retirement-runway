@@ -214,6 +214,17 @@ console.log('--- 401(k): limits, Roth share, Roth catch-up ---');
   const c = base({dob: '1982-01-01', income: 200000, retireAge: 70, k401Pct: 10}, {dob: '1962-01-01', retireAge: 0}, {wage: 0, rCash: 0});
   const z = {strategy: 'brk', returns: new Array(60).fill(0)}, a = E.simulate(c, z).rows[0], b = E.simulate(c, Object.assign({k401: {who: 'both', mode: 'stop'}}, z)).rows[0];
   check('stop with spouse retired: savings rise by pay not contributed less its tax, once', (b.cash + b.brk) - (a.cash + a.brk), 20000 - (b.fed + b.state - a.fed - a.state), 2); }
+console.log('--- Conversions from 63 ---');
+{ // retired couple, big IRA, fill the 24% bracket; from 63 a lower target can apply (Medicare looks back two years)
+  const c = (dob, c63) => base({dob, ira: 3e6}, {dob}, {convTarget: 'b24', conv63: c63, spend: 40000, rCash: 0});
+  const r = (dob, c63) => E.simulate(c(dob, c63), {strategy: 'smart'}).rows[0], T1 = E.RULES.irmaa.mfj[0];
+  check('age 64, same targets: income over the first Medicare line', r('1963-01-01', 'same').agi > T1 ? 1 : 0, 1, 0);
+  check('age 64, just under the first Medicare line', r('1963-01-01', 'irmaa1').agi <= T1 ? 1 : 0, 1, 0);
+  check('age 64, under first line but converts close to it', r('1963-01-01', 'irmaa1').agi > T1 - 2000 ? 1 : 0, 1, 0);
+  const z = r('1963-01-01', 'zero'); check('age 64, 0% line: taxable income at most the 0% line', z.taxable <= z.l0 + 1 ? 1 : 0, 1, 0);
+  { const d = c('1963-01-01', 'irmaa1'); d.infl = 3; const s = E.simulate(d, {strategy: 'smart'});
+    check('with inflation, converting just under the line at 64 means no surcharge at 66', s.rows[2].irmaaK, 0, 0); }
+  check('age 60: after-63 setting not yet used', r('1967-01-01', 'irmaa1').conv, r('1967-01-01', 'same').conv, 1); }
 console.log('--- Keeping figures current ---');
 { // Every tax/benefit figure must come from RULES. Flag any "$12,345"-style figure in the page or UI script
   // (outside the engine) that equals a RULES value, since it would go stale at the yearly update.
