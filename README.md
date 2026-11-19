@@ -19,6 +19,9 @@ that browser only, and plans can be downloaded and reopened as a report (.md), C
   markets, and what-if calculators (spend it all, retire earlier, bad market timing,
   long-term care, spending more early, best Social Security ages, windfalls).
 
+**Use it online:** https://ashokkrishnan1-source.github.io/retirement-runway/ (published
+automatically from `main` once GitHub Pages is switched on).
+
 ## Files
 
 | File | What it is |
@@ -26,6 +29,9 @@ that browser only, and plans can be downloaded and reopened as a report (.md), C
 | `index.html` | The whole app. Open it in a browser, or publish it as a page. |
 | `tests/check-rules.js` | 41 checks against hand-worked answers. Run with `node tests/check-rules.js`. |
 | `tests/README.md` | How to run the checks and what to update each year. |
+| `tools/build-pages.js` | Builds the standalone website version into `_site/`. |
+| `.github/workflows/pages.yml` | Runs the checks, then publishes to GitHub Pages on every push to `main`. |
+| `CLAUDE.md` | Project notes for Claude sessions: structure, accuracy rules, yearly update steps. |
 
 ## Keeping it current
 

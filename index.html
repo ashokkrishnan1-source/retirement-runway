@@ -1523,8 +1523,16 @@ function buildReport(){
 }
 const emsg=t=>{const e=document.getElementById('exportMsg');e.textContent=t;e.hidden=!t};
 let DL=null;
+/* On its own website (not inside claude.ai) the page saves files with an ordinary browser download */
+const STANDALONE=(()=>{try{return window.top===window&&!(window.claude&&window.claude.use)}catch(e){return false}})();
+function plainDownload(name,data){
+  const type=/\.pdf$/.test(name)?'application/pdf':/\.csv$/.test(name)?'text/csv':'text/markdown';
+  const blob=data instanceof Blob?data:new Blob([data],{type:type+';charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);emsg('Saved '+name+'.');
+}
 async function offer(name,data){
-  if(!DL)return;
+  if(!DL){if(STANDALONE)plainDownload(name,data);return}
   try{await DL.save({filename:name,data});emsg('Saved '+name+'.')}
   catch(e){const c=e&&e.code;emsg(c==='declined'?'Download cancelled.':c==='rate_limited'?'A save prompt is already open. Finish it, then try again.':'Download isn\'t available here. Use "Copy report" instead.')}
 }
@@ -1535,7 +1543,7 @@ document.getElementById('cpReport').onclick=async()=>{if(!LAST)return;await prep
   const sel=()=>{ta.value=txt;ta.hidden=false;ta.select();emsg('Report selected below. Press Ctrl+C or ⌘C to copy, then paste it into chat.')};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>{ta.hidden=true;emsg('Report copied. Paste it into chat.')},sel);else sel()};
 (async()=>{try{DL=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){DL=null}
-  if(DL){['dlPdf','dlReport','dlCsv'].forEach(id=>document.getElementById(id).hidden=false)}})();
+  if(DL||STANDALONE){['dlPdf','dlReport','dlCsv'].forEach(id=>document.getElementById(id).hidden=false)}})();
 
 /* ---------- PDF ---------- */
 function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector('script[src="'+src+'"]'))return res();const el=document.createElement('script');el.src=src;el.onload=()=>res();el.onerror=()=>rej(new Error('load'));document.head.appendChild(el)})}
@@ -1787,7 +1795,7 @@ HELP.rules=()=>'Tax brackets, deductions and Social Security limits are updated 
 document.getElementById('maintCopy').onclick=()=>{const t=checklistMd(),m=document.getElementById('maintMsg');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>{m.textContent='Checklist copied.'},()=>{m.textContent='Copy blocked here. Use Download instead.'});else m.textContent='Copy blocked here. Use Download instead.'};
 document.getElementById('maintDl').onclick=()=>offer('retirement-runway-tax-rules-checklist.md',checklistMd());
-setTimeout(()=>{if(DL)document.getElementById('maintDl').hidden=false},1500);
+setTimeout(()=>{if(DL||STANDALONE)document.getElementById('maintDl').hidden=false},1500);
 
 /* ---------- open a saved file ---------- */
 function scenarioJSON(){return JSON.stringify(Object.assign({},S,{_view:{strat,real}}))}
