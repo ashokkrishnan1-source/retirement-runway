@@ -1,7 +1,7 @@
 // Retirement Runway: rules check.
 // Run after any change to the tax rules or the engine:   node tests/check-rules.js
 // Every check has a hand-calculated expected value. Exit code is 1 if anything fails.
-// Covers: federal tax reference figures (from the video), Social Security (spousal, survivor,
+// Covers: federal tax reference figures, Social Security (spousal, survivor,
 // earnings test), RMDs, payroll tax, state tax, cash-flow accounting, what-ifs and a fuzz test.
 // Note: expected values assume the 2027 rules. When you update RULES for a new year, the
 // federal reference figures below will change; re-derive them (or confirm the differences) first.
@@ -72,7 +72,7 @@ console.log('--- Simulation ---');
 { const c = clone(EX); c.spend = 10000; c.cash = 1e7; check('safe-spending search not capped at 3x', E.solveScale(m => E.simulate(c, {strategy: 'brk', spendScale: m}).shortReal < 1) > 3 ? 1 : 0, 1, 0); }
 
 console.log('--- Taxes ---');
-{ // the video's worked examples (2027, married, both 65+)
+{ // worked examples (2027, married, both 65+)
   const a = {Y: 2027, st: 'mfj', n65: 2, ss: 0, ix: 1, seniorExt: false, nii: 0};
   check('fed: $150k from the IRA', E.fedTax({...a, ord: 150000, qual: 0}).tax, 11656);
   check('fed: $75k of long-term gains only', E.fedTax({...a, ord: 0, qual: 75000}).tax, 0);

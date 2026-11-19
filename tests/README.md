@@ -17,7 +17,7 @@ a total. The run ends with an error code if anything fails.
 
 ## What it checks
 
-- **Federal tax:** the worked examples from the video ($150k from the IRA, the
+- **Federal tax:** worked examples ($150k from the IRA, the
   0% capital-gains line, filling the 12% bracket), single filers, and large gains
   with the 15%/20% rates and the 3.8% investment income tax.
 - **State tax:** Illinois, Pennsylvania and California recomputed by hand from

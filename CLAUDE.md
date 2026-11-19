@@ -40,7 +40,7 @@ never assume `window.claude` exists.
 - Prefer official sources (IRS, SSA, state revenue departments, Tax Foundation tables). When a figure
   comes from secondary sources or memory, say so to the owner and mark it in `RULES` comments.
 - Verify changes with numbers: hand-compute expected values, add a check to `tests/check-rules.js`,
-  and run the whole suite. Confirm the video's federal reference figures still match after rule changes.
+  and run the whole suite. Confirm the federal reference figures in the tests still match after rule changes.
 - State the model's simplifications openly in the "How this works" section.
 - Results compare plans on lifetime tax and after-tax value to heirs; "today's dollars" deflate flows by
   `fi` and end-of-year balances by `fe` (one more year).
@@ -61,7 +61,7 @@ publication date, generated from `RULES`.
 ## Privacy
 
 - Never commit personal plans, reports, PDFs, CSVs or screenshots (`.gitignore` blocks them).
-- The built-in example is the fictional couple "Dan and Linda" from the source video. Keep real users'
+- The built-in example is the fictional sample couple "Dan and Linda". Keep real users'
   names and numbers out of the code, tests, commits and this file.
 - User inputs stay in the browser (localStorage) and in files the user downloads. Nothing is sent anywhere.
 
