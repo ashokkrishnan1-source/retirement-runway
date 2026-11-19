@@ -214,6 +214,19 @@ console.log('--- 401(k): limits, Roth share, Roth catch-up ---');
   const c = base({dob: '1982-01-01', income: 200000, retireAge: 70, k401Pct: 10}, {dob: '1962-01-01', retireAge: 0}, {wage: 0, rCash: 0});
   const z = {strategy: 'brk', returns: new Array(60).fill(0)}, a = E.simulate(c, z).rows[0], b = E.simulate(c, Object.assign({k401: {who: 'both', mode: 'stop'}}, z)).rows[0];
   check('stop with spouse retired: savings rise by pay not contributed less its tax, once', (b.cash + b.brk) - (a.cash + a.brk), 20000 - (b.fed + b.state - a.fed - a.state), 2); }
+console.log('--- Roth IRA income limit, after-tax 401(k) ---');
+{ // single, age 45, no other income: Roth IRA phases out 158,000-173,000 (2027); IRA limit 7,500 (+1,100 from 50)
+  const one = (dob, inc, extra) => base(Object.assign({dob, income: inc, retireAge: 70}, extra || {}), null, {wage: 0, rCash: 0});
+  const z = {strategy: 'brk', returns: new Array(60).fill(0)}, r = c => E.simulate(c, z).rows[0];
+  check('Roth IRA: half allowed at 165,500 (mid phase-out)', r(one('1982-01-01', 165500, {rothAdd: 7000})).roth, 3500, 1);
+  check('Roth IRA: the cut part goes to brokerage', r(one('1982-01-01', 165500, {rothAdd: 7000})).rothIraCut, 3500, 1);
+  check('Roth IRA: none allowed at 180,000', r(one('1982-01-01', 180000, {rothAdd: 7000})).roth, 0, 1);
+  check('Roth IRA: pre-tax 401(k) brings income under the limit (180k - 25.5k)', r(one('1982-01-01', 180000, {rothAdd: 7000, k401Pct: 20})).roth, 7000, 1);
+  check('Roth IRA: capped at 7,500 at 45', r(one('1982-01-01', 50000, {rothAdd: 10000})).roth, 7500, 1);
+  check('Roth IRA: capped at 8,600 at 55', r(one('1972-01-01', 50000, {rothAdd: 10000})).roth, 8600, 1);
+  // after-tax 401(k): 75,000 total - 20,000 own - 10,000 match = 45,000 room
+  check('after-tax 401(k) to Roth: capped by the 75,000 total', r(one('1982-01-01', 200000, {k401Pct: 10, matchPct: 5, afterTaxRoth: 60000})).roth, 45000, 1);
+  check('after-tax 401(k) to Roth: under the cap, all of it', r(one('1982-01-01', 200000, {k401Pct: 10, matchPct: 5, afterTaxRoth: 20000})).roth, 20000, 1); }
 console.log('--- Conversions from 63 ---');
 { // retired couple, big IRA, fill the 24% bracket; from 63 a lower target can apply (Medicare looks back two years)
   const c = (dob, c63) => base({dob, ira: 3e6}, {dob}, {convTarget: 'b24', conv63: c63, spend: 40000, rCash: 0});

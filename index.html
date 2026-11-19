@@ -531,7 +531,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
           <div id="howTaxes"></div>
           <div><b>The three plans.</b> <i>Typical</i> spends cash above your floor, then pays the bills from the IRA. <i>Brokerage first</i> spends cash above your floor, then brokerage, then IRA, then Roth. <i>Brokerage first + conversions</i> can also convert while you're both still working, up to a bracket or a fixed amount, with the extra tax paid from cash above your floor, then brokerage. Once either of you retires, it adds a Roth conversion every year sized to your chosen limit, through the age you pick. While a spouse still works, their wages already fill the low brackets, so only the 22% or 24% limits convert much in those years. Conversion tax is paid from cash above your floor, then from brokerage (including tax on any gains from selling shares). If those can't cover it, the tool converts less: it never uses IRA or Roth money, or your cash floor, to pay conversion tax.</div>
           <div><b>Brokerage gains.</b> Only the gain part of a sale is taxed. Your cost basis is tracked year by year, so the gain share rises as the account grows.</div>
-          <div><b>Social Security.</b> Enter the monthly benefit at full retirement age from ssa.gov/myaccount, in today's dollars. Claiming early cuts it (about 30% at 62); waiting adds 8% a year to 70. A spouse gets the larger of their own or half the other's, once the other has claimed. After a death, the survivor gets the larger of their own benefit or a survivor benefit. The survivor benefit is the deceased's actual check if they had claimed (at least 82.5% of their full-age amount); 100% of their full-age amount if they died before full retirement age without claiming; or that plus the delayed credits earned up to death if they died later without claiming. A survivor can start survivor benefits from 60 at 71.5%, rising to 100% at their own full retirement age. If you claim before full retirement age while still working, the earnings test withholds $1 of benefits for every $2 of pay above <span id="etLimTxt">the yearly limit</span>, including benefits a spouse receives on that worker's record, and those months are credited back at full retirement age. From 63 you can set a lower conversion target ("From age 63, convert up to"), applied once anyone is within two years of Medicare. 401(k) contributions are capped at the IRS limit plus the catch-up for your age; you can split them between pre-tax and Roth, and catch-up contributions are Roth when last year's pay was over the IRS limit. When Roth saving or smaller contributions change your take-home pay, the difference is saved in (or paid from) cash and brokerage, since pay covers living costs. Benefits are paid in full as scheduled unless you tick "Assume a Social Security cut in my plan" (or test one in the what-if). A cut is modeled as a flat percentage off every benefit, own, spousal and survivor, from the year you choose, for life; a real fix could instead protect current retirees, phase in, or raise taxes rather than cut benefits.</div>
+          <div><b>Social Security.</b> Enter the monthly benefit at full retirement age from ssa.gov/myaccount, in today's dollars. Claiming early cuts it (about 30% at 62); waiting adds 8% a year to 70. A spouse gets the larger of their own or half the other's, once the other has claimed. After a death, the survivor gets the larger of their own benefit or a survivor benefit. The survivor benefit is the deceased's actual check if they had claimed (at least 82.5% of their full-age amount); 100% of their full-age amount if they died before full retirement age without claiming; or that plus the delayed credits earned up to death if they died later without claiming. A survivor can start survivor benefits from 60 at 71.5%, rising to 100% at their own full retirement age. If you claim before full retirement age while still working, the earnings test withholds $1 of benefits for every $2 of pay above <span id="etLimTxt">the yearly limit</span>, including benefits a spouse receives on that worker's record, and those months are credited back at full retirement age. From 63 you can set a lower conversion target ("From age 63, convert up to"), applied once anyone is within two years of Medicare. 401(k) contributions are capped at the IRS limit plus the catch-up for your age, after-tax 401(k) money (converted to Roth at once) at the yearly total limit, and Roth IRA contributions at the IRA limit, phased out by income (the part not allowed is saved in brokerage); you can split them between pre-tax and Roth, and catch-up contributions are Roth when last year's pay was over the IRS limit. When Roth saving or smaller contributions change your take-home pay, the difference is saved in (or paid from) cash and brokerage, since pay covers living costs. Benefits are paid in full as scheduled unless you tick "Assume a Social Security cut in my plan" (or test one in the what-if). A cut is modeled as a flat percentage off every benefit, own, spousal and survivor, from the year you choose, for life; a real fix could instead protect current retirees, phase in, or raise taxes rather than cut benefits.</div>
           <div><b>Pensions.</b> Enter the yearly amount your plan statement shows when payments begin, the starting age, any yearly increase (many private pensions have none, so they lose buying power over time), and the share your spouse keeps after your death (often 0%, 50% or 100%, depending on the payout option you choose). Pensions are taxed as ordinary income and fill the low brackets before IRA withdrawals or conversions.</div>
           <div><b>RMDs.</b> Start at <span id="rmdAgesTxt">73 or 75, depending on your birth year</span>, using the IRS Uniform Lifetime Table. Extra RMD money is reinvested in brokerage.</div>
           <div><b>State taxes.</b> Pick your state now and in retirement. The tool uses each state's 2026 rules in simplified form (reviewed November 2026): its brackets in the range most retirees fall in, whether and above what income it taxes Social Security, and its main exclusion for IRA and 401(k) income, including income limits and whether Roth conversions qualify (for example, Pennsylvania and Illinois exempt retirement income entirely). City and county taxes are skipped, except average county tax in Indiana and Maryland. Typing your own rate replaces the brackets with that flat rate.</div>
@@ -609,7 +609,10 @@ var RULES={
     /* SECURE 2.0 sec. 603: catch-up contributions must be Roth when the prior year's FICA wages from the same employer
        exceeded this. 2027 threshold applies to 2026 wages ($150,000 for 2026). Source: secondary (Lexology/plan-provider
        summaries); the official 2027 limits are IRS Notice 2026-66 (news release IR-2026-136): confirm there. */
-    rothCatchUpThr:155000},
+    rothCatchUpThr:155000,
+    /* Total yearly additions to one person's 401(k) (employee + employer + after-tax; catch-up on top), IRC 415(c), and the
+       Roth IRA income phase-out (MAGI). Source: IRS Notice 2026-66 / IR-2026-136 (Nov 2026), via ASPPA and Journal of Accountancy. */
+    total415:75000,rothIraPhase:{mfj:[250000,260000],single:[158000,173000]}},
 
   /* Qualified charitable distributions: gifts straight from an IRA from age 70 1/2 count toward RMDs and are not
      taxed. Limit is per person and indexed (2026: $111,000 per IRS; 2027 figure not yet confirmed). */
@@ -765,7 +768,7 @@ function simulate(cfg,opt){
     var nAlive=alive.filter(Boolean).length;
     var st=(n>1&&nAlive===2)?'mfj':'single';
     var n65=0, anyRetired=false, anyWorking=false, health=0, acaN=0, i;
-    var wages=0, ordWage=0, contrib=0, fica=0, wArr=[0,0], contribT=[0,0], refOrd=0, refK=0, empK=0;
+    var wages=0, ordWage=0, contrib=0, fica=0, wArr=[0,0], contribT=[0,0], refOrd=0, refK=0, empK=0, roW=[0,0], atT=0;
     var LM=RULES.limits, li=fi*Math.pow(1+inf,START_YEAR-LM.year), kOpt=opt.k401||null;
     for(i=0;i<n;i++){
       if(!alive[i])continue;
@@ -774,7 +777,8 @@ function simulate(cfg,opt){
       if(age[i]<p.retireAge){
         anyWorking=true;
         var inc=p.income*Math.pow(1+cfg.wage/100,t);
-        var m=inc*p.matchPct/100, ira=p.iraAdd*fi, ro=p.rothAdd*fi;
+        var m=inc*p.matchPct/100, ira=p.iraAdd*fi, iraL=(LM.ira+(age[i]>=50?LM.iraCatchUp:0))*li, ro=Math.min(p.rothAdd*fi,Math.max(0,iraL-ira));
+        roW[i]=ro;
         /* employee 401(k) deferrals, capped at the IRS limit plus the catch-up for the person's age */
         var baseL=LM.k401*li, cuL=age[i]>=60&&age[i]<=63?LM.catchUp6063*li:age[i]>=50?LM.catchUp50*li:0;
         var kRef=Math.min(inc*p.k401Pct/100,baseL+cuL), k=kRef;
@@ -785,8 +789,10 @@ function simulate(cfg,opt){
         /* catch-up must be Roth if last year's wages from this employer were over the threshold (assumes the same job) */
         var cu=Math.max(0,k-baseL),mustR=p.catchUpRoth==='yes'||(p.catchUpRoth!=='no'&&inc/(1+cfg.wage/100)>LM.rothCatchUpThr*li);
         var kR=Math.max(k*rs,mustR?cu:0),kP=k-kR;
-        trad[i]+=kP+m+ira; roth[i]+=ro+kR; contribT[i]=kP+m+ira;
-        wArr[i]=inc; wages+=inc; ordWage+=inc-kP-ira; contrib+=k+ira+ro; refOrd+=inc-kRef-ira; refK+=kRef; empK+=k;
+        /* after-tax 401(k) contributions converted to Roth right away, if the plan allows: limited by the yearly total (catch-up excluded) */
+        var at=Math.min((p.afterTaxRoth||0)*fi,Math.max(0,LM.total415*li-Math.min(k,baseL)-m));atT+=at;
+        trad[i]+=kP+m+ira; roth[i]+=ro+kR+at; contribT[i]=kP+m+ira;
+        wArr[i]=inc; wages+=inc; ordWage+=inc-kP-ira; contrib+=k+ira+ro+at; refOrd+=inc-kRef-ira; refK+=kRef; empK+=k;
         fica+=RULES.fica.ssRate*Math.min(inc,RULES.fica.wageBase*fi*Math.pow(1+inf,START_YEAR-RULES.fica.year))+RULES.fica.medRate*inc;
       }else{anyRetired=true;if(age[i]<65){if(cfg.healthMode==='aca')acaN++;else health+=cfg.health*fi}}
     }
@@ -957,6 +963,10 @@ function simulate(cfg,opt){
       var lo=0,hi=res.conv;for(var b2=0;b2<30&&hi-lo>25;b2++){var mid=(lo+hi)/2;if(otherUse(drawFor(needFn,base0,div,cap(mid)))<=lim)lo=mid;else hi=mid}
       return lo>=500?drawFor(needFn,base0,div,cap(lo)):r0;
     }
+    /* Roth IRA contributions phase out with income (MAGI, which leaves out Roth conversions). What isn't allowed is saved in brokerage. */
+    var rothIraCut=0;if(roW[0]+roW[1]>0){var ph=LM.rothIraPhase[st==='mfj'?'mfj':'single'],mg=fedTax(Object.assign({},taxArgs,{ord:ordWage+rmd+interest+pen,qual:div,nii:0})).agi;
+      var okF=Math.max(0,Math.min(1,(ph[1]*li-mg)/((ph[1]-ph[0])*li)));
+      for(i=0;i<n;i++){var cutI=roW[i]*(1-okF);if(cutI>0){roth[i]-=cutI;brk+=cutI;basis+=cutI;rothIraCut+=cutI}}}
     var base0=ordWage+rmd+interest+pen, inflow=wages-contrib-fica+ss+rmd+pen, res, Rbase=null;
     if(!anyRetired){
       /* working years: take-home pay covers living costs and the tax on wages; only extra costs and conversion tax come from savings */
@@ -1015,7 +1025,7 @@ function simulate(cfg,opt){
     rows.push({Y:Y,t:t,fi:fi,fe:fe,pen:pen,tradStart:tradStart,age:age.slice(),alive:alive.slice(),st:st,wages:wages,ordWage:ordWage,ss:ss,rmd:rmd,interest:interest,div:div,
       draw:draw,gains:gains,conv:conv,sCode:sCode,need:spendNeed+extraNeed,fed:R.tax,state:R.state,pen10:R.pen10,marg:R.marg,margEff:margEff,tss:R.tss,agi:R.agi,ded:R.ded,l0:R.l0,br:R.br,taxable:R.taxable,ordT:R.ordT,qT:R.qT,
       short:short,cash:cash,brk:brk,trad:Tt,roth:Ro,total:cash+brk+Tt+Ro,retired:anyRetired,working:anyWorking,
-      wageTax:wageTax,qcd:qcd,rmdAll:rmd+qcdFromRmd,give:giveAmt,basis:basis,aca:R.aca,acaSub:R.acaSub,magiA:R.magiA,fpl4:A.cliff*fpl,acaN:acaN,irmaa:R.irmaa,irmaaK:R.irmaaK,medN:medN,hc:R.hc,healthFixed:health});
+      wageTax:wageTax,qcd:qcd,rmdAll:rmd+qcdFromRmd,rothIraCut:rothIraCut,afterTaxRoth:atT,give:giveAmt,basis:basis,aca:R.aca,acaSub:R.acaSub,magiA:R.magiA,fpl4:A.cliff*fpl,acaN:acaN,irmaa:R.irmaa,irmaaK:R.irmaaK,medN:medN,hc:R.hc,healthFixed:health});
     /* deaths at the end of the year: set what the survivor can receive on this record; IRAs roll to the spouse */
     for(i=0;i<n;i++){if(alive[i]&&age[i]>=P[i].lifeExp){
       var pia12=P[i].ssPIA*12;
@@ -1161,8 +1171,8 @@ const STORE='retirement-runway-v2';
 const EXAMPLE={
   couple:true,
   p:[
-    {name:'Dan',dob:'1962-03-10',income:0,retireAge:65,k401:0,ira:1200000,roth:0,k401Pct:0,matchPct:0,k401RothPct:0,k401RothAge:0,catchUpRoth:'auto',rothAdd:0,iraAdd:0,ssPIA:3300,claimAge:70,lifeExp:92,penAmt:0,penAge:65,penColaPct:0,penSurvPct:50},
-    {name:'Linda',dob:'1962-07-22',income:0,retireAge:65,k401:0,ira:800000,roth:0,k401Pct:0,matchPct:0,k401RothPct:0,k401RothAge:0,catchUpRoth:'auto',rothAdd:0,iraAdd:0,ssPIA:2400,claimAge:70,lifeExp:95,penAmt:0,penAge:65,penColaPct:0,penSurvPct:50}
+    {name:'Dan',dob:'1962-03-10',income:0,retireAge:65,k401:0,ira:1200000,roth:0,k401Pct:0,matchPct:0,k401RothPct:0,k401RothAge:0,catchUpRoth:'auto',rothAdd:0,afterTaxRoth:0,iraAdd:0,ssPIA:3300,claimAge:70,lifeExp:92,penAmt:0,penAge:65,penColaPct:0,penSurvPct:50},
+    {name:'Linda',dob:'1962-07-22',income:0,retireAge:65,k401:0,ira:800000,roth:0,k401Pct:0,matchPct:0,k401RothPct:0,k401RothAge:0,catchUpRoth:'auto',rothAdd:0,afterTaxRoth:0,iraAdd:0,ssPIA:2400,claimAge:70,lifeExp:95,penAmt:0,penAge:65,penColaPct:0,penSurvPct:50}
   ],
   combined:false,cTrad:2000000,cRoth:0,cOwner:'even',
   cash:100000,brokerage:900000,brokerageSave:0,gainPct:50,divYield:1.5,cashFloor:50000,
@@ -1177,7 +1187,7 @@ const PFIELDS=[
   ['income','Annual income','number',1000,'before tax, 0 if retired'],['retireAge','Retire at age','number',1],
   ['k401','401(k) / 403(b)','number',1000,'pre-tax balance'],['ira','Traditional IRA','number',1000],
   ['roth','Roth (IRA + 401k)','number',1000],['k401Pct','401(k) contribution %','number',1,'of pay'],['k401RothPct','Roth share of 401(k) %','number',10,'0 = all pre-tax'],['k401RothAge','Roth share starts at age','number',1,'0 = now'],['catchUpRoth','Catch-up must be Roth','select',null,'from age 50, high earners',[['auto','Work it out from my pay'],['yes','Yes'],['no','No']]],
-  ['matchPct','Employer match %','number',0.5,'of pay'],['rothAdd','Roth added / yr','number',500,'today\'s $'],
+  ['matchPct','Employer match %','number',0.5,'of pay'],['rothAdd','Roth IRA added / yr','number',500,'today\'s $; limited by income'],['afterTaxRoth','After-tax 401(k) to Roth / yr','number',1000,'today\'s $; only if your plan allows'],
   ['iraAdd','IRA added / yr','number',500,'today\'s $, deductible'],['ssPIA','Social Security / mo','number',50,'at full age, today\'s $'],['penAmt','Pension per year','number',1000,'0 if none; amount when payments start'],['penAge','Pension starts at age','number',1],['penColaPct','Pension yearly increase %','number',0.5,'0 if it never rises'],['penSurvPct','Survivor gets %','number',25,'share paid to spouse after death'],
   ['claimAge','Claim SS at age','number',1,'62 to 70'],['lifeExp','Plan to age','number',1]
 ];
@@ -1445,6 +1455,8 @@ function drawYear(){
     const ra=rmdAge(birthYear(p));if(a===ra)todo.push(['First required withdrawal for '+who(i),'Due by April 1 next year, but waiting puts two withdrawals in one tax year. Most people take it by December 31.'])});
   if(r.rmdAll>1)todo.push(['By December 31: required withdrawals',full(r.rmdAll)+' in total'+(r.qcd>1?', of which '+full(Math.min(r.qcd,r.rmdAll))+' can go straight to charity':'')+'. Missing it costs a 25% penalty (10% if fixed quickly).']);
   if(r.qcd>1)todo.push(['Give from your IRA',full(r.qcd)+' as a qualified charitable distribution: ask your IRA custodian to pay the charity directly. It isn\'t taxed and counts toward your required withdrawal.']);
+  if(r.rothIraCut>1)todo.push(['Roth IRA: over the income limit',full(r.rothIraCut)+' of your planned Roth IRA contributions isn\'t allowed at this income (the limit phases out from '+full(RULES.limits.rothIraPhase[r.st==='mfj'?'mfj':'single'][0])+' of income in '+RULES.limits.year+'). The plan saves it in brokerage instead. Options: more pre-tax 401(k) saving (it lowers the income that counts), or a backdoor Roth if you have no traditional IRA money (otherwise most of it is taxed).']);
+  if(r.afterTaxRoth>1)todo.push(['After-tax 401(k) to Roth',full(r.afterTaxRoth)+' this year. Ask the plan to convert it to Roth right away (in-plan conversion), so its growth isn\'t taxed.']);
   if(r.conv>1)todo.push(['By December 31: Roth conversion',full(r.conv)+'. In November, enter your year-to-date income in tax software and confirm your taxable income lands where the plan expects ('+full(r.taxable)+'). Pay the tax from cash or brokerage, not from the IRA.']);
   if(est>500)todo.push(['Tax payments','About '+full(est)+' of tax isn\'t covered by paycheck withholding. Pay about '+full(est/4)+' by April 15, June 15, September 15 and January 15, or have tax withheld from IRA withdrawals or Social Security. Paying at least 110% of last year\'s total tax avoids an underpayment penalty.']);
   if(r.acaN>0)todo.push(['Marketplace insurance','When you enroll (open enrollment runs November 1 to January 15), estimate your income as about '+full(r.magiA)+'. '+(r.magiA>r.fpl4?'That\'s above the subsidy limit of '+full(r.fpl4)+', so you\'d pay the full premium.':'Staying under '+full(r.fpl4)+' keeps your subsidy.')]);
@@ -2215,6 +2227,8 @@ const HELP={
   wage:'Yearly pay raises. Benchmark: about 3% a year on average, often less late in a career.',
   cola:'Yearly Social Security increase. It follows inflation; the 20-year average is about 2.6%.',
   giving:()=>'What you give to charity each year, as part of your spending. From 70\u00bd the tool gives it straight from your IRA (a qualified charitable distribution, up to about '+full(RULES.qcd.limit)+' a person a year in '+RULES.qcd.year+'): it counts toward required withdrawals and isn\'t taxed. Before that it\'s paid like any other spending.',
+  rothAdd:()=>{const L=RULES.limits;return 'Money you put straight into a Roth IRA each year. The '+L.year+' limit is '+full(L.ira)+' a person ('+full(L.ira+L.iraCatchUp)+' from 50), minus any traditional IRA contribution. It phases out with income: for a couple, between '+full(L.rothIraPhase.mfj[0])+' and '+full(L.rothIraPhase.mfj[1])+' of modified adjusted gross income ('+full(L.rothIraPhase.single[0])+'\u2013'+full(L.rothIraPhase.single[1])+' single). Pre-tax 401(k) saving lowers that income; Roth 401(k) saving does not. Any amount over the limit is saved in brokerage instead, and the This year view tells you. A "backdoor Roth" can get around the income limit, but if you hold traditional IRA money, most of it is taxed (the pro-rata rule).'},
+  afterTaxRoth:()=>'Some 401(k) plans let you add after-tax money beyond the normal limit and convert it to Roth right away (sometimes called a "mega backdoor Roth"). Check your plan document for "after-tax contributions" and "in-plan Roth conversion". The total going into one person\'s 401(k) (your contributions, the employer\'s and after-tax) is capped at '+full(RULES.limits.total415)+' in '+RULES.limits.year+', with catch-up on top. Like your other contributions, it comes out of your pay. The tool caps it to fit.',
   conv63:()=>'Medicare premiums at 65 are set by your income at 63, so conversions from 63 can add a surcharge (from '+full(RULES.irmaa.mfj[0])+' of income for a couple, '+full(RULES.irmaa.single[0])+' single, in '+RULES.irmaa.year+'). A common approach: do most conversions before 63, then convert less. "Just under the first Medicare surcharge" converts as much as fits below that line; the 0% line or the 12% bracket converts less. Compare them in What if → "Conversions after 63".',
   k401RothPct:()=>'Share of your own 401(k) contributions that go in as Roth (after tax) instead of pre-tax. Roth costs tax now but is tax-free later, and it isn\'t counted for required withdrawals. The employer match is treated as pre-tax. Leave at 0 if you contribute pre-tax. Compare in What if → "401(k): pre-tax or Roth".',
   k401RothAge:'Age at which the Roth share above starts. 0 means it applies now. Example: 55 to keep saving pre-tax until 55, then switch to Roth.',
