@@ -1,0 +1,5 @@
+# Personal reports and screenshots never belong in the repo
+*.pdf
+*.png
+*.csv
+retirement-runway-*.md
