@@ -178,6 +178,18 @@ console.log('--- Social Security cut ---');
   check('SS cut: plan setting matches the what-if (2035)', row(sim(p), 2035).ss, row(b, 2035).ss, 1);
   const w = E.WI.sscut(p, 'brk', 2030, 22);
   check('SS cut what-if: compares against no cut even when the plan has one', w.ssLost > 0 ? 1 : 0, 1, 0); }
+console.log('--- Conversion chosen for one year ---');
+{ const c = clone(EX), Y = E.START_YEAR; c.convYears = {}; c.convYears[Y] = 50000;
+  const s = E.simulate(c, {strategy: 'smart'});
+  check('chosen conversion used in that year', row(s, Y).conv, 50000, 1);
+  check('chosen conversion ignored outside the conversion plan', row(E.simulate(c, {strategy: 'brk'}), Y).conv, 0, 0);
+  const tops = E.WI.convTops(clone(EX), Y), t12 = tops.find(t => t.k === 1);
+  const at = a => { const d = clone(EX); d.convYears = {}; d.convYears[Y] = a; return row(E.simulate(d, {strategy: 'smart'}), Y) };
+  const r1 = at(t12.amt), r2 = at(t12.amt + 1000);
+  check('fill the 12% bracket: stays inside it', r1.ordT <= r1.br[1] ? 1 : 0, 1, 0);
+  check('fill the 12% bracket: $1,000 more goes over', r2.ordT > r2.br[1] ? 1 : 0, 1, 0);
+  const d = clone(EX); d.cash = 0; d.cashFloor = 0; d.brokerage = 0; d.convYears = {}; d.convYears[Y] = 100000;
+  check('chosen conversion shrinks to $0 when no cash or brokerage can pay its tax', row(E.simulate(d, {strategy: 'smart'}), Y).conv, 0, 0); }
 console.log('--- Keeping figures current ---');
 { // Every tax/benefit figure must come from RULES. Flag any "$12,345"-style figure in the page or UI script
   // (outside the engine) that equals a RULES value, since it would go stale at the yearly update.

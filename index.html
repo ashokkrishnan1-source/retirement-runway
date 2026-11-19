@@ -327,6 +327,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
         </div>
         <p class="note" style="margin:0" id="yIntro"></p>
         <div class="stats" id="yStats"></div>
+        <div id="yConv"></div>
         <div id="yPay"></div>
         <h3>To do this year</h3>
         <div class="how" id="yTodo"></div>
@@ -824,6 +825,8 @@ function simulate(cfg,opt){
     var floorAmt=cfg.cashFloor*fi;
     var olderAge=Math.max.apply(null,age.filter(function(a,ii){return alive[ii]}));
     var canConvert=strat==='smart'&&anyRetired&&olderAge<=cfg.convUntil;
+    /* a conversion amount chosen for this year (that year's dollars) replaces the rule, in the conversion plan only */
+    var ovr=strat==='smart'&&cfg.convYears&&cfg.convYears[Y]!=null?Math.max(0,+cfg.convYears[Y]||0):null;
     var spendNeed=0;
     if(anyRetired){
       var baseSpend=cfg.spend*fi*scale*((n>1&&nAlive===1)?cfg.survivorPct/100:1)*(1+(opt.spendAdj&&opt.spendAdj[Y]||0));
@@ -923,10 +926,10 @@ function simulate(cfg,opt){
     if(!anyRetired){
       /* working years: take-home pay covers living costs and the tax on wages; only extra costs and conversion tax come from savings */
       Rbase=taxFor(base0,div,0,0);
-      var wt=strat==='smart'&&olderAge<=cfg.convUntil?(cfg.workConvTarget||'none'):'none';
+      var wt=ovr!=null?'over':strat==='smart'&&olderAge<=cfg.convUntil?(cfg.workConvTarget||'none'):'none';
       var needW=function(tp){return extraNeed+Math.max(0,tp-(Rbase.tax+Rbase.state+Rbase.hc))};
       /* conversion size is set on the year's base income (bracket targets don't depend on how the tax is paid) */
-      var WC0=wt==='none'?0:(wt==='fixed'?Math.min(tradTot,(cfg.workConvAmt||0)*fi):convTarget(wt)(base0,div,{trad:0,tradPen:0}));
+      var WC0=wt==='none'?0:wt==='over'?Math.min(tradTot,ovr):(wt==='fixed'?Math.min(tradTot,(cfg.workConvAmt||0)*fi):convTarget(wt)(base0,div,{trad:0,tradPen:0}));
       if(WC0>0&&wt==='fixed'&&(cfg.guardAca||cfg.guardIrmaa>0))WC0=Math.min(WC0,convTarget('none')(base0,div,{trad:0,tradPen:0}));
       var fixedFn=function(cap){return function(ordB,qual,d){return Math.max(0,Math.min(cap,WC0,tradTot-d.trad-d.tradPen))}};
       if(WC0<=0&&extraNeed<=0){res={d:{cash:0,brk:0,trad:0,roth:0,tradPen:0,floor:0},gains:0,conv:0,R:Rbase,need:0,short:0}}
@@ -938,7 +941,9 @@ function simulate(cfg,opt){
       var other=rmd+pen+ss-((Rbase.tax+Rbase.state)-(Rw.tax+Rw.state));
       var save=cfg.brokerageSave*fi+Math.max(0,other);brk+=save;basis+=save;
     }else{
-      res=fitConv(function(tp){return spendNeed+extraNeed+tp-inflow},canConvert?convTarget(target):null,function(cap){return function(o,q,d){return Math.min(cap,convTarget(target)(o,q,d))}});
+      var ovrFn=function(cap){return function(o,q,d){return Math.max(0,Math.min(cap,ovr,tradTot-d.trad-d.tradPen))}};
+      res=ovr!=null?fitConv(function(tp){return spendNeed+extraNeed+tp-inflow},ovr>0?ovrFn(ovr):null,ovrFn):
+        fitConv(function(tp){return spendNeed+extraNeed+tp-inflow},canConvert?convTarget(target):null,function(cap){return function(o,q,d){return Math.min(cap,convTarget(target)(o,q,d))}});
       if(res.need<0){brk+=-res.need;basis+=-res.need}
     }
     var wageTax=0;if(wages>0){var Rwg=fedTax(Object.assign({},taxArgs,{ord:ordWage,qual:0,nii:0,ss:0}));wageTax=Rwg.tax+stateTax(Rwg,0,0,0)}
@@ -1045,6 +1050,27 @@ var WI={
     else g.push(ages.map(function(a){var s=simulate(cfg,{strategy:st,claim:[a]});return {leg:s.legacy,short:s.shortReal}}));
     return {ages:ages,grid:g}},
   lump:function(cfg,st,type,amt,year){var o={lump:{}};o.lump[year]=type==='out'?-amt:amt;return compareWI(cfg,st,o)},
+  /* Roth conversion choices for one year: that year's tax, rates and the lifetime effect of each amount */
+  convYear:function(cfg,Y,amounts,tops0){
+    var run=function(a){var c=JSON.parse(JSON.stringify(cfg));c.convYears=Object.assign({},c.convYears||{});c.convYears[Y]=a;var sm=simulate(c,{strategy:'smart'}),r=null;
+      for(var i=0;i<sm.rows.length;i++)if(sm.rows[i].Y===Y)r=sm.rows[i];return {sm:sm,r:r}};
+    var z=run(0);if(!z.r)return null;
+    var r0=z.r,tops=tops0||WI.convTops(cfg,Y);
+    var list=[0].concat(tops.map(function(t){return t.amt}),(amounts||[]).filter(function(a){return a>0})).filter(function(a,i,arr){return arr.indexOf(a)===i}).sort(function(a,b){return a-b});
+    var out=list.map(function(a){var x=a===0?z:run(a),r=x.r;return {ask:a,conv:r.conv,fed:r.fed,state:r.state,marg:r.marg,ordT:r.ordT,br:r.br,agi:r.agi,magiA:r.magiA,fpl4:r.fpl4,acaN:r.acaN,
+      top:tops.filter(function(t){return t.amt===a}).map(function(t){return t.all?9:t.k})[0]||0,legacy:x.sm.legacy,taxReal:x.sm.taxReal,irmaaReal:x.sm.irmaaReal||0,hcReal:x.sm.healthReal||0,short:x.sm.shortReal}});
+    return {Y:Y,fi:r0.fi,rows:out}},
+  /* the largest conversion that keeps ordinary taxable income inside each bracket (12%, 22%, 24%, 32%), found by
+     simulating, so the deduction, taxable Social Security and stacked capital gains are all accounted for */
+  convTops:function(cfg,Y){
+    var row=function(a){var c=JSON.parse(JSON.stringify(cfg));c.convYears=Object.assign({},c.convYears||{});c.convYears[Y]=a;var sm=simulate(c,{strategy:'smart'});
+      for(var i=0;i<sm.rows.length;i++)if(sm.rows[i].Y===Y)return sm.rows[i];return null};
+    var r0=row(0),out=[],lastConv=-1;if(!r0)return out;
+    for(var k=1;k<=4;k++){var lim=r0.br[k]-1;if(r0.ordT>=lim)continue;
+      var lo=0,hi=r0.br[k]+r0.ded+r0.qT+100000,rh=row(hi);if(rh.ordT<=lim){if(rh.conv>lastConv+500)out.push({k:k,amt:Math.round(rh.conv/100)*100,all:true});break}
+      for(var it=0;it<24&&hi-lo>50;it++){var mid=(lo+hi)/2;if(row(mid).ordT<=lim)lo=mid;else hi=mid}
+      var a=Math.floor(lo/100)*100;if(a>lastConv+500){out.push({k:k,amt:a});lastConv=a}}
+    return out},
   sscut:function(cfg,st,year,pct){var c=JSON.parse(JSON.stringify(cfg));c.ssCutOn=false;var o={ssCut:{year:year,pct:pct}},r=compareWI(c,st,o);
     var a=simulate(c,{strategy:st}),b=simulate(c,Object.assign({strategy:st},o)),ssSum=function(s){return s.rows.reduce(function(t,x){return t+x.ss/x.fi},0)};
     r.ssLost=ssSum(a)-ssSum(b);return r}
@@ -1073,7 +1099,7 @@ const EXAMPLE={
   cash:100000,brokerage:900000,brokerageSave:0,gainPct:50,divYield:1.5,cashFloor:50000,
   spend:150000,health:12000,survivorPct:70,
   giving:0,yearIdx:0,healthMode:'fixed',acaPrem:15000,guardAca:false,guardIrmaa:0,lens:'plan',
-  ssCutOn:false,ssCutYear:2033,ssCutPct:22,wiSsPreset:'oasi',wiSsYear:2033,wiSsPct:22,
+  convYears:{},ssCutOn:false,ssCutYear:2033,ssCutPct:22,wiSsPreset:'oasi',wiSsYear:2033,wiSsPct:22,
   wiTarget:0,wiTab:'spend',wiEarlyWho:'both',wiEarlyBest:true,wiDrop:30,wiLtcCost:110000,wiLtcYears:3,wiLtcAge:85,wiLtcWho:0,wiBonus:30000,wiBonusUntil:75,wiCutPct:20,wiCutAge:85,wiLumpType:'in',wiLumpAmt:250000,wiLumpYear:2035,workConvTarget:'none',workConvAmt:100000,convTarget:'zero',convUntil:74,stateNow:'FL',stateRet:'same',moveYear:0,stateTax:0,stateTaxRet:0,heirTax:24,seniorExt:false,
   rPre:6,rPost:6,sd:12,rCash:3,infl:2.75,wage:3,cola:2.5
 };
@@ -1267,6 +1293,40 @@ function render(){
 }
 
 /* ---------- This year lens ---------- */
+/* ---------- This year: choose the year's Roth conversion and see its tax ---------- */
+let yConvCache={key:null,res:null,tkey:null,tops:null}, yConvTimer=null;
+function drawYearConv(){
+  const box=document.getElementById('yConv');if(!LAST||!box)return;
+  if(S.lens!=='year'){yConvCache.key=null;return}
+  const rows=LAST.base.rows,N=Math.min(rows.length,8),r=rows[Math.min(S.yearIdx||0,N-1)],Y=r.Y,set=S.convYears&&S.convYears[Y]!=null;
+  if(strat!=='smart'){box.innerHTML='<h3>Roth conversion for '+Y+'</h3><p class="note" style="margin:0">Roth conversions are part of the "'+STRATS.smart+'" plan. Choose it at the top of the Plan view to set a conversion for '+Y+' and see its tax.</p>';return}
+  if(S.yConvFor!==Y){S.yConvFor=Y;S.yConvAmt=Math.round(r.conv/1000)*1000}
+  const amt=Math.max(0,S.yConvAmt||0),key=JSON.stringify([S,Y,amt]);
+  const tkey=JSON.stringify([S,Y].map((v,i)=>i?v:Object.assign({},v,{yConvAmt:0})));if(yConvCache.tkey!==tkey){yConvCache.tkey=tkey;yConvCache.tops=WI.convTops(S,Y);yConvCache.key=null}
+  if(yConvCache.key!==key){yConvCache.key=key;yConvCache.res=WI.convYear(S,Y,[amt],yConvCache.tops)}
+  const res=yConvCache.res;if(!res){box.innerHTML='';return}
+  const z=res.rows[0],tax=x=>x.fed+x.state,lbl=x=>x.ask===0?'No conversion':(x.top===9?'Largest possible':x.top?'Fill the '+Math.round(RATES[x.top]*100)+'% bracket':'')+(x.ask===amt?(x.top?' · your amount':'Your amount'):'');
+  const anyIr=res.rows.some(x=>Math.abs(x.irmaaReal-z.irmaaReal)>50),warn=[];
+  let h='<h3>Roth conversion for '+Y+'</h3><p class="note" style="margin:0">'+(set?'Your plan converts the amount you chose for '+Y+'.':'Your plan\'s conversion rule gives '+full(r.conv)+' in '+Y+'.')+' Try an amount to see its tax. Amounts are in '+Y+' dollars; the tax must be paid from cash above your floor or from brokerage, not from the IRA. Conversions in other years still follow your rule.</p>'+
+    '<div class="fields"><label class="f">Convert in '+Y+'<span class="h">'+Y+' dollars</span><input type="number" id="yConvAmt" step="5000" value="'+amt+'"></label></div>'+
+    '<div class="scroll"><table><tr><th style="text-align:left">Choice</th><th>Convert</th><th>Tax in '+Y+'</th><th>Extra tax</th><th>Tax on this slice</th><th>Top federal bracket</th>'+(anyIr?'<th>Medicare surcharge later</th>':'')+'<th>Lifetime tax</th><th>Left to heirs</th></tr>';
+  res.rows.forEach((x,i)=>{const p=i?res.rows[i-1]:null,dC=p?x.conv-p.conv:0,slice=p&&dC>1?(tax(x)-tax(p))/dC:null,ex=tax(x)-tax(z),avg=x.conv>1?ex/x.conv:null;
+    const sg=v=>Math.abs(v)<500?'same':(v>0?'+':'−')+money(Math.abs(v));
+    h+='<tr class="'+(x.ask===amt?'mark':'')+'"><td style="font-family:var(--body);text-align:left">'+esc(lbl(x))+'</td><td>'+full(x.conv)+'</td><td>'+full(tax(x))+'</td><td>'+(x.conv>1?full(ex)+(avg!=null?' ('+pct(avg)+')':''):'—')+'</td><td>'+(slice!=null?pct(slice):'—')+'</td><td>'+(x.ordT>1?pct(x.marg):'0%')+'</td>'+
+      (anyIr?'<td>'+(i?sg(x.irmaaReal-z.irmaaReal):'—')+'</td>':'')+'<td>'+(i?sg(x.taxReal-z.taxReal):money(z.taxReal))+'</td><td>'+(i?sg(x.legacy-z.legacy):money(z.legacy))+'</td></tr>';
+    if(x.ask>0&&x.conv<x.ask-500)warn.push('Only '+full(x.conv)+' of '+full(x.ask)+' can be converted: the tax has to come from cash above your floor or from brokerage, and there isn\'t enough.');
+    if(x.ask===amt&&x.acaN>0&&x.magiA>x.fpl4)warn.push('At '+full(x.conv)+', income is above the marketplace subsidy limit, so the subsidy is lost for '+Y+'.')});
+  const best=res.rows.reduce((a,x)=>x.legacy>a.legacy?x:a,res.rows[0]);
+  h+='</table></div><p class="note" style="margin:0"><b>Extra tax</b> is what converting adds to '+Y+'\'s federal and state tax (in brackets: as a share of the conversion). <b>Tax on this slice</b> is the rate on the dollars between this row and the one above; it can be higher than the bracket because converting can also make more Social Security taxable, reduce a deduction, or push capital gains from brokerage sales out of the 0% rate. <b>Lifetime tax</b> and <b>Left to heirs</b> (after their tax on any IRA left) compare with no conversion in '+Y+', in today\'s dollars'+(anyIr?'; <b>Medicare surcharge later</b> is the extra premium from income two years on':'')+'. Of these choices, '+esc(lbl(best).toLowerCase()||full(best.conv))+' ('+full(best.conv)+') leaves the most to heirs.</p>'+
+    warn.map(w=>'<p class="note" style="margin:0;color:var(--warn,inherit)">'+esc(w)+'</p>').join('')+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+(set&&S.convYears[Y]===amt?'':'<button type="button" class="btn" id="yConvUse">Use '+full(amt)+' for '+Y+' in my plan</button>')+(set?'<button type="button" class="btn" id="yConvReset">Go back to the plan\'s rule for '+Y+'</button>':'')+'</div>';
+  const had=document.activeElement&&document.activeElement.id==='yConvAmt',pos=had?document.activeElement.selectionStart:null;
+  box.innerHTML=h;
+  const inp=document.getElementById('yConvAmt');if(had){inp.focus();try{inp.setSelectionRange(pos,pos)}catch(e){}}
+  inp.oninput=()=>{S.yConvAmt=num(inp.value);clearTimeout(yConvTimer);yConvTimer=setTimeout(drawYearConv,400)};
+  const u=document.getElementById('yConvUse');if(u)u.onclick=()=>{S.convYears=Object.assign({},S.convYears||{});S.convYears[Y]=amt;touched()};
+  const b=document.getElementById('yConvReset');if(b)b.onclick=()=>{S.convYears=Object.assign({},S.convYears);delete S.convYears[Y];S.yConvFor=null;touched()};
+}
 document.getElementById('yearSel').onchange=e=>{S.yearIdx=+e.target.value;save();drawYear()};
 function drawYear(){
   if(!LAST)return;const cfg=LAST.cfg,sim=LAST.base,rows=sim.rows,P=cfg.couple?cfg.p:[cfg.p[0]],names=P.map(p=>p.name||'Person');
@@ -1282,6 +1342,7 @@ function drawYear(){
   if(retired)t.push(['From savings',full(fromSav),'cash, brokerage, IRA and Roth']);
   t.push(['Roth conversion',full(r.conv),r.conv>1?'by December 31':'none this year'],['Taxes',full(taxes),'federal '+full(r.fed)+' + state '+full(r.state)]);
   if(r.hc>1)t.push(['Income-based health costs',full(r.hc),'marketplace premium after subsidy, Medicare surcharges']);
+  drawYearConv();
   document.getElementById('yStats').innerHTML=t.map(x=>'<div class="stat"><div class="k">'+x[0]+'</div><div class="v">'+x[1]+'</div><div class="n">'+x[2]+'</div></div>').join('');
   /* monthly paycheck */
   let pay='';
@@ -1377,7 +1438,7 @@ function showLens(){const l=LENSES.includes(S.lens)&&document.getElementById('le
   document.querySelectorAll('#lensBar button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===l));
   planEls().forEach(e=>e.hidden=l!=='plan');
   document.querySelectorAll('.lensPanel').forEach(e=>e.hidden=e.id!=='lens-'+l)}
-document.querySelectorAll('#lensBar button').forEach(b=>b.onclick=()=>{if(b.disabled)return;S.lens=b.dataset.l;save();showLens()});
+document.querySelectorAll('#lensBar button').forEach(b=>b.onclick=()=>{if(b.disabled)return;S.lens=b.dataset.l;save();showLens();if(S.lens==='year')drawYearConv()});
 
 function drawHealth(){
   if(!LAST)return;const cfg=LAST.cfg,sim=LAST.base,rows=sim.rows,P=cfg.couple?cfg.p:[cfg.p[0]];
@@ -1805,7 +1866,7 @@ function buildReport(){
   if(cfg.combined)g.push(['401(k) & IRA, combined',full(cfg.cTrad)],['Roth, combined',full(cfg.cRoth)],['Retirement accounts mostly in',cfg.cOwner==='even'?'split evenly':(cfg.p[cfg.cOwner==='p0'?0:1].name)]);
   g.push(['Cash',full(cfg.cash)],['Brokerage',full(cfg.brokerage)],['Gain share of brokerage',cfg.gainPct+'%'],['Dividend yield',cfg.divYield+'%'],['Added to brokerage / yr',full(cfg.brokerageSave)],['Cash floor',full(cfg.cashFloor)],
     ['Annual spending',full(cfg.spend)],['Health cover before 65',full(cfg.health)],['Spending after first death',cfg.survivorPct+'%'],
-    ['Conversions while working',WTARGETS[cfg.workConvTarget||'none']+(cfg.workConvTarget==='fixed'?' ('+full(cfg.workConvAmt)+')':'')],['Conversion limit in retirement',TARGETS[cfg.convTarget]],['Last year to convert (age)',String(cfg.convUntil)],['State now',(STATES[cfg.stateNow]||[''])[0]+' ('+cfg.stateTax+'%)'],['State in retirement',cfg.stateRet&&cfg.stateRet!=='same'?STATES[cfg.stateRet][0]+' ('+cfg.stateTaxRet+'%), moving '+(cfg.moveYear?'in '+cfg.moveYear:'when the first of you retires'):'same'],['Heirs\' tax rate',cfg.heirTax+'%'],['Senior deduction extended',cfg.seniorExt?'yes':'no'],
+    ['Conversions while working',WTARGETS[cfg.workConvTarget||'none']+(cfg.workConvTarget==='fixed'?' ('+full(cfg.workConvAmt)+')':'')],['Conversion limit in retirement',TARGETS[cfg.convTarget]],...(cfg.convYears&&Object.keys(cfg.convYears).length?[['Conversions chosen for specific years',Object.keys(cfg.convYears).sort().map(y=>y+': '+full(cfg.convYears[y])).join(', ')]]:[]),['Last year to convert (age)',String(cfg.convUntil)],['State now',(STATES[cfg.stateNow]||[''])[0]+' ('+cfg.stateTax+'%)'],['State in retirement',cfg.stateRet&&cfg.stateRet!=='same'?STATES[cfg.stateRet][0]+' ('+cfg.stateTaxRet+'%), moving '+(cfg.moveYear?'in '+cfg.moveYear:'when the first of you retires'):'same'],['Heirs\' tax rate',cfg.heirTax+'%'],['Senior deduction extended',cfg.seniorExt?'yes':'no'],
     ['Return before / in retirement',cfg.rPre+'% / '+cfg.rPost+'%'],['Volatility',cfg.sd+'%'],['Cash interest',cfg.rCash+'%'],['Inflation',cfg.infl+'%'],['Pay raises',cfg.wage+'%'],['SS COLA',cfg.cola+'%']);
   md+='\n'+mdTable(['Setting','Value'],g);
   md+='\n## Summary ('+STRATS[strat]+')\n\n';
@@ -1973,7 +2034,7 @@ function buildPdf(jsPDF){
   table([''].concat(names),pf.map(f=>[f[1]].concat(P.map(p=>fmtP(f[0],p[f[0]])))));
   const g=[];
   if(cfg.combined)g.push(['401(k) & IRA, combined',full(cfg.cTrad)],['Roth, combined',full(cfg.cRoth)]);
-  g.push(['Cash',full(cfg.cash)],['Brokerage',full(cfg.brokerage)],['Gain share of brokerage',cfg.gainPct+'%'],['Dividend yield',cfg.divYield+'%'],['Cash floor',full(cfg.cashFloor)],['Annual spending (today\'s $)',full(cfg.spend)],['Health cover before 65',full(cfg.health)],['Spending after first death',cfg.survivorPct+'%'],['Conversions while working',WTARGETS[cfg.workConvTarget||'none']+(cfg.workConvTarget==='fixed'?' ('+full(cfg.workConvAmt)+')':'')],['Conversion limit in retirement',TARGETS[cfg.convTarget]],['Last year to convert (age)',String(cfg.convUntil)],['State now',(STATES[cfg.stateNow]||[''])[0]+' ('+cfg.stateTax+'%)'],['State in retirement',cfg.stateRet&&cfg.stateRet!=='same'?STATES[cfg.stateRet][0]+' ('+cfg.stateTaxRet+'%), moving '+(cfg.moveYear?'in '+cfg.moveYear:'when the first of you retires'):'same'],['Heirs\' tax rate',cfg.heirTax+'%'],['Returns before / in retirement',cfg.rPre+'% / '+cfg.rPost+'%'],['Inflation',cfg.infl+'%'],['Social Security COLA',cfg.cola+'%']);
+  g.push(['Cash',full(cfg.cash)],['Brokerage',full(cfg.brokerage)],['Gain share of brokerage',cfg.gainPct+'%'],['Dividend yield',cfg.divYield+'%'],['Cash floor',full(cfg.cashFloor)],['Annual spending (today\'s $)',full(cfg.spend)],['Health cover before 65',full(cfg.health)],['Spending after first death',cfg.survivorPct+'%'],['Conversions while working',WTARGETS[cfg.workConvTarget||'none']+(cfg.workConvTarget==='fixed'?' ('+full(cfg.workConvAmt)+')':'')],['Conversion limit in retirement',TARGETS[cfg.convTarget]],...(cfg.convYears&&Object.keys(cfg.convYears).length?[['Conversions chosen for specific years',Object.keys(cfg.convYears).sort().map(y=>y+': '+full(cfg.convYears[y])).join(', ')]]:[]),['Last year to convert (age)',String(cfg.convUntil)],['State now',(STATES[cfg.stateNow]||[''])[0]+' ('+cfg.stateTax+'%)'],['State in retirement',cfg.stateRet&&cfg.stateRet!=='same'?STATES[cfg.stateRet][0]+' ('+cfg.stateTaxRet+'%), moving '+(cfg.moveYear?'in '+cfg.moveYear:'when the first of you retires'):'same'],['Heirs\' tax rate',cfg.heirTax+'%'],['Returns before / in retirement',cfg.rPre+'% / '+cfg.rPost+'%'],['Inflation',cfg.infl+'%'],['Social Security COLA',cfg.cola+'%']);
   table(['Setting','Value'],g);
   // ----- ledger
   doc.addPage('letter','landscape');W=792;y=M;
