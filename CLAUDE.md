@@ -73,8 +73,17 @@ publication date, generated from `RULES`.
   safety; layout must work at phone width without sideways scrolling.
 - Every input and result can carry a `?` help note (`HELP` map): what it is, the assumption, typical values.
 
+## Views (lenses)
+
+One engine, four views selected by the bar above the headline (`S.lens`): **Plan** (all the original
+panels), **This year** (`drawYear`: paycheck, estimated tax, to-do list), **Health** (`drawHealth`:
+marketplace subsidy and Medicare IRMAA from `RULES.aca` / `RULES.irmaa`), **Legacy** (`drawLegacy`).
+Anything that changes the plan's numbers goes in the engine (health costs, QCDs); views only read rows.
+New inputs should default to off and sit in collapsed or optional sections, to keep the page simple.
+
 ## Roadmap ideas (ask the owner before starting)
 
-Medicare IRMAA surcharges; health-insurance subsidies before 65; survivor benefit switching; a
-"best plan" optimizer button; PolicyEngine-based rules sync; verifying low-confidence state entries
-(DC, LA, SC, NM, AZ deductions).
+Survivor benefit switching; a "best plan" optimizer button; health costs rising faster than inflation;
+PolicyEngine-based rules sync; verifying low-confidence entries (DC, LA, SC, NM, AZ deductions; 2027
+Part D surcharges; the ACA applicable-percentage table). Later: Tool #2, "Where to live in retirement",
+which should hand its results to Runway through the scenario file.

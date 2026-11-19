@@ -18,6 +18,10 @@ that browser only, and plans can be downloaded and reopened as a report (.md), C
 - 2027 federal tax rules, simplified rules for all 50 states plus DC, 1,000 simulated
   markets, and what-if calculators (spend it all, retire earlier, bad market timing,
   long-term care, spending more early, best Social Security ages, windfalls).
+- Four views of the same plan: **Plan** (projection, comparison, what-ifs), **This year**
+  (monthly paycheck, tax payments, dated to-do list), **Health** (marketplace premiums and
+  subsidies before 65, Medicare surcharges from 65) and **Legacy** (what heirs receive by
+  account type, heirs' tax rates, charitable giving from an IRA).
 
 **Use it online:** https://ashokkrishnan1-source.github.io/retirement-runway/ (published
 automatically from `main` once GitHub Pages is switched on).

@@ -119,5 +119,42 @@ console.log('--- Taxes ---');
 { // GA per person: one spouse owns the IRA
   const c = base({dob: '1961-01-01', ira: 2e6}, {dob: '1961-01-01'}, {cash: 0, spend: 150000, stateNow: 'GA', stateTax: 4.99});
   const r = E.simulate(c, {strategy: 'typical'}).rows[0]; check('GA per-person exclusion: state tax > $2k', r.state > 2000 ? 1 : 0, 1, 0); console.log('     GA one-owner state tax', Math.round(r.state)); }
+console.log('--- Health: marketplace subsidies and Medicare surcharges ---');
+{ // independent subsidy formula (2027 rules): applicable % rises linearly within each band
+  const pctOf = x => { const t = [[1.33, 2.15, 2.15], [1.5, 3.22, 4.30], [2, 4.30, 6.78], [2.5, 6.78, 8.66], [3, 8.66, 10.22], [4, 10.22, 10.22]]; let lo = 0; for (const [hi, a, b] of t) { if (x <= hi) return a + (b - a) * (x - lo) / (hi - lo); lo = hi } return null };
+  check('subsidy %: 2.7726x poverty line -> 9.51%', pctOf(60000 / 21640), 9.5106, 0.001);
+  const c = base({dob: '1965-01-01', ira: 1.5e6}, {dob: '1965-01-01', ira: 0}, {cash: 0, brokerage: 300000, gainPct: 30, spend: 60000, healthMode: 'aca', acaPrem: 15000});
+  const s = E.simulate(c, {strategy: 'brk'}); const r = s.rows[0];
+  const exp = r.magiA / 21640 <= 4 ? Math.max(0, 30000 - pctOf(r.magiA / 21640) / 100 * r.magiA) : 0;
+  check('marketplace: premium for two people under 65', r.aca, 30000, 1);
+  check('marketplace: subsidy matches hand formula (income ' + Math.round(r.magiA) + ')', r.acaSub, exp, 1);
+  const c2 = clone(c); c2.spend = 120000; const r2 = E.simulate(c2, {strategy: 'typical'}).rows[0];
+  check('marketplace: no subsidy above 400% of the poverty line ($86,560 couple)', r2.magiA > 86560 ? r2.acaSub : 0, 0, 0);
+  const c3 = clone(c); c3.convTarget = 'b22'; c3.guardAca = true; c3.convUntil = 74;
+  const s3 = E.simulate(c3, {strategy: 'smart'}); const viol = s3.rows.filter(x => x.acaN > 0 && x.conv > 1 && x.magiA > x.fpl4 + 1).length;
+  check('subsidy limit respected by conversions when that option is on', viol, 0, 0);
+  check('...and conversions still happen under it', s3.rows.filter(x => x.acaN > 0 && x.conv > 1).length > 0 ? 1 : 0, 1, 0);
+}
+{ // Medicare surcharge from income two years earlier (couple, 2027 tiers, no inflation)
+  const c = base({dob: '1955-01-01', ira: 6e6, claimAge: 70, ssPIA: 3000}, {dob: '1955-01-01', claimAge: 70, ssPIA: 2000}, {cash: 0, spend: 250000});
+  const s = E.simulate(c, {strategy: 'typical'}); const th = [224000, 282000, 354000, 424000, 750000], b = [83.70, 209.40, 335.00, 460.60, 502.60], d = [14.50, 37.50, 60.40, 83.30, 91.00];
+  const r = s.rows[3], prev = s.rows[1]; let k = 0; th.forEach((x, q) => { if (prev.agi > x) k = q + 1 });
+  check('Medicare surcharge uses income from two years earlier (tier ' + k + ')', r.irmaa, k ? 2 * 12 * (b[k - 1] + d[k - 1]) : 0, 1);
+  const c2 = clone(c); c2.ira = 0; c2.p[0].ira = 3e6; c2.convTarget = 'b24'; c2.guardIrmaa = 1; c2.convUntil = 80; c2.cash = 2e6;
+  const s2 = E.simulate(c2, {strategy: 'smart'}); const over = s2.rows.filter(x => x.conv > 1 && x.agi > 224000).length;
+  check('Medicare limit respected by conversions when set to "no surcharge"', over, 0, 0);
+}
+console.log('--- Giving and estimated tax ---');
+{ const c = base({dob: '1950-01-01', ira: 2e6, claimAge: 70, ssPIA: 2000}, {dob: '1950-01-01', claimAge: 70, ssPIA: 1500}, {cash: 1e6, spend: 120000});
+  const a = E.simulate(c, {strategy: 'brk'}).rows[0], g = E.simulate(Object.assign(clone(c), {giving: 30000}), {strategy: 'brk'}).rows[0];
+  check('QCD: taxable required withdrawal falls by the gift', a.rmd - g.rmd, 30000, 1);
+  check('QCD: gift recorded', g.qcd, 30000, 1);
+  check('QCD: federal tax falls', a.fed - g.fed > 3000 ? 1 : 0, 1, 0);
+  const y = base({dob: '1960-01-01', ira: 2e6}, null, {cash: 1e6, spend: 60000, giving: 20000});
+  check('QCD: not before 70½ (age 67)', E.simulate(y, {strategy: 'brk'}).rows[0].qcd, 0, 0); }
+{ const c = base({dob: '1975-01-01', income: 150000, retireAge: 65, ira: 1e6}, {dob: '1975-01-01', income: 150000, retireAge: 65, ira: 1e6}, {cash: 1e6, workConvTarget: 'b24'});
+  const r = E.simulate(c, {strategy: 'smart'}).rows[0];
+  const a = {Y: 2027, st: 'mfj', n65: 0, ss: 0, ix: 1, seniorExt: false, nii: 0};
+  check('estimated tax: tax on wages alone is set aside for withholding', r.wageTax, E.fedTax({...a, ord: r.ordWage, qual: 0}).tax, 1); }
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exitCode = fail ? 1 : 0;
