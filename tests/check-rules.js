@@ -227,6 +227,25 @@ console.log('--- Roth IRA income limit, after-tax 401(k) ---');
   // after-tax 401(k): 75,000 total - 20,000 own - 10,000 match = 45,000 room
   check('after-tax 401(k) to Roth: capped by the 75,000 total', r(one('1982-01-01', 200000, {k401Pct: 10, matchPct: 5, afterTaxRoth: 60000})).roth, 45000, 1);
   check('after-tax 401(k) to Roth: under the cap, all of it', r(one('1982-01-01', 200000, {k401Pct: 10, matchPct: 5, afterTaxRoth: 20000})).roth, 20000, 1); }
+console.log('--- Engine audit fixes ---');
+{ // early retiree under 59 1/2 drawing Roth while converting: no money lost (zero returns, wealth falls only by spending, tax, health)
+  const c = base({dob: '1975-01-01', ira: 800000, roth: 150000}, null, {cash: 20000, brokerage: 30000, spend: 60000, convTarget: 'b12', rCash: 0, divYield: 0});
+  const s = E.simulate(c, {strategy: 'smart', returns: new Array(60).fill(0)}); let leak = 0, prev = 20000 + 30000 + 800000 + 150000;
+  for (let t = 0; t < 4; t++) { const r = s.rows[t]; leak += Math.abs(r.total - prev + r.need + r.fed + r.state + r.hc); prev = r.total }
+  check('Roth draw and conversion in the same year: no money lost (4 years)', leak, 0, 5); }
+{ // survivor benefit grows like the deceased's own check: inflation to their claim year, then COLA
+  const c = base({dob: '1980-01-01', ssPIA: 3000, claimAge: 70, lifeExp: 72}, {dob: '1985-01-01', ssPIA: 0, claimAge: 70});
+  c.infl = 3; c.cola = 2; const s = E.simulate(c, {strategy: 'brk'});
+  check('survivor benefit = deceased check x (1 + COLA)', row(s, 2053).ss, row(s, 2052).ss * 1.02, 2); }
+{ // Roth 401(k) tax while working, with a big one-off cost: cash never negative
+  const c = base({dob: '1985-01-01', income: 200000, retireAge: 65, k401Pct: 15, k401RothPct: 100}, null, {cash: 50000, cashFloor: 0, brokerage: 0, rCash: 0});
+  const r = E.simulate(c, {strategy: 'brk', extra: {2027: 50000}}).rows[0];
+  check('Roth 401(k) extra tax with a one-off cost: cash not negative', r.cash < -1 ? 1 : 0, 0, 0); }
+{ // working at 73 with a gift from the IRA: giving isn't paid twice
+  const c = base({dob: '1954-01-01', income: 100000, retireAge: 80, ira: 1e6}, null, {rCash: 0});
+  const z = {strategy: 'brk', returns: new Array(60).fill(0)};
+  const a = E.simulate(c, z).rows[0], g = E.simulate(Object.assign(clone(c), {giving: 20000}), z).rows[0];
+  check('QCD while working: wealth not lower than without giving', g.total - a.total > -1 ? 1 : 0, 1, 0); }
 console.log('--- Conversions from 63 ---');
 { // retired couple, big IRA, fill the 24% bracket; from 63 a lower target can apply (Medicare looks back two years)
   const c = (dob, c63) => base({dob, ira: 3e6}, {dob}, {convTarget: 'b24', conv63: c63, spend: 40000, rCash: 0});
