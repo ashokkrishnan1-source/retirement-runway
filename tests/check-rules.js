@@ -167,6 +167,17 @@ console.log('--- Giving and estimated tax ---');
   const r = E.simulate(c, {strategy: 'smart'}).rows[0];
   const a = {Y: 2027, st: 'mfj', n65: 0, ss: 0, ix: 1, seniorExt: false, nii: 0};
   check('estimated tax: tax on wages alone is set aside for withholding', r.wageTax, E.fedTax({...a, ord: r.ordWage, qual: 0}).tax, 1); }
+console.log('--- Social Security cut ---');
+{ // both claim at 62 in 2027 (PIA 3000 and 1000 -> 37,500 a year, see spousal B); a 22% cut from 2030
+  const c = base({ssPIA: 3000, claimAge: 62}, {ssPIA: 1000, claimAge: 62});
+  const a = sim(c), b = E.simulate(c, {strategy: 'brk', ssCut: {year: 2030, pct: 22}});
+  check('SS cut: year before the cut unchanged (2029)', row(b, 2029).ss, row(a, 2029).ss, 1);
+  check('SS cut: 2030 benefit is 78% of uncut', row(b, 2030).ss, 0.78 * row(a, 2030).ss, 1);
+  check('SS cut: 2027 couple benefit 37,500 stays 37,500', row(b, 2027).ss, 37500, 1);
+  const p = Object.assign(clone(c), {ssCutOn: true, ssCutYear: 2030, ssCutPct: 22});
+  check('SS cut: plan setting matches the what-if (2035)', row(sim(p), 2035).ss, row(b, 2035).ss, 1);
+  const w = E.WI.sscut(p, 'brk', 2030, 22);
+  check('SS cut what-if: compares against no cut even when the plan has one', w.ssLost > 0 ? 1 : 0, 1, 0); }
 console.log('--- Keeping figures current ---');
 { // Every tax/benefit figure must come from RULES. Flag any "$12,345"-style figure in the page or UI script
   // (outside the engine) that equals a RULES value, since it would go stale at the yearly update.

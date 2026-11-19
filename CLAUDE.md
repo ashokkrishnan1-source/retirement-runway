@@ -10,11 +10,11 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `index.html` | The whole app, written in the **claude.ai page format**: no `<!doctype>`, `<html>`, `<head>` or `<body>` tags (claude.ai adds them). Do not add them here. |
 | `tools/build-pages.js` | Wraps `index.html` in a full HTML document for GitHub Pages, writing `_site/index.html` (git-ignored). |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
-| `tests/check-rules.js` | Checks against hand-worked answers (59 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
+| `tests/check-rules.js` | Checks against hand-worked answers (64 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
-  figure, with sources), `fedTax`, Social Security helpers, `simulate`, Monte Carlo (`makePaths`,
+  figure, with sources), `fedTax`, Social Security helpers (including the optional trust-fund cut, `opt.ssCut` / `cfg.ssCutOn`), `simulate`, Monte Carlo (`makePaths`,
   `mcJob`), and the what-if calculators (`WI.*`). The engine's text is also loaded into Web Workers,
   so it must stay self-contained, ES5-style plain functions, with no references to the page.
 - The second `<script>` is the UI: inputs, rendering, charts (hand-drawn SVG), exports (report .md,
@@ -56,8 +56,10 @@ never assume `window.claude` exists.
    0%/15% gains thresholds; IRS plan limits → `RULES.limits`. Update `RULES.meta`.
 3. February: Tax Foundation state table → `RULES.states` (rates, brackets, deductions, Social Security
    rules, exclusions) and `RULES.statesReviewed`.
-4. Watch for law changes: senior deduction (ends after 2028), RMD ages, Social Security.
-5. Update the 2027-based expected values in `tests/check-rules.js`, run it, push, republish.
+4. Spring/summer: Social Security Trustees Report → `RULES.ssTrust` (depletion years and payable %, used by the
+   "Social Security cut" what-if presets and the optional plan setting).
+5. Watch for law changes: senior deduction (ends after 2028), RMD ages, Social Security.
+6. Update the 2027-based expected values in `tests/check-rules.js`, run it, push, republish.
 
 The page's "Tax rules and sources (for maintainers)" section lists every figure, its source and
 publication date, generated from `RULES`.
