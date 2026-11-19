@@ -494,7 +494,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
         <h2>How this works</h2>
         <div class="how">
           <div id="howTaxes"></div>
-          <div><b>The three plans.</b> <i>Typical</i> spends cash above your floor, then pays the bills from the IRA. <i>Brokerage first</i> spends cash above your floor, then brokerage, then IRA, then Roth. <i>Brokerage first + conversions</i> can also convert while you're both still working, up to a bracket or a fixed amount, with the extra tax paid from cash above your floor, then brokerage. Once either of you retires, it adds a Roth conversion every year sized to your chosen limit, through the age you pick. While a spouse still works, their wages already fill the low brackets, so only the 22% or 24% limits convert much in those years. Conversion tax is paid from cash or brokerage.</div>
+          <div><b>The three plans.</b> <i>Typical</i> spends cash above your floor, then pays the bills from the IRA. <i>Brokerage first</i> spends cash above your floor, then brokerage, then IRA, then Roth. <i>Brokerage first + conversions</i> can also convert while you're both still working, up to a bracket or a fixed amount, with the extra tax paid from cash above your floor, then brokerage. Once either of you retires, it adds a Roth conversion every year sized to your chosen limit, through the age you pick. While a spouse still works, their wages already fill the low brackets, so only the 22% or 24% limits convert much in those years. Conversion tax is paid from cash above your floor, then from brokerage (including tax on any gains from selling shares). If those can't cover it, the tool converts less: it never uses IRA or Roth money, or your cash floor, to pay conversion tax.</div>
           <div><b>Brokerage gains.</b> Only the gain part of a sale is taxed. Your cost basis is tracked year by year, so the gain share rises as the account grows.</div>
           <div><b>Social Security.</b> Enter the monthly benefit at full retirement age from ssa.gov/myaccount, in today's dollars. Claiming early cuts it (about 30% at 62); waiting adds 8% a year to 70. A spouse gets the larger of their own or half the other's, once the other has claimed. After a death, the survivor gets the larger of their own benefit or a survivor benefit. The survivor benefit is the deceased's actual check if they had claimed (at least 82.5% of their full-age amount); 100% of their full-age amount if they died before full retirement age without claiming; or that plus the delayed credits earned up to death if they died later without claiming. A survivor can start survivor benefits from 60 at 71.5%, rising to 100% at their own full retirement age. If you claim before full retirement age while still working, the earnings test withholds $1 of benefits for every $2 of pay above <span id="etLimTxt">the yearly limit</span>, including benefits a spouse receives on that worker's record, and those months are credited back at full retirement age.</div>
           <div><b>Pensions.</b> Enter the yearly amount your plan statement shows when payments begin, the starting age, any yearly increase (many private pensions have none, so they lose buying power over time), and the share your spouse keeps after your death (often 0%, 50% or 100%, depending on the payout option you choose). Pensions are taxed as ordinary income and fill the low brackets before IRA withdrawals or conversions.</div>
@@ -881,6 +881,17 @@ function simulate(cfg,opt){
       if(!(maxC>0)||!ok(0))return 0;if(ok(maxC))return maxC;
       var lo=0,hi=maxC;for(var bi=0;bi<32;bi++){var mid=(lo+hi)/2;if(ok(mid))lo=mid;else hi=mid}return lo}}
 
+    /* Conversion tax may only be paid from cash above the floor and from brokerage. If those can't cover it,
+       convert less: IRA, Roth and the cash floor are used for spending only, never for conversion tax. */
+    function otherUse(r){return r.d.trad+r.d.tradPen+r.d.roth+r.d.floor+r.short}
+    function fitConv(needFn,convFn,capFn){
+      var res=drawFor(needFn,base0,div,convFn);if(!convFn||!(res.conv>1))return res;
+      var r0=drawFor(needFn,base0,div,null),lim=otherUse(r0)+0.05;if(otherUse(res)<=lim)return res;
+      /* the search only shrinks the conversion, so a plain cap is enough (no need to recompute the target) */
+      var cap=function(c){return function(o,q,d){return Math.max(0,Math.min(c,tradTot-d.trad-d.tradPen))}};
+      var lo=0,hi=res.conv;for(var b2=0;b2<30&&hi-lo>25;b2++){var mid=(lo+hi)/2;if(otherUse(drawFor(needFn,base0,div,cap(mid)))<=lim)lo=mid;else hi=mid}
+      return lo>=500?drawFor(needFn,base0,div,cap(lo)):r0;
+    }
     var base0=ordWage+rmd+interest+pen, inflow=wages-contrib-fica+ss+rmd+pen, res, Rbase=null;
     if(!anyRetired){
       /* working years: take-home pay covers living costs and the tax on wages; only extra costs and conversion tax come from savings */
@@ -893,19 +904,14 @@ function simulate(cfg,opt){
       var fixedFn=function(cap){return function(ordB,qual,d){return Math.max(0,Math.min(cap,WC0,tradTot-d.trad-d.tradPen))}};
       if(WC0<=0&&extraNeed<=0){res={d:{cash:0,brk:0,trad:0,roth:0,tradPen:0,floor:0},gains:0,conv:0,R:Rbase,need:0,short:0}}
       else{
-        res=drawFor(needW,base0,div,WC0>0?fixedFn(WC0):null);
-        if(res.short>1&&res.conv>0){ /* not enough cash or brokerage for the conversion tax: convert less */
-          var full0=drawFor(needW,base0,div,null);
-          if(full0.short<=1){var lo=0,hi=res.conv;for(var b2=0;b2<20;b2++){var mid=(lo+hi)/2;if(drawFor(needW,base0,div,fixedFn(mid)).short<=1)lo=mid;else hi=mid}res=drawFor(needW,base0,div,fixedFn(lo))}
-          else res=full0;
-        }
+        res=fitConv(needW,WC0>0?fixedFn(WC0):null,fixedFn);
       }
       /* Social Security, pension and RMD received while working are saved after their own tax */
       taxArgs.ss=0;var Rw=taxFor(ordWage+interest,div,0,0);taxArgs.ss=ss;
       var other=rmd+pen+ss-((Rbase.tax+Rbase.state)-(Rw.tax+Rw.state));
       var save=cfg.brokerageSave*fi+Math.max(0,other);brk+=save;basis+=save;
     }else{
-      res=drawFor(function(tp){return spendNeed+extraNeed+tp-inflow},base0,div,canConvert?convTarget(target):null);
+      res=fitConv(function(tp){return spendNeed+extraNeed+tp-inflow},canConvert?convTarget(target):null,function(cap){return function(o,q,d){return Math.min(cap,convTarget(target)(o,q,d))}});
       if(res.need<0){brk+=-res.need;basis+=-res.need}
     }
     var wageTax=0;if(wages>0){var Rwg=fedTax(Object.assign({},taxArgs,{ord:ordWage,qual:0,nii:0,ss:0}));wageTax=Rwg.tax+stateTax(Rwg,0,0,0)}

@@ -144,6 +144,17 @@ console.log('--- Health: marketplace subsidies and Medicare surcharges ---');
   const s2 = E.simulate(c2, {strategy: 'smart'}); const over = s2.rows.filter(x => x.conv > 1 && x.agi > 224000).length;
   check('Medicare limit respected by conversions when set to "no surcharge"', over, 0, 0);
 }
+console.log('--- Who pays the conversion tax ---');
+{ // working couple at 55 with little cash and no brokerage: conversion tax must not come from the IRA, Roth or cash floor
+  const w = base({dob: '1972-01-01', income: 150000, retireAge: 65, ira: 1e6}, {dob: '1972-01-01', income: 150000, retireAge: 65, ira: 1e6}, {cash: 20000, cashFloor: 10000, brokerage: 0, workConvTarget: 'b24'});
+  const s = E.simulate(w, {strategy: 'smart'}), wr = s.rows.filter(r => r.working && !r.retired);
+  check('conversion tax: no IRA, Roth or cash-floor money used while working', wr.reduce((a, r) => a + r.draw.trad + r.draw.roth + r.draw.floor, 0), 0, 5);
+  check('conversion tax: no early-withdrawal penalty triggered', s.rows.reduce((a, r) => a + (r.pen10 || 0), 0), 0, 1);
+  check('conversion tax: conversion shrinks to what spare cash can pay (first year > 0)', wr[0].conv > 1000 ? 1 : 0, 1, 0);
+  // retired, spending already uses the IRA: conversion adds no extra IRA withdrawal for its tax
+  const r = base({dob: '1962-01-01', ira: 2e6}, {dob: '1962-01-01'}, {cash: 60000, cashFloor: 50000, brokerage: 0, spend: 60000, convTarget: 'b22'});
+  const a = E.simulate(r, {strategy: 'smart'}).rows[0], b = E.simulate(Object.assign(clone(r), {convTarget: 'zero', convUntil: 0}), {strategy: 'smart'}).rows[0];
+  check('conversion tax: retired IRA withdrawal no larger than without converting', Math.max(0, a.draw.trad - b.draw.trad), 0, 5); }
 console.log('--- Giving and estimated tax ---');
 { const c = base({dob: '1950-01-01', ira: 2e6, claimAge: 70, ssPIA: 2000}, {dob: '1950-01-01', claimAge: 70, ssPIA: 1500}, {cash: 1e6, spend: 120000});
   const a = E.simulate(c, {strategy: 'brk'}).rows[0], g = E.simulate(Object.assign(clone(c), {giving: 30000}), {strategy: 'brk'}).rows[0];
