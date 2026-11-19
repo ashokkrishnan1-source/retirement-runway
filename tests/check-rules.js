@@ -246,6 +246,15 @@ console.log('--- Engine audit fixes ---');
   const z = {strategy: 'brk', returns: new Array(60).fill(0)};
   const a = E.simulate(c, z).rows[0], g = E.simulate(Object.assign(clone(c), {giving: 20000}), z).rows[0];
   check('QCD while working: wealth not lower than without giving', g.total - a.total > -1 ? 1 : 0, 1, 0); }
+console.log('--- Best plan search ---');
+{ const r = E.WI.best(clone(EX), 'smart'), cur = r.rows[0], b = r.rows.find(x => x.tag === 'best1'), lo = r.rows.find(x => x.tag === 'lowtax');
+  check('best plan: first row is the current plan', cur.tag === 'current' ? 1 : 0, 1, 0);
+  check('best plan: best leaves at least as much to heirs as now', !b || b.legacy >= cur.legacy ? 1 : 0, 1, 0);
+  check('best plan: every finalist beats the current plan', r.rows.filter(x => /^best/.test(x.tag)).every(x => x.legacy > cur.legacy) ? 1 : 0, 1, 0);
+  check('best plan: lowest-tax plan pays no more tax than now', lo.tax <= cur.tax + 1 ? 1 : 0, 1, 0);
+  const c = clone(EX); Object.assign(c, {workConvTarget: b ? b.set.workConvTarget : c.workConvTarget, convTarget: b ? b.set.convTarget : c.convTarget, conv63: b ? b.set.conv63 : 'same', convUntil: b ? b.set.convUntil : c.convUntil});
+  if (b) b.set.claim.forEach((a, i) => { c.p[i].claimAge = a });
+  check('best plan: applying its settings reproduces its heirs figure', E.simulate(c, {strategy: 'smart'}).legacy, b ? b.legacy : cur.legacy, 1); }
 console.log('--- Conversions from 63 ---');
 { // retired couple, big IRA, fill the 24% bracket; from 63 a lower target can apply (Medicare looks back two years)
   const c = (dob, c63) => base({dob, ira: 3e6}, {dob}, {convTarget: 'b24', conv63: c63, spend: 40000, rCash: 0});
