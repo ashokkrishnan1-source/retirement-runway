@@ -136,6 +136,9 @@ label.btn{display:inline-flex;align-items:center;cursor:pointer}
 .hlp:hover{border-color:var(--fg3);color:var(--fg)}
 #helpPop{position:absolute;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.16);font-size:13px;line-height:1.5;color:var(--fg2)}
 #helpPop b{color:var(--fg)}
+details.explain{border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+details.explain>summary{text-transform:none;letter-spacing:0;font-size:14px;color:var(--fg)}
+details.explain .how{margin-top:10px}
 .lensbar{display:flex;flex-wrap:wrap;gap:4px;background:var(--sunk);border-radius:9px;padding:4px}
 .lensbar button{flex:1 1 90px;font:600 14px var(--body);border:0;background:transparent;color:var(--fg2);padding:9px 10px;border-radius:6px;cursor:pointer}
 .lensbar button[aria-pressed=true]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.14)}
@@ -263,7 +266,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
           <label class="f">Heirs' tax rate %<span class="h">on inherited IRA money</span><input type="number" id="heirTax" step="1"></label>
           <label class="chk" id="guardAcaWrap"><input type="checkbox" id="guardAca"> Keep income under the marketplace subsidy limit in years before 65</label>
           <label class="f wide">Keep income under the Medicare surcharge<span class="h">applies to conversions from age 63, since Medicare looks back two years</span><select id="guardIrmaa"><option value="0">No limit</option><option value="1">Below the first surcharge</option><option value="2">Below the second surcharge</option><option value="3">Below the third surcharge</option></select></label>
-          <label class="chk"><input type="checkbox" id="seniorExt"> Assume the <span id="seniorTxt">$6,000 senior deduction is extended past 2028</span></label>
+          <label class="chk"><input type="checkbox" id="seniorExt"> Assume the <span id="seniorTxt">senior deduction is extended</span></label>
         </div>
       </div>
 
@@ -344,6 +347,8 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
         <p class="note" style="margin:0" id="hIntro"></p>
         <div class="stats" id="hStats"></div>
         <div class="how" id="hInsights"></div>
+        <details class="explain" id="xIrmaa"><summary>About the Medicare surcharge (IRMAA)</summary><div class="how" id="xIrmaaBody"></div></details>
+        <details class="explain" id="xAca"><summary>About marketplace subsidies before 65</summary><div class="how" id="xAcaBody"></div></details>
         <h3>Before Medicare: marketplace coverage</h3>
         <div id="hAca"></div>
         <h3>Medicare surcharges (IRMAA)</h3>
@@ -498,10 +503,10 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
           <div><b>Brokerage gains.</b> Only the gain part of a sale is taxed. Your cost basis is tracked year by year, so the gain share rises as the account grows.</div>
           <div><b>Social Security.</b> Enter the monthly benefit at full retirement age from ssa.gov/myaccount, in today's dollars. Claiming early cuts it (about 30% at 62); waiting adds 8% a year to 70. A spouse gets the larger of their own or half the other's, once the other has claimed. After a death, the survivor gets the larger of their own benefit or a survivor benefit. The survivor benefit is the deceased's actual check if they had claimed (at least 82.5% of their full-age amount); 100% of their full-age amount if they died before full retirement age without claiming; or that plus the delayed credits earned up to death if they died later without claiming. A survivor can start survivor benefits from 60 at 71.5%, rising to 100% at their own full retirement age. If you claim before full retirement age while still working, the earnings test withholds $1 of benefits for every $2 of pay above <span id="etLimTxt">the yearly limit</span>, including benefits a spouse receives on that worker's record, and those months are credited back at full retirement age.</div>
           <div><b>Pensions.</b> Enter the yearly amount your plan statement shows when payments begin, the starting age, any yearly increase (many private pensions have none, so they lose buying power over time), and the share your spouse keeps after your death (often 0%, 50% or 100%, depending on the payout option you choose). Pensions are taxed as ordinary income and fill the low brackets before IRA withdrawals or conversions.</div>
-          <div><b>RMDs.</b> Start at 73 (born 1951–1959) or 75 (born 1960 or later), using the IRS Uniform Lifetime Table. Extra RMD money is reinvested in brokerage.</div>
+          <div><b>RMDs.</b> Start at <span id="rmdAgesTxt">73 or 75, depending on your birth year</span>, using the IRS Uniform Lifetime Table. Extra RMD money is reinvested in brokerage.</div>
           <div><b>State taxes.</b> Pick your state now and in retirement. The tool uses each state's 2026 rules in simplified form (reviewed November 2026): its brackets in the range most retirees fall in, whether and above what income it taxes Social Security, and its main exclusion for IRA and 401(k) income, including income limits and whether Roth conversions qualify (for example, Pennsylvania and Illinois exempt retirement income entirely). City and county taxes are skipped, except average county tax in Indiana and Maryland. Typing your own rate replaces the brackets with that flat rate.</div>
           <div><b>Views.</b> <i>Plan</i> shows the long-term projection and what-ifs. <i>This year</i> turns the plan into a monthly paycheck, tax payments and a to-do list. <i>Health</i> shows marketplace premiums and subsidies before 65 and Medicare surcharges from 65. <i>Legacy</i> shows what heirs receive by account type.</div>
-          <div><b>Health costs.</b> If you choose a marketplace plan, the tool charges the benchmark premium for each retired person under 65 and subtracts the premium subsidy: you pay a share of income (2.15% to 10.22% in 2027), with no subsidy above 400% of the poverty line. From 65, Medicare surcharges (IRMAA) are added when income two years earlier passed the limits. Both count as costs, so conversions and withdrawals are judged with them included, and you can keep conversions under either limit.</div>
+          <div><b>Health costs.</b> If you choose a marketplace plan, the tool charges the benchmark premium for each retired person under 65 and subtracts the premium subsidy: you pay a share of income (<span id="acaPctTxt">set each year by the IRS</span>), with no subsidy above 400% of the poverty line. From 65, Medicare surcharges (IRMAA) are added when income two years earlier passed the limits. Both count as costs, so conversions and withdrawals are judged with them included, and you can keep conversions under either limit.</div>
           <div><b>Giving.</b> Charitable giving is part of your spending. From 70½ it is paid straight from the IRA as a qualified charitable distribution, which counts toward required withdrawals and isn't taxed.</div>
           <div><b>IRA withdrawals before 59½.</b> Withdrawals before the year you turn 60 pay a 10% penalty, so each plan uses cash, brokerage and Roth first and touches a penalized IRA last. Roth withdrawals are assumed to come from contributions, which are penalty-free.</div>
           <div><b>Simplifications to know about.</b> The headline and "average markets" figures assume your average return every single year; because real returns swing, a typical simulated market grows about 0.7 points a year slower, which is why the 85% figures matter more. All dividends are treated as qualified, IRA contributions as deductible, and one return applies to all invested accounts. Social Security benefits keep their buying power until you claim and then rise with your COLA figure; survivor benefits start at the later of 60 and the survivor's planned claiming age. The earnings test ignores the special rule in the year you reach full retirement age. Heirs are assumed to inherit brokerage accounts with a stepped-up cost basis.</div>
@@ -571,6 +576,8 @@ var RULES={
   /* Qualified charitable distributions: gifts straight from an IRA from age 70 1/2 count toward RMDs and are not
      taxed. Limit is per person and indexed (2026: $111,000 per IRS; 2027 figure not yet confirmed). */
   qcd:{year:2026,age:70.5,limit:111000},
+  /* Gain on selling a main home that is tax-free (IRC 121): set by law, not indexed. */
+  homeSale:{mfj:500000,single:250000},
 
   /* Marketplace (ACA) premium tax credit for 2027 coverage. The extra 2021-2025 credits expired, so the
      original rules apply, including no credit above 400% of the poverty line. Sources: HHS 2026 poverty
@@ -1298,6 +1305,40 @@ function drawLegacy(){
   ].map(x=>'<div><b>'+esc(x[0])+'.</b> '+esc(x[1])+'</div>').join('');
 }
 
+/* ---------- Health guides: every figure comes from RULES, so the yearly update keeps them current ---------- */
+function drawHealthGuides(cfg,sim){
+  const I=RULES.irmaa,A=RULES.aca,cost=k=>12*(I.bSur[k]+I.dSur[k]);
+  const tiers=[['up to '+full(I.mfj[0]),'up to '+full(I.single[0]),'$0']].concat(I.mfj.map((m,k)=>[(k<I.mfj.length-1?full(m)+' – '+full(I.mfj[k+1]):'over '+full(m)),(k<I.single.length-1?full(I.single[k])+' – '+full(I.single[k+1]):'over '+full(I.single[k])),'about '+full(cost(k))]));
+  const brkInc=cfg.brokerage*cfg.divYield/100, cashInc=cfg.cash*cfg.rCash/100;
+  document.getElementById('xIrmaaBody').innerHTML=
+   '<div>Everyone on Medicare pays a monthly premium for Part B (doctor visits) and Part D (drugs). People with higher incomes pay extra on top: the Income-Related Monthly Adjustment Amount (IRMAA). It is set from your income <b>two years earlier</b> (your '+(I.year-2)+' tax return sets your '+I.year+' premium), it is charged <b>per person</b>, and it works like a cliff: $1 over a limit puts you in the higher tier for the whole year. "Income" here is your adjusted gross income plus any tax-free municipal bond interest.</div>'+
+   '<div class="scroll"><table><tr><th>Income two years earlier (couple)</th><th>Single</th><th>Extra per person per year</th></tr>'+tiers.map(r=>'<tr><td style="font-family:var(--body);text-align:left">'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>').join('')+'</table></div>'+
+   '<div class="note" style="margin:0">'+I.year+' figures; the Part D part uses '+(I.year-1)+' amounts until the new ones are confirmed. Base Part B premium: $'+I.partB.toFixed(2)+' a month per person.</div>'+
+   '<div><b>How each account affects it.</b></div>'+
+   '<div class="scroll"><table><tr><th>Account</th><th>Balance counts?</th><th>What counts as income</th></tr>'+
+   [['401(k) / traditional IRA','Indirectly: the biggest driver, because a large balance means large required withdrawals later','Every withdrawal, every required minimum distribution, and every Roth conversion, in full'],
+    ['Roth','No','Nothing. Roth withdrawals don\'t count'],
+    ['Brokerage','No','Dividends, interest and realized gains, every year, even if reinvested (yours: about '+full(brkInc)+' a year in dividends now). Selling counts only the gain part'],
+    ['Cash','No','Only the interest (yours: about '+full(cashInc)+' a year now)'],
+    ['Also counted','','Pensions, wages, and the taxable part of Social Security']].map(r=>'<tr><td style="font-family:var(--body);text-align:left">'+r[0]+'</td><td style="font-family:var(--body);text-align:left;white-space:normal;min-width:140px">'+r[1]+'</td><td style="font-family:var(--body);text-align:left;white-space:normal;min-width:240px">'+r[2]+'</td></tr>').join('')+'</table></div>'+
+   '<div><b>Ways to keep it low or at zero.</b></div>'+
+   '<div>1. <b>Do big Roth conversions before 63.</b> Conversions from 63 raise premiums from 65; earlier ones also shrink the IRA, so later required withdrawals are smaller.</div>'+
+   '<div>2. <b>From 63, size conversions to stop just under a tier.</b> Use "Keep income under the Medicare surcharge" in the Roth conversion plan'+(cfg.guardIrmaa>0?' (you have it set below tier '+cfg.guardIrmaa+')':'')+'.</div>'+
+   '<div>3. <b>Spend Roth and brokerage money in years close to a limit.</b> Roth withdrawals don\'t count, and brokerage sales count only the gain.</div>'+
+   '<div>4. <b>From '+String(RULES.qcd.age).replace('.5','½')+', give to charity straight from the IRA.</b> It counts toward required withdrawals but isn\'t income (up to '+full(RULES.qcd.limit)+' a person). Enter it under "Yearly giving to charity".</div>'+
+   '<div>5. <b>Keep brokerage income low:</b> broad index funds and ETFs pay out little; avoid realizing big gains in one year, and use losses to offset gains.</div>'+
+   '<div>6. <b>Time one-off income</b> such as home-sale gains above the tax-free '+full(RULES.homeSale.mfj)+' for a couple, or a business sale: spread it out or take it before 63.</div>'+
+   '<div>7. <b>Appeal after a life change.</b> If income drops because you retired, a spouse died or a pension ended, ask Social Security to use your current income (form SSA-44).</div>'+
+   '<div>8. <b>Mind the survivor years.</b> A widow or widower uses the single limits, which are half, often with almost the same income. Converting while you\'re both alive helps.</div>'+
+   '<div class="note" style="margin:0">Tax-free municipal bond interest doesn\'t help: it counts for this even though it isn\'t taxed. In this plan, lifetime surcharges come to about '+full(sim.irmaaReal||0)+' in today\'s dollars.</div>';
+  const cl2=A.cliff*(A.fpl1+A.fplAdd),cl1=A.cliff*A.fpl1;
+  document.getElementById('xAcaBody').innerHTML=
+   '<div>If you retire before Medicare starts at 65 and buy a marketplace (ACA) plan, a premium subsidy limits what you pay to a share of your income: from '+A.pct[0][1]+'% at low incomes to '+A.pct[A.pct.length-1][2]+'% near the top ('+A.year+'). Above '+(A.cliff*100)+'% of the poverty line, <b>'+full(cl2)+' for a couple or '+full(cl1)+' single</b>, there is no subsidy at all, so $1 too much income can cost the whole subsidy.</div>'+
+   '<div><b>What counts:</b> adjusted gross income plus all of your Social Security (taxable or not) and tax-free interest. Roth conversions, IRA withdrawals, dividends, interest and realized gains count. Roth withdrawals, cash and the cost-basis part of brokerage sales do not.</div>'+
+   '<div><b>Ways to keep the subsidy:</b> live on cash, Roth contributions and brokerage cost basis in the years before 65; do large Roth conversions before you retire or after 65; keep realized gains small; and tick "Keep income under the marketplace subsidy limit" in the Roth conversion plan. Compare the result in the Plan view: sometimes converting more is worth more than the subsidy.</div>'+
+   '<div class="note" style="margin:0">Enhanced subsidies from 2021 to 2025 have expired; these are the '+A.year+' rules.</div>';
+}
+
 /* ---------- lenses: Plan, This year, Health, Legacy ---------- */
 const LENSES=['plan','year','health','legacy'];
 function planEls(){return ['#whatif','#compare','#ssgrid','.detailhead','#bsvg','#convTable','#chart','#taxchart','#ledger'].map(q=>{const e=document.querySelector(q);return e?(e.classList.contains('detailhead')||e.id==='whatif'?e:e.closest('.panel')):null}).filter(Boolean)}
@@ -1328,6 +1369,7 @@ function drawHealth(){
     if(over>0&&over<25000)ins.push('<div><b>'+pr.Y+': income was '+full(dv(over,pr))+' over a Medicare limit</b>, which adds '+full(dv(r.irmaa,r))+' of surcharges in '+r.Y+'.'+(pr.conv>over?' Converting '+full(dv(over,pr))+' less that year would avoid it.':'')+'</div>')});
   if(!cfg.guardIrmaa&&irRows.some(r=>r.irmaaK>0)&&strat==='smart')ins.push('<div><button type="button" class="btn" data-apply-guard="1">Apply: keep conversions below the first Medicare surcharge</button></div>');
   if(!ins.length)ins.push('<div>No health-cost cliffs are being crossed under this plan.</div>');
+  drawHealthGuides(cfg,sim);
   document.getElementById('hInsights').innerHTML=ins.slice(0,8).join('');
   /* tables */
   const ages=r=>r.age.map((a,j)=>r.alive[j]?a:'–').join(' / ');
@@ -1463,7 +1505,7 @@ const WIR={
     document.getElementById('wiRes-ss').innerHTML=h+'</table></div><p class="note" style="margin:0">Green is the best pair; the blue outline is your current choice. Claiming later also protects the survivor, who keeps the larger of your two checks. Health and family longevity matter too: if either of you expects a shorter life, earlier claiming gains ground.</p>'},
   lump(res,cfg){const inn=S.wiLumpType!=='out';
     document.getElementById('wiRes-lump').innerHTML='<p class="wihead">'+esc((inn?full(S.wiLumpAmt)+' arriving':'A '+full(S.wiLumpAmt)+' expense')+' in '+S.wiLumpYear+'.')+'</p>'+compareTiles(res,cfg)+
-    '<p class="note" style="margin:0">'+(inn?'Money coming in is added to your brokerage account at full cost basis (inherited assets get a stepped-up basis). A home sale is tax-free up to $500,000 of gain for a couple.':'The expense comes from cash above your floor, then brokerage, then your IRA (grossed up for about 24% tax). Taxes on selling brokerage shares aren\'t included.')+'</p>'}
+    '<p class="note" style="margin:0">'+(inn?'Money coming in is added to your brokerage account at full cost basis (inherited assets get a stepped-up basis). A home sale is tax-free up to '+full(RULES.homeSale.mfj)+' of gain for a couple ('+full(RULES.homeSale.single)+' single).':'The expense comes from cash above your floor, then brokerage, then your IRA (grossed up for about 24% tax). Taxes on selling brokerage shares aren\'t included.')+'</p>'}
 };
 document.getElementById('whatif').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   let msg=null;
@@ -1958,11 +2000,11 @@ const HELP={
   infl:'Yearly price growth. The Federal Reserve targets 2%; the long-run US average is about 3%. Tax brackets in the tool rise with this figure.',
   wage:'Yearly pay raises. Benchmark: about 3% a year on average, often less late in a career.',
   cola:'Yearly Social Security increase. It follows inflation; the 20-year average is about 2.6%.',
-  giving:'What you give to charity each year, as part of your spending. From 70\u00bd the tool gives it straight from your IRA (a qualified charitable distribution, up to about $111,000 a person a year): it counts toward required withdrawals and isn\'t taxed. Before that it\'s paid like any other spending.',
+  giving:()=>'What you give to charity each year, as part of your spending. From 70\u00bd the tool gives it straight from your IRA (a qualified charitable distribution, up to about '+full(RULES.qcd.limit)+' a person a year in '+RULES.qcd.year+'): it counts toward required withdrawals and isn\'t taxed. Before that it\'s paid like any other spending.',
   healthMode:'How you\'ll get health insurance before Medicare at 65 if you retire earlier. Choose <b>Marketplace (ACA) plan</b> to model subsidies, which depend on your income. Employer retiree plans or COBRA: use a fixed yearly cost.',
   acaPrem:'The full price of the benchmark "second-lowest-cost silver" plan for one person at your age where you live, before any subsidy. Look it up on healthcare.gov or your state\'s marketplace. For someone aged 60 to 64 it is often $12,000 to $20,000 a year.',
-  guardAca:'Before 65, income above 400% of the poverty line ($86,560 for a couple in 2027) means no marketplace subsidy at all. With this ticked, Roth conversions stop just under that line.',
-  guardIrmaa:'Medicare charges extra premiums when income two years earlier is above set limits (from $224,000 for a couple in 2027). Pick a tier to keep conversions under, starting from age 63. Each tier costs roughly $1,200 to $2,000 more a year per person.',
+  guardAca:()=>'Before 65, income above '+(RULES.aca.cliff*100)+'% of the poverty line ('+full(RULES.aca.cliff*(RULES.aca.fpl1+RULES.aca.fplAdd))+' for a couple, '+full(RULES.aca.cliff*RULES.aca.fpl1)+' single, in '+RULES.aca.year+') means no marketplace subsidy at all. With this ticked, Roth conversions stop just under that line.',
+  guardIrmaa:()=>{const I=RULES.irmaa,c=I.bSur.map((b,k)=>12*(b+I.dSur[k]));return 'Medicare charges extra premiums when income two years earlier is above set limits (from '+full(I.mfj[0])+' for a couple, '+full(I.single[0])+' single, in '+I.year+'). Pick a tier to keep conversions under, starting from age 63. The surcharge runs from about '+full(c[0])+' to '+full(c[c.length-1])+' a year per person. See "About the Medicare surcharge" in the Health view.'},
   wiTarget:'How much you want to leave behind, after tax, in today\'s dollars. Enter 0 to see the most you could spend.',
   /* results and sections */
   verdict:function(){const mu=S.rPost,sd=S.sd,g=(Math.exp(Math.log(1+mu/100)-Math.log(1+(sd/100)**2/(1+mu/100)**2)/2)-1)*100;
@@ -2022,6 +2064,8 @@ function renderRules(){
   document.getElementById('rulesLine').innerHTML='Tax figures: '+y+' (updated '+esc(RULES.meta.updated)+')'+(RULES_STALE?' · <b>Using '+y+' figures, projected to '+START_YEAR+' with your inflation rate.</b> A newer update may be available.':'')+' '+hb('rules');
   const F=RULES.fed;
   document.getElementById('howTaxes').innerHTML='<b>Taxes.</b> Federal tax uses the '+y+' IRS figures: brackets, the '+full(F.mfj.std)+' joint standard deduction, '+full(F.mfj.add65)+' extra per spouse over 65 ('+full(F.single.add65)+' single), the '+full(RULES.senior.amount)+' senior deduction through '+RULES.senior.lastYear+' (shrinks by '+(RULES.senior.phaseRate*100)+'% of income over '+full(F.mfj.senior)+' joint, '+full(F.single.senior)+' single), and 0% long-term gains up to '+full(F.mfj.l0)+' of taxable income ('+full(F.single.l0)+' single). Up to 85% of Social Security is taxed using the IRS provisional-income formula. Brackets rise with your inflation figure after '+y+'. After one spouse dies, the survivor files as single.';
+  const ra=RULES.rmd.ages,rT=document.getElementById('rmdAgesTxt');if(rT)rT.textContent=ra[1][1]+' (born '+ra[1][0]+'–'+(ra[0][0]-1)+') or '+ra[0][1]+' (born '+ra[0][0]+' or later)';
+  const aP=document.getElementById('acaPctTxt');if(aP)aP.textContent=RULES.aca.pct[0][1]+'% to '+RULES.aca.pct[RULES.aca.pct.length-1][2]+'% in '+RULES.aca.year;
   const et=document.getElementById('etLimTxt');if(et)et.textContent=full(RULES.earningsTest.limit)+' in '+RULES.earningsTest.year;
   document.getElementById('seniorTxt').textContent=full(RULES.senior.amount)+' senior deduction is extended past '+RULES.senior.lastYear;
   document.getElementById('maintIntro').innerHTML='Every tax and Social Security number the tool uses lives in one block, <b>RULES</b>, at the top of the engine code. To update: change the numbers there, set <b>meta.taxYear</b> and <b>meta.updated</b>, and republish. This table is generated from that block, so it always shows what the tool is really using.';

@@ -167,5 +167,17 @@ console.log('--- Giving and estimated tax ---');
   const r = E.simulate(c, {strategy: 'smart'}).rows[0];
   const a = {Y: 2027, st: 'mfj', n65: 0, ss: 0, ix: 1, seniorExt: false, nii: 0};
   check('estimated tax: tax on wages alone is set aside for withholding', r.wageTax, E.fedTax({...a, ord: r.ordWage, qual: 0}).tax, 1); }
+console.log('--- Keeping figures current ---');
+{ // Every tax/benefit figure must come from RULES. Flag any "$12,345"-style figure in the page or UI script
+  // (outside the engine) that equals a RULES value, since it would go stale at the yearly update.
+  const i = html.indexOf('<script id="engine">'), j = html.indexOf('</script>', i), ui = html.slice(0, i) + html.slice(j);
+  const vals = new Set(); (function walk(o) { for (const k in o) { const v = o[k]; if (typeof v === 'number' && v >= 1000) vals.add(v); else if (v && typeof v === 'object') walk(v) } })(E.RULES);
+  // Known figures that are NOT tax rules but happen to equal a RULES value (sample data, market benchmarks).
+  const ALLOW = [/spending $/, /average retired worker gets about $/, /often costs \$?[0-9,]* ?(to )?$/, /it is often \$?[0-9,]* ?(to )?$/, /spending $/, /check federal tax on $/];
+  const hits = []; const re = /\$([0-9]{1,3}(?:,[0-9]{3})+)/g; let m;
+  while ((m = re.exec(ui))) { const n = +m[1].replace(/,/g, ''), before = ui.slice(Math.max(0, m.index - 40), m.index).replace(/\s+/g, ' ');
+    if (vals.has(n) && !ALLOW.some(a => a.test(before))) hits.push('$' + m[1] + ' near "' + before + '"') }
+  hits.forEach(h => console.log('     typed-in figure: ' + h));
+  check('no rule figures typed into the page text (they must come from RULES)', hits.length, 0, 0); }
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exitCode = fail ? 1 : 0;

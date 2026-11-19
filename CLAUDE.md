@@ -10,7 +10,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `index.html` | The whole app, written in the **claude.ai page format**: no `<!doctype>`, `<html>`, `<head>` or `<body>` tags (claude.ai adds them). Do not add them here. |
 | `tools/build-pages.js` | Wraps `index.html` in a full HTML document for GitHub Pages, writing `_site/index.html` (git-ignored). |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
-| `tests/check-rules.js` | 41 checks against hand-worked answers. Run `node tests/check-rules.js` after any engine or rules change. |
+| `tests/check-rules.js` | Checks against hand-worked answers (59 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -37,6 +37,10 @@ never assume `window.claude` exists.
 ## Accuracy rules (this is about people's money)
 
 - Every tax or benefit figure lives in `RULES` with its source and year. Never hard-code one elsewhere.
+  That includes explanatory text: help notes (`HELP`), guides and "How this works" must build their
+  figures from `RULES` (e.g. `full(RULES.irmaa.mfj[0])`), so the yearly update refreshes them. The rules
+  check scans the page for typed-in figures that match a `RULES` value and fails if it finds one; genuine
+  non-rule figures (sample data, market benchmarks) go in its `ALLOW` list with a reason.
 - Prefer official sources (IRS, SSA, state revenue departments, Tax Foundation tables). When a figure
   comes from secondary sources or memory, say so to the owner and mark it in `RULES` comments.
 - Verify changes with numbers: hand-compute expected values, add a check to `tests/check-rules.js`,
