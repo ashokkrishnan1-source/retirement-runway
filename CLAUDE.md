@@ -99,6 +99,29 @@ marketplace subsidy and Medicare IRMAA from `RULES.aca` / `RULES.irmaa`), **Lega
 Anything that changes the plan's numbers goes in the engine (health costs, QCDs); views only read rows.
 New inputs should default to off and sit in collapsed or optional sections, to keep the page simple.
 
+## The example and the reader's own numbers (`MINE`)
+
+The owner asked on 2026-11-20 for a button to "reset" the page to the made-up people, so that he could follow the
+guide with them. There was one, "Reset to example", but it sat inside the collapsed "Save or load a scenario" box,
+where he did not find it, and it erased the reader's numbers. Now:
+
+- **Show example** (`#exBtn`) is a small button under the title, beside the tax-figures line. It is offered whenever
+  something other than the untouched example is on show. It shows Dan and Linda and **sets the reader's numbers aside
+  instead of erasing them**: they go into `MINE`, which is saved inside the `retirement-runway-v2` entry
+  (`mine: {s, ex, real, strat}`). So they survive a reload and the trips to the guide and back, and the home page's
+  encrypted copy carries them.
+- The banner then says "Your own numbers are kept" and offers **Bring back my numbers** (`#mineBtn`), which restores
+  them exactly and drops whatever was tried on the example. If the example has been changed, the banner reads "Your
+  earlier numbers are kept." Pressing Show example again gives a clean example and keeps the same set-aside numbers.
+- While numbers are set aside, the home page's status line (`ftol-summary-runway`) is left as it was, so the home
+  page goes on describing the reader's own plan.
+- **Erase my numbers** is the old "Reset to example", in the same collapsed box, and still asks twice. It removes
+  the numbers on show and any set aside. Keep the two names apart: one keeps, the other erases.
+- The button is under the title and not with the download buttons, because a sixth button there made the header
+  wrap on a laptop screen.
+- The other tools already had a visible way: Prism's "Show example" beside "Load a screener file" (the reader's
+  file comes back on a reload), and Open This First's "See an example".
+
 ## The guides (`guide/index.html` for Runway, `prism/guide/index.html` for Prism)
 
 The owner asked for Runway's on 2026-11-20: Runway "has become quite sophisticated", so could it have a companion
@@ -110,7 +133,8 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   list and nothing else. Keep it that way.
   - Runway: look around with the sample couple, put in your own numbers, read your answer; which account pays the
     bills, Roth conversions, this year, Social Security, health, legacy, the what-if calculators, where the numbers
-    come from; saving and the yearly check-up.
+    come from; saving and the yearly check-up. Its first lesson tells a reader who already has numbers to press
+    Show example, which keeps them (see the section above).
   - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
     holding up or slipping), the entry ceiling, the put desk, the five questions, the nine named lists, moonshots,
     why a company isn't listed; verdicts (and how to note a put), what changed, the scorecard; options and settings,

@@ -174,7 +174,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
       <div class="eyebrow">Financial Tools of Life · No. 1</div>
       <h1>Retirement Runway</h1>
       <p class="sub">See how long your money lasts, which account should pay the bills, and how much to move into a Roth each year, using real federal tax brackets.</p>
-      <p class="note" id="rulesLine" style="margin:4px 0 0"></p>
+      <div class="row" style="margin-top:4px;gap:4px 12px"><p class="note" id="rulesLine" style="margin:0"></p><button type="button" class="btn sm" id="exBtn" hidden>Show example</button></div>
     </div>
     <div class="row">
       <div class="row" id="exportRow">
@@ -191,7 +191,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
   <div class="banner row" id="importMsg" hidden style="justify-content:space-between"><span id="importTxt"></span><button type="button" class="btn sm" id="importUndo">Undo</button></div>
   <textarea id="exportFallback" aria-label="Report text" hidden style="min-height:160px"></textarea>
 
-  <div class="banner" id="exampleBanner"><b>Example: Dan and Linda, a sample couple.</b> Both 65, $2M in IRAs, $1M in brokerage and cash, spending $150,000 a year, claiming Social Security at 70. Replace these with your numbers. Everything you type stays in this browser on this device and is never sent anywhere.</div>
+  <div class="banner" id="exampleBanner"><span id="exA"><b>Example: Dan and Linda, a sample couple.</b> Both 65, $2M in IRAs, $1M in brokerage and cash, spending $150,000 a year, claiming Social Security at 70.</span><span id="exNew"> Replace these with your numbers. Everything you type stays in this browser on this device and is never sent anywhere.</span><span id="exKept" hidden> Your own numbers are kept.</span><span id="exB" hidden><b>Your earlier numbers are kept.</b> They were set aside when you opened the example.</span><span id="exGuide"></span> <button type="button" class="btn sm" id="mineBtn" style="margin-left:4px" hidden>Bring back my numbers</button></div>
 
   <div class="grid">
     <form class="panel" id="form" autocomplete="off">
@@ -310,7 +310,7 @@ td.cur{box-shadow:inset 0 0 0 2px var(--accent)}
           <div class="row">
             <button type="button" class="btn" id="copyBtn">Copy scenario</button>
             <button type="button" class="btn" id="loadBtn">Load pasted scenario</button>
-            <button type="button" class="btn" id="resetBtn">Reset to example</button>
+            <button type="button" class="btn" id="resetBtn">Erase my numbers</button>
             <span class="note" id="ioMsg" role="status"></span>
           </div>
           <div id="vault" style="display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px;margin-top:4px"></div>
@@ -1275,12 +1275,16 @@ function convLabel(c){c=c||S;const w=c.workConvTarget||'none';return w==='none'?
 const TARGETS={zero:'Fill to the 0% gains line',b12:'Fill the 12% bracket',b22:'Fill the 22% bracket',b24:'Fill the 24% bracket'};
 
 let S, isExample=true, real=true, strat='smart', bIdx=null;
-function load(){try{const raw=localStorage.getItem(STORE);if(raw){const o=JSON.parse(raw);if(o&&o.s){S=merge(o.s);isExample=!!o.ex;real=o.real!==false;strat=o.strat||'smart';return}}}catch(e){}S=structuredClone(EXAMPLE);isExample=true}
+/* MINE holds the reader's own numbers while the example is on show. "Show example" sets them aside here instead of
+   erasing them, and "Bring back my numbers" restores them. They are saved with the rest, so they survive a reload
+   and the trips to the guide and back. */
+let MINE=null;
+function load(){try{const raw=localStorage.getItem(STORE);if(raw){const o=JSON.parse(raw);if(o&&o.s){S=merge(o.s);isExample=!!o.ex;real=o.real!==false;strat=o.strat||'smart';MINE=o.mine&&o.mine.s&&Array.isArray(o.mine.s.p)?o.mine:null;return}}}catch(e){}S=structuredClone(EXAMPLE);isExample=true}
 function merge(o){const s=Object.assign(structuredClone(EXAMPLE),o);
   {const T=RULES.ssTrust;if(s.wiSsPreset==='oasi'){s.wiSsYear=T.oasiYear;s.wiSsPct=100-T.oasiPayable}else if(s.wiSsPreset==='combined'){s.wiSsYear=T.combinedYear;s.wiSsPct=100-T.combinedPayable}}
   if(!s.stateCustom&&STATES[s.stateNow])s.stateTax=STATES[s.stateNow][1];
   if(!s.stateCustomRet&&s.stateRet&&s.stateRet!=='same'&&STATES[s.stateRet])s.stateTaxRet=STATES[s.stateRet][1];s.p=[0,1].map(i=>Object.assign({},EXAMPLE.p[i],(o.p||[])[i]||{}));return s}
-function save(){try{localStorage.setItem(STORE,JSON.stringify({s:S,ex:isExample,real,strat}))}catch(e){}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(Object.assign({s:S,ex:isExample,real,strat},MINE?{mine:MINE}:{})))}catch(e){}}
 
 /* ---------- form ---------- */
 const peopleEl=document.getElementById('people');
@@ -1342,7 +1346,10 @@ function syncToggles(){
   const rule=c=>{const r=STATES[c];if(!r)return '';const o=r[5]||{};if(!r[1])return r[0]+': no state income tax.'+(o.n?' '+o.n:'');
     return r[0]+': '+(o.br?'brackets of '+o.br.filter(x=>x[1]>0).slice(0,3).map(x=>x[1]+'%').join(', ')+' (about '+r[1]+'% at typical retiree incomes)':r[1]+'% flat')+(r[2]?', taxes some Social Security':', doesn\'t tax Social Security')+(o.n?'':(r[3]<0?', exempts IRA and 401(k) income'+(r[4]?' from age '+String(r[4]).replace('.5','½'):''):r[3]?', exempts up to '+full(r[3])+' a person'+(r[4]?' from age '+String(r[4]).replace('.5','½'):''):''))+'.'+(o.n?' '+o.n:'')};
   document.getElementById('stateRules').textContent=rule(S.stateNow||'FL')+(mv?' After the move: '+rule(S.stateRet):'')+' Simplified from 2026 rules (reviewed Nov 2026); city taxes are skipped. If you change the rate, the tool uses your rate as a flat rate instead of the brackets.';
-  document.getElementById('exampleBanner').hidden=!isExample;
+  /* The banner says whose numbers are on show: the untouched example, or, when the reader's own were set aside, that
+     they are kept, with the button that brings them back. "Show example" is offered whenever something else is on show. */
+  {const g=id=>document.getElementById(id);g('exampleBanner').hidden=!(isExample||MINE);g('exA').hidden=!isExample;g('exNew').hidden=!isExample||!!MINE;g('exKept').hidden=!isExample||!MINE;
+    g('exB').hidden=isExample||!MINE;g('exGuide').hidden=!isExample||!!MINE;g('mineBtn').hidden=!MINE;g('exBtn').hidden=isExample}
   document.getElementById('sepBtn').setAttribute('aria-pressed',!S.combined);
   document.getElementById('combBtn').setAttribute('aria-pressed',!!S.combined);
   document.getElementById('combFields').hidden=!S.combined;
@@ -1424,7 +1431,7 @@ function render(){
   if(base.shortReal<1){const last=names.map((n,i)=>end.alive[i]?n+' would be '+end.age[i]:null).filter(Boolean);headline=(P.length>1?'The money lasts for both of you: '+P.map((p,i)=>names[i]+' to age '+p.lifeExp).join(', '):'The money lasts to age '+P[0].lifeExp)+', through '+end.Y+'. It leaves '+money(end.total/end.fe)+' in today\'s dollars (about '+money(end.total)+' in '+end.Y+' dollars).'}
   else{const r=rows.find(x=>x.Y===base.firstShort);const who=names.map((n,i)=>r.alive[i]?n+' is '+r.age[i]:null).filter(Boolean);headline='The money runs short in '+base.firstShort+(who.length?', when '+who.join(' and '):'')+'.'}
   document.getElementById('verdict').innerHTML='<div class="row">'+pill+hb('verdict')+'</div><div class="big">'+esc(headline)+'</div><div class="note">'+esc(STRATS[strat])+' · '+full(cfg.spend)+' a year of spending in today\'s dollars, starting when '+(cfg.couple?'the first of you retires':'you retire')+'.'+(cfg.ssCutOn?' Includes a '+cfg.ssCutPct+'% Social Security cut from '+cfg.ssCutYear+'.':'')+' This is your plan as entered; the What if… tests below don\'t change it unless you click Apply.</div>';
-  try{localStorage.setItem('ftol-summary-runway',JSON.stringify({line:headline,example:isExample,at:new Date().toISOString()}))}catch(e){}
+  if(!MINE)try{localStorage.setItem('ftol-summary-runway',JSON.stringify({line:headline,example:isExample,at:new Date().toISOString()}))}catch(e){}     /* while the reader's own numbers are set aside, the home page keeps their status */
   // stats
   const now=cfg.cash+cfg.brokerage+(cfg.combined?cfg.cTrad+cfg.cRoth:P.reduce((a,p)=>a+p.k401+p.ira+p.roth,0));
   const saved=sims.typical.taxReal-base.taxReal;
@@ -2122,9 +2129,16 @@ document.getElementById('copyBtn').onclick=()=>{const txt=JSON.stringify(S);cons
   const sel=()=>{ta.select();msg('Selected. Press Ctrl+C or ⌘C to copy.')};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>msg('Copied.'),sel);else sel()};
 document.getElementById('loadBtn').onclick=()=>{try{const o=JSON.parse(document.getElementById('scenarioText').value);if(!o||!Array.isArray(o.p))throw 0;S=merge(o);isExample=false;bIdx=null;init();msg('Scenario loaded.')}catch(e){msg('That text is not a saved scenario. Copy one with "Copy scenario" first.')}};
+/* Show example: the sample couple, without losing what was here. The reader's own numbers are set aside in MINE,
+   unless some are set aside already or what is on show is the untouched example. Bring back my numbers restores them
+   and drops whatever was tried on the example. */
+document.getElementById('exBtn').onclick=()=>{if(!MINE&&!isExample)MINE={s:S,ex:false,real,strat};
+  S=structuredClone(EXAMPLE);isExample=true;real=true;strat='smart';bIdx=null;init()};
+document.getElementById('mineBtn').onclick=()=>{if(!MINE)return;S=merge(MINE.s);isExample=!!MINE.ex;real=MINE.real!==false;strat=MINE.strat||'smart';MINE=null;bIdx=null;init()};
+/* Erase my numbers: removes them from this browser for good, the ones on show and any set aside. It asks twice. */
 let armed=false;
-document.getElementById('resetBtn').onclick=e=>{if(!armed){armed=true;e.target.textContent='Click again to erase your numbers';setTimeout(()=>{armed=false;e.target.textContent='Reset to example'},4000);return}
-  S=structuredClone(EXAMPLE);isExample=true;armed=false;bIdx=null;e.target.textContent='Reset to example';init();msg('Example restored.')};
+document.getElementById('resetBtn').onclick=e=>{if(!armed){armed=true;e.target.textContent='Click again to erase your numbers';setTimeout(()=>{armed=false;e.target.textContent='Erase my numbers'},4000);return}
+  S=structuredClone(EXAMPLE);isExample=true;MINE=null;real=true;strat='smart';armed=false;bIdx=null;e.target.textContent='Erase my numbers';init();msg('Your numbers were erased from this browser. The example is showing.')};
 
 /* ---------- export ---------- */
 const LCOLS=[['Year',r=>String(r.Y)],['Ages',r=>r.age.map((a,j)=>r.alive[j]?a:'-').join('/')],['Filing',r=>r.st==='mfj'?'joint':'single'],
@@ -2641,7 +2655,7 @@ makeVault({mount:document.getElementById('vault'),app:'runway',what:'your plan',
   setState:o=>{if(!o||!o.s||!Array.isArray(o.s.p))throw 0;S=merge(o.s);strat=o.strat||'smart';real=o.real!==false;isExample=false;bIdx=null;save();init()}});
 /* The collection has a guide to this page (window.FTOL_GUIDE, set by the build; the shared snippet draws the link to it).
    The sample banner mentions it to a first-time reader. */
-(function(){try{const g=window.FTOL_GUIDE,b=document.getElementById('exampleBanner');if(!g||!b)return;
+(function(){try{const g=window.FTOL_GUIDE,b=document.getElementById('exGuide');if(!g||!b)return;
   const l=document.createElement('a');l.href=g;l.textContent='The guide';l.style.color='var(--accent)';b.append(' New here? ',l,' walks you through this page in about ten minutes.')
 }catch(e){}})();
 })();
