@@ -24,7 +24,7 @@ Inside `index.html`:
 
 1. **claude.ai artifact** (the owner's private link): https://claude.ai/artifact/GhUT9d6gZtRnZ3UWhXRHfm
    Republish with the Artifact tool, passing that `url` and `index.html` as the file. It declares
-   the `downloads` capability; keep it on redeploys.
+   the `downloads`, `db` and `user` capabilities; keep them on redeploys.
 2. **GitHub Pages**: deployed automatically from `main` by the workflow.
 
 Both should carry the same `index.html`. After changing the app: run the checks, commit and push,
@@ -104,6 +104,20 @@ single file, no backend, answers stay in the browser (localStorage key `open-thi
   `/open-this-first/` (built by `tools/build-pages.js`). The example is the fictional "Dan Rivera".
 - Source: the owner's business requirements document (pilot stage). Accounts, sharing, payments and assisted
   setup are deliberately out of scope until the free local version shows demand.
+
+## Encrypted and online copies (shared by all tools)
+
+`tools/vault-snippet.js` is the single source for the "Encrypted copies" feature. `node tools/sync-vault.js` copies
+it into each tool between the `VAULT:START` / `VAULT:END` markers; the workflow fails if a page is out of date.
+Never edit the copy inside a page.
+
+- The state is encrypted in the browser (PBKDF2-SHA256, 310,000 rounds, AES-GCM 256) with a passphrase that is
+  held in memory only. There is no recovery: say so plainly wherever it is offered.
+- Online copies use the claude.ai `db` capability under `data/users/<viewer id>/` (private per signed-in person),
+  one document per saved version: `{app, name, at, enc, kdf, salt, iv, ct}`. Name and date are not encrypted.
+- Both artifacts declare `capabilities: {downloads: true, db: {}, user: {}}`; keep all three on redeploys.
+  Each artifact has its own store, so Runway versions and Open This First versions are kept separately.
+- On the standalone site there is no online store: only encrypted files are offered.
 
 ## Roadmap ideas (ask the owner before starting)
 

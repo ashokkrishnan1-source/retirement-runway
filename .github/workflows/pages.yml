@@ -26,6 +26,8 @@ jobs:
           node-version: 20
       - name: Rules check (hand-worked cases)
         run: node tests/check-rules.js
+      - name: Shared code is in sync across tools
+        run: node tools/sync-vault.js --check
       - name: Build the standalone page
         run: node tools/build-pages.js
       - uses: actions/configure-pages@v5
