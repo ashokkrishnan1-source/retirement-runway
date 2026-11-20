@@ -1089,7 +1089,9 @@ const HELP = {
   t_up: () => '<p><b>Rising.</b> The price is above its 50-day average.</p>',
   t_alist: b => { const r = rowOf(b); return '<p><b>A-list.</b> ' + (r && r.pin === 'in' ? 'You put this company on your A-list.' : 'This company passes all six tests of the business itself: return on capital, years of profit, sales growth, cash earnings, share count and debt.') + '</p><p>Tap the row to see the six tests, or to take it off your list.</p>'; },
   t_earn: b => { const r = rowOf(b); return r && r.earn ? '<p><b>Earnings on ' + esc(day(r.earn)) + '</b>, in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days') + '.</p><p>An option that expires after that date carries whatever the report brings. The tag turns amber when the report is within ' + C.put_earn + ' days.</p>' : '<p>The date of the next earnings report.</p>'; },
-  t_new: () => '<p><b>New.</b> This company was not on this list in your previous file.</p>'
+  t_new: () => '<p><b>New.</b> This company was not on this list in your previous file.</p>',
+  t_noceil: b => { const r = rowOf(b); return '<p><b>No entry ceiling.</b> ' + (r ? 'Prism shows none for ' + esc(r.sym) + ' because ' + noCeil(r)[1] + '.' : '') + '</p>' +
+    '<p>The entry ceiling is the price at which a ' + pct(C.exp_hurdle) + ' yearly return still works on cautious growth. Where that sum can\'t be trusted, Prism leaves it out rather than guess.</p><p>The line below is today\'s share price.</p>'; }
 };
 Object.keys(FL).forEach(f => { HELP['f_' + f] = () => '<p><b>' + FL[f][0] + '.</b> ' + FL[f][1] + '</p>' + (SEVERE[f] ? '<p>This is a data warning: check the figure before trusting anything else in the row.</p>' : ''); });
 const pop = document.createElement('div'); pop.id = 'helpPop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Help note'); document.body.appendChild(pop);
@@ -1230,6 +1232,16 @@ function saleWhy(r) {
 /* the four signs that a business is slipping, in words */
 const SW = {growth: 'sales have slowed', returns: 'returns have dropped', forecast: 'a weak forecast', profit: 'profit is falling'};
 const slipWords = r => r.slip ? SLIP.filter(k => r.slip.s[k] === true).map(k => SW[k]).join(', ') : '';
+/* Why a company has no entry ceiling: a few words for the row and a clause for the note and the detail.
+   The order follows the engine, which works a ceiling only from positive cash flow, clean figures, a non-cyclical
+   industry and a price that does not already assume very high growth. */
+function noCeil(r) {
+  if (!r.scored) return ['not scored', 'Prism does not score this company'];
+  if (!(r.fcfy > 0)) return ['no cash flow', 'free cash flow is not positive'];
+  if (r.hold) return ['data warning', 'the figures carry a data warning'];
+  if (r.cyc) return ['cyclical', 'this is a cyclical industry, where one year\'s cash flow is a poor guide'];
+  return ['priced high', 'the price already assumes very high growth'];
+}
 /* a tag in a row: a small button that opens the note for it (works by touch, where a hover note does not) */
 const tag = (cls, key, text, r) => '<button type="button" class="pill ' + cls + ' tip" data-h="' + key + '" data-sym="' + esc(r.sym) + '">' + esc(text) + '</button>';
 const trendPill = r => r.trend === 'down' ? tag('mute', 't_down', 'Falling', r) : r.trend === 'up' ? tag('mute', 't_up', 'Rising', r) : '';
@@ -1312,7 +1324,7 @@ function rowHTML(r) {
   return '<tr class="main" data-sym="' + esc(r.sym) + '"><td class="c-co"><div class="s"><button type="button" class="symb" aria-expanded="' + (OPEN === r.sym) + '" title="Show how ' + esc(r.sym) + ' answered each question">' + esc(r.sym) + '</button>' + (NEW.has(r.sym) ? ' ' + tag('new', 't_new', 'New', r) : '') + '</div><div class="m">' + esc(r.name || '') + '</div><div class="m i">' + esc(r.industry || '') + '</div></td>' +
     '<td class="num c-size">' + money(r.cap) + '</td><td class="c-five">' + found(r) + '</td>' +
     '<td class="c-imp">' + (r.impg == null ? '–' : '<span class="lab">Price implies </span><span class="bk">' + BUCKET[r.bucket].toLowerCase() + '</span><div class="m">' + (r.impg >= 0.4 ? 'over 40%' : r.impg <= -0.15 ? 'under −15%' : pct(r.impg)) + ' a year' + (r.impgSpread > 0.1 ? ' (readings differ)' : '') + '</div>') + '</td>' +
-    '<td class="num c-ceil"><span class="lab">Ceiling </span>' + (r.ceiling ? price(r.ceiling) : '–') + '<div class="m">price ' + price(r.price) + (r.ceiling ? ', ' + (r.price <= r.ceiling ? pct(1 - r.price / r.ceiling) + ' under' : pct(r.price / r.ceiling - 1) + ' over') : '') + '</div></td>' +
+    '<td class="num c-ceil"><span class="lab">Ceiling </span>' + (r.ceiling ? price(r.ceiling) : tag('mute', 't_noceil', 'None: ' + noCeil(r)[0], r)) + '<div class="m">price ' + price(r.price) + (r.ceiling ? ', ' + (r.price <= r.ceiling ? pct(1 - r.price / r.ceiling) + ' under' : pct(r.price / r.ceiling - 1) + ' over') : '') + '</div></td>' +
     '<td class="c-ver"><select class="vsel" data-sym="' + esc(r.sym) + '" aria-label="Verdict for ' + esc(r.sym) + '"><option value="">Verdict…</option>' + VERDICTS.map(v => '<option' + (verdictOf(r) === v ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></td></tr>';
 }
 function drawTable(rows) {
@@ -1363,7 +1375,7 @@ function detailHTML(r) {
       '<p class="note">Today\'s price is fair only if cash flow and earnings ' + (r.impg >= 0.4 ? 'grow more than 40%' : r.impg <= -0.15 ? 'shrink more than 15%' : (r.impg < 0 ? 'shrink ' : 'grow ') + 'about <b>' + pct(Math.abs(r.impg)) + '</b>') + ' a year for ' + C.exp_N + ' years, for a ' + pct(C.exp_r) + ' yearly return. ' + (r.histg != null ? 'Sales ' + (r.histg < 0 ? 'fell ' : 'grew ') + pct(Math.abs(r.histg)) + ' over the past year.' : '') + '</p>' +
       (r.impgSpread > 0.1 ? '<p class="note"><span class="pill warn">Readings differ</span> Judged on cash flow alone the figure is ' + gtxt(r.impg_f) + '; on earnings alone, ' + gtxt(r.impg_e) + '. When they are this far apart, find out why before trusting the average.</p>' : '')) +
       (r.ceiling ? '<p class="note"><b>Entry ceiling ' + price(r.ceiling) + '</b>, ' + (r.ceiling >= r.price ? pct(r.ceiling / r.price - 1) + ' above' : pct(1 - r.ceiling / r.price) + ' below') + ' today\'s price. At that price a ' + pct(C.exp_hurdle) + ' yearly return still works if cash flow grows only ' + pct(gc) + ' a year. It is a hurdle for buying, not a fair value or a target.</p>' :
-        '<p class="note">No entry ceiling is shown because ' + (!(r.fcfy > 0) ? 'free cash flow is not positive' : r.hold ? 'the figures carry a data warning' : r.cyc ? 'this is a cyclical industry, where one year\'s cash flow is a poor guide' : 'the price already assumes very high growth') + '.</p>') + '</div></div>';
+        '<p class="note">No entry ceiling is shown because ' + noCeil(r)[1] + '.</p>') + '</div></div>';
     const fl = r.flags.filter(f => f !== 'cyc' || !r.flags.includes('peak'));
     if (fl.length) h += '<div class="dbox"><h4>Check before trusting the numbers</h4>' + fl.map(f => '<p class="note"><span class="pill ' + (SEVERE[f] ? 'warn' : 'mute') + '">' + FL[f][0] + '</span> ' + FL[f][1] + '</p>').join('') + '</div>';
     if (r.lists.length) h += '<div class="dbox"><h4>Ways in</h4>' + r.lists.map(id => '<p class="note"><b>' + LI[id][0] + '.</b> ' + LI[id][1] + ' <b>First check:</b> ' + LI[id][2] + ' <b>Wrong if:</b> ' + LI[id][3] + '</p>').join('') + '</div>';
