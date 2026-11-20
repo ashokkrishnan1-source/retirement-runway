@@ -140,6 +140,13 @@ format as the other tools; no AI, no live data.
   the Q/V/S/P/T letters and ranks appear only in a row's detail. Company size, order, find, the question toggles
   and the tally sit in the collapsed "More options", whose summary line says when a setting is not the default.
   Keep the first company on the first screen at phone width.
+- **Help notes (`HELP`, `hb`, `tag`).** The owner expects contextual help everywhere (asked 2026-11-20). A "?"
+  button sits beside the list title ("how to read a row", written for the list on show), the Show menu, each column
+  heading, the options and "Your verdicts"; and every tag in a row (Holding up, Falling, Earnings in N days, the
+  cautions) is a button that opens its own note, with that company's particulars. Notes open on a tap, because a
+  hover note is no use on a phone; any other tap or Escape closes them. They build their figures from `C`, so they
+  stay true when a setting changes. When you add a tag, a column or an option, add its note: the browser test
+  checks that every `data-h` on the page has one.
 - **The A-list (`gradeOf`, `judge`).** Six tests of the business, price ignored, all absolute rather than ranked
   within a sector: return on capital (five-year and latest), years of profit in a row, sales growth (five and ten
   years), cash from operations against profit, share-count growth, and debt (net cash, or net debt over EBITDA

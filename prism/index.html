@@ -94,6 +94,14 @@ td.c-five{min-width:210px;max-width:330px}
 td .ans{font-size:13px}
 td .also{font-size:12.5px;color:var(--fg2)}
 #askHint,#digHint{text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg3)}
+/* help notes: a small "?" button, and tags that can be tapped; both open the same note */
+.hlp{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg2);font:600 11px/1 var(--body);cursor:pointer;vertical-align:1px;letter-spacing:0;text-transform:none;flex:none}
+.hlp:hover{border-color:var(--fg3);color:var(--fg)}
+button.pill{border:0;cursor:pointer;line-height:inherit}
+button.pill:hover{filter:brightness(.96)}
+#helpPop{position:absolute;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.16);font-size:13px;line-height:1.5;color:var(--fg2);text-transform:none;letter-spacing:0;font-weight:400}
+#helpPop b{color:var(--fg)}
+#helpPop p{margin:0 0 6px}#helpPop p:last-child{margin:0}
 select.vsel{min-width:96px;padding:5px 6px;min-height:34px}
 .detail>td>div{position:sticky;left:10px;width:var(--tw,100%);max-width:var(--tw,100%)}
 td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -156,23 +164,23 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
   </details>
 
   <section id="listSec">
-    <h2 id="tblTitle">Companies</h2>
+    <div class="row" style="gap:2px;align-items:baseline;flex-wrap:nowrap"><h2 id="tblTitle">Companies</h2><button type="button" class="hlp" data-h="row" aria-label="How to read this list">?</button></div>
     <p id="lede" style="max-width:80ch"></p>
     <p class="note" id="crowd" hidden></p>
-    <label class="f" for="show" style="max-width:460px">Show<select id="show"></select></label>
+    <label class="f" for="show" style="max-width:460px"><span>Show<button type="button" class="hlp" data-h="show" aria-label="What each list is">?</button></span><select id="show"></select></label>
     <div class="card" id="listInfo" hidden></div>
     <details id="askBox">
       <summary>More options<span id="askHint"></span></summary>
       <div class="card" style="gap:12px;margin-top:10px">
         <div class="toolbar">
-          <label class="f" for="pool">Company size<select id="pool"><option value="main">Large: $2B and up</option><option value="ext">Large and mid: $1B and up</option><option value="all">Everything scored</option></select></label>
-          <label class="f" for="sort">Order<select id="sort"></select></label>
+          <label class="f" for="pool"><span>Company size<button type="button" class="hlp" data-h="pool" aria-label="About company size">?</button></span><select id="pool"><option value="main">Large: $2B and up</option><option value="ext">Large and mid: $1B and up</option><option value="all">Everything scored</option></select></label>
+          <label class="f" for="sort"><span>Order<button type="button" class="hlp" data-h="sort" aria-label="About the order">?</button></span><select id="sort"></select></label>
           <label class="f" for="q">Find in this list<input type="search" id="q" placeholder="Symbol or name" autocomplete="off"></label>
         </div>
         <div class="row">
-          <label class="chk" for="hideWarn"><input type="checkbox" id="hideWarn"> Hide companies with data warnings</label>
-          <label class="chk" for="showRej"><input type="checkbox" id="showRej"> Show companies I rejected</label>
-          <label class="chk" for="tierB"><input type="checkbox" id="tierB"> Put companies that miss just one of the six tests on the A-list too</label>
+          <label class="chk" for="hideWarn"><input type="checkbox" id="hideWarn"> Hide companies with data warnings<button type="button" class="hlp" data-h="hideWarn" aria-label="About data warnings">?</button></label>
+          <label class="chk" for="showRej"><input type="checkbox" id="showRej"> Show companies I rejected<button type="button" class="hlp" data-h="showRej" aria-label="About rejected companies">?</button></label>
+          <label class="chk" for="tierB"><input type="checkbox" id="tierB"> Put companies that miss just one of the six tests on the A-list too<button type="button" class="hlp" data-h="tierB" aria-label="About the six tests">?</button></label>
         </div>
         <h3>The five questions</h3>
         <p class="note">The short list needs a yes to every question below. Each one looks at different facts, so five yeses are five separate reasons, not one reason counted five times. Press a question to stop requiring it.</p>
@@ -193,7 +201,7 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
   </section>
 
   <section>
-    <h2>Your verdicts</h2>
+    <h2>Your verdicts<button type="button" class="hlp" data-h="verdict" aria-label="About verdicts">?</button></h2>
     <p class="note">Record a verdict on any row so you don't read the same company again tomorrow. Rejected companies drop off every list until you bring them back.</p>
     <div id="watch"></div>
     <div class="row">
@@ -1043,8 +1051,62 @@ function sorted(rows) {
   return rows.slice().sort((a, b) => val(b) - val(a) || (b.cap || 0) - (a.cap || 0));
 }
 
+/* ---------- help notes ---------- */
+/* Every "?" button and every tag in a row opens one of these notes. They take their figures from the settings, so a note
+   stays true when a setting is changed. A note that is a function is handed the button that was pressed, to find the
+   company it belongs to. Notes open on a tap as well as a click: a hover note is no use on a phone. */
+const hb = k => '<button type="button" class="hlp" data-h="' + k + '" aria-label="More about this">?</button>';
+const rowOf = b => BY[b.dataset.sym] || null;
+const HELP = {
+  show: () => '<p><b>Which list to read.</b></p><p><b>A-list on sale</b>: the best businesses whose price is low today. Start here.</p><p><b>Put desk</b>: A-list companies that are on sale or fell hard this week, with listed options.</p><p><b>The whole A-list</b>: every A-class business, whatever its price.</p>' +
+    '<p><b>Yes to all five</b>: companies that are cheap and out of favor, judged against their own sector. A different test from the A-list.</p><p><b>Near misses</b>: one question short of that.</p><p><b>Moonshots</b>: small companies growing fast. Most disappoint.</p><p><b>Nine named lists</b>: particular situations, such as a strong business at a low price.</p>',
+  row: () => { const v = viewNow();
+    return '<p><b>How to read a row.</b> ' + (v === 'sale' ? 'The first line says why the price counts as low. The tags say whether the business is holding up and whether the price is rising or falling.'
+      : v === 'put' ? 'The first line gives the fall this week and how far the price moves in a typical day. The tags give the days to the next earnings report and whether the business is holding up.'
+      : v === 'A' ? 'The first line gives what the business earns on its capital and how many years it has made a profit.'
+      : v === 'moon' ? 'The lines give sales growth, gross margin, how long the cash lasts and the change in the share count.'
+      : 'The first lines say how the company answered the five questions and which named lists it is on.') + '</p>' +
+      '<p><b>Price implies</b> is the yearly growth today\'s price needs to be fair. <b>Entry ceiling</b> is the most you could pay and still expect ' + pct(C.exp_hurdle) + ' a year on cautious growth; "under" means today\'s price is below it.</p>' +
+      '<p>Tap any tag for what it means. Tap the row for the full figures and to record your verdict.</p>'; },
+  found: () => '<p><b>What Prism found.</b> A few words on why the company is on this list, then small tags.</p><p>Tap a tag for what it means. Tap the row for the figures behind it.</p>',
+  size: () => '<p><b>Size.</b> The market value of the whole company. The lists show companies worth ' + money(C.size_main) + ' or more unless you choose otherwise under More options.</p>',
+  implies: () => '<p><b>Price implies.</b> Instead of calling a share cheap, Prism works out the growth today\'s price needs. It assumes you want ' + pct(C.exp_r) + ' a year and that the growth lasts ' + C.exp_N + ' years.</p>' +
+    '<p>"Decline" or "No growth" means the price expects very little. "Perfection" means it expects more than ' + pct(C.exp_perf) + ' a year.</p><p>"Readings differ" means cash flow and earnings give very different answers: find out why first.</p>',
+  ceiling: () => '<p><b>Entry ceiling.</b> The price at which a ' + pct(C.exp_hurdle) + ' yearly return still works if cash flow grows no faster than ' + pct(C.exp_cap) + ' a year, or slower if sales have grown slower.</p>' +
+    '<p>It is a hurdle for buying, not a fair value or a target. "Under" means today\'s price is below it.</p><p>None is shown for a cyclical industry, a company with no positive cash flow, or one with a data warning.</p>',
+  verdict: () => '<p><b>Verdict.</b> Your own decision, remembered from file to file. Prism never sets one.</p><p><b>Watch</b>: interesting, waiting for something. <b>Act</b>: an order or a put is open. <b>Own</b>: you hold the shares. <b>No action</b>: fine company, wrong price. <b>Reject</b>: hide it from every list.</p>' +
+    '<p>Open a row to add your thesis, a review date and what you did.</p>',
+  pool: () => '<p><b>Company size.</b> Which companies the lists include, by market value. "Large" is ' + money(C.size_main) + ' and up; mid-size adds those from ' + money(C.size_ext) + '.</p><p>Moonshots keep their own range, up to ' + money(C.moon_max) + '.</p>',
+  sort: () => '<p><b>Order.</b> "Best fit first" uses each list\'s own order. On the on-sale list that is businesses that are holding up first, then the most signs of a low price. On the put desk it is the biggest fall this week.</p><p>The other choices order every list by one measure.</p>',
+  hideWarn: () => '<p><b>Data warnings.</b> A figure that looks too good is usually a one-off or an error: a cash yield above ' + pct(C.flag_fcf) + ', a P/E under ' + C.flag_pe + ', cash larger than the company, or a share count that halved or doubled.</p><p>Those companies stay hidden unless you untick this.</p>',
+  showRej: () => '<p><b>Rejected companies.</b> A company you gave the verdict Reject is hidden from every list. Tick this to see them again, and change the verdict to bring one back.</p>',
+  tierB: () => '<p><b>The six tests of an A-class business</b>, with the price left out: a return on capital of ' + pct(C.a_roic5) + ' over five years and ' + pct(C.a_roic) + ' now; a profit in each of the last ' + C.a_years + ' years; sales growing ' + pct(C.a_grow) + ' a year; cash from operations of at least ' + pct(C.a_cash) + ' of profit; a share count growing no more than ' + pct(C.a_dil) + ' a year; and little debt.</p>' +
+    '<p>Tick this to include companies that miss exactly one. Their rows name the test they miss.</p>',
+  t_slip: b => { const r = rowOf(b), st = r && r.slipping, w = r ? slipWords(r) : '';
+    return '<p><b>' + (st === 'slipping' ? 'Slipping' : st === 'one' ? 'One weak spot' : 'Holding up') + '.</b> ' + (st === 'slipping' ? 'The business shows ' + r.slip.n + ' of four signs of weakening: ' + esc(w) + '.' : st === 'one' ? 'One of four signs of weakening: ' + esc(w) + '. Two would count as slipping.' : 'None of the four signs that a business is weakening.') + '</p>' +
+      '<p>The signs: sales growth in the latest quarter far below the company\'s own pace; return on capital well under its five-year average; a forecast far below that pace; falling operating profit.</p><p>A low price with a slipping business is often a trap. Tap the row for the figures.</p>'; },
+  t_down: () => '<p><b>Falling.</b> The price is below its 50-day average and lower than a month ago.</p><p>A cheap share that is still falling often gets cheaper.</p>',
+  t_up: () => '<p><b>Rising.</b> The price is above its 50-day average.</p>',
+  t_alist: b => { const r = rowOf(b); return '<p><b>A-list.</b> ' + (r && r.pin === 'in' ? 'You put this company on your A-list.' : 'This company passes all six tests of the business itself: return on capital, years of profit, sales growth, cash earnings, share count and debt.') + '</p><p>Tap the row to see the six tests, or to take it off your list.</p>'; },
+  t_earn: b => { const r = rowOf(b); return r && r.earn ? '<p><b>Earnings on ' + esc(day(r.earn)) + '</b>, in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days') + '.</p><p>An option that expires after that date carries whatever the report brings. The tag turns amber when the report is within ' + C.put_earn + ' days.</p>' : '<p>The date of the next earnings report.</p>'; },
+  t_new: () => '<p><b>New.</b> This company was not on this list in your previous file.</p>'
+};
+Object.keys(FL).forEach(f => { HELP['f_' + f] = () => '<p><b>' + FL[f][0] + '.</b> ' + FL[f][1] + '</p>' + (SEVERE[f] ? '<p>This is a data warning: check the figure before trusting anything else in the row.</p>' : ''); });
+const pop = document.createElement('div'); pop.id = 'helpPop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Help note'); document.body.appendChild(pop);
+let popFor = null;
+const hideHelp = () => { pop.hidden = true; popFor = null; };
+document.addEventListener('click', e => { const b = e.target.closest('.hlp, .tip');
+  if (b) { e.preventDefault(); e.stopPropagation(); if (popFor === b && !pop.hidden) { hideHelp(); return; }
+    const v = HELP[b.dataset.h]; if (!v) return; pop.innerHTML = typeof v === 'function' ? v(b) : v; pop.hidden = false; popFor = b;
+    const r = b.getBoundingClientRect(), w = Math.min(340, document.documentElement.clientWidth - 32); pop.style.width = w + 'px';
+    let left = r.left + window.scrollX - 12; left = Math.max(16 + window.scrollX, Math.min(left, window.scrollX + document.documentElement.clientWidth - w - 16));
+    pop.style.left = left + 'px'; pop.style.top = (r.bottom + window.scrollY + 6) + 'px'; return; }
+  if (!pop.hidden) hideHelp(); }, true);     /* any other tap closes the note, a tap on the note itself included */
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pop.hidden) { const f = popFor; hideHelp(); if (f && f.isConnected) f.focus(); } });
+
 /* ---------- drawing ---------- */
 function render() {
+  hideHelp();     /* a note belongs to the row it was opened on; the rows are about to be redrawn */
   const m = DATA.meta, view = viewNow(), base5 = baseRows(''), base = baseFor(view), n = x => x.toLocaleString('en-US');
   $('fileStatus').textContent = m.example ? 'Example: ' + m.n.toLocaleString('en-US') + ' made-up companies. Load your own file to replace them.' : m.file + ' · ' + m.n.toLocaleString('en-US') + ' companies · ' + (m.dateFrom === 'price' ? 'prices dated ' : m.dateFrom === 'name' ? 'file dated ' : 'loaded ') + day(m.date);
   drawFields(m.report);
@@ -1168,7 +1230,9 @@ function saleWhy(r) {
 /* the four signs that a business is slipping, in words */
 const SW = {growth: 'sales have slowed', returns: 'returns have dropped', forecast: 'a weak forecast', profit: 'profit is falling'};
 const slipWords = r => r.slip ? SLIP.filter(k => r.slip.s[k] === true).map(k => SW[k]).join(', ') : '';
-const trendPill = r => r.trend === 'down' ? '<span class="pill mute" title="Below its 50-day average and down over the past month">Falling</span>' : r.trend === 'up' ? '<span class="pill mute" title="Above its 50-day average">Rising</span>' : '';
+/* a tag in a row: a small button that opens the note for it (works by touch, where a hover note does not) */
+const tag = (cls, key, text, r) => '<button type="button" class="pill ' + cls + ' tip" data-h="' + key + '" data-sym="' + esc(r.sym) + '">' + esc(text) + '</button>';
+const trendPill = r => r.trend === 'down' ? tag('mute', 't_down', 'Falling', r) : r.trend === 'up' ? tag('mute', 't_up', 'Rising', r) : '';
 /* why a company is on the A-list when it did not pass all six tests */
 function gradeLine(r) {
   const miss = r.a && r.a.yes < 6 ? r.a.no.concat(r.a.unk).map(k => AT[k]).join(', ') : '';
@@ -1186,12 +1250,12 @@ function found(r) {
       if (r.ret1w != null && r.ret1w <= C.put_drop) a.push('Down ' + p0(-r.ret1w) + ' this week');
       if (r.atr != null && r.price > 0) a.push((a.length ? 'moves' : 'Moves') + ' about ' + p0(r.atr / r.price) + ' a day');
       if (a.length) h += '<div class="ans">' + a.join(' · ') + '</div>';
-      if (r.earnIn != null && r.earnIn >= 0) pills.push('<span class="pill ' + (r.earnIn <= C.put_earn ? 'warn' : 'mute') + '" title="Next earnings ' + esc(day(r.earn)) + '">Earnings in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days') + '</span>'); }
+      if (r.earnIn != null && r.earnIn >= 0) pills.push(tag(r.earnIn <= C.put_earn ? 'warn' : 'mute', 't_earn', 'Earnings in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days'), r)); }
     if (view === 'A' && r.a && r.roic5 != null && r.py != null) h += '<div class="ans">Earns ' + p0(r.roic5) + ' on its capital · profitable ' + r.py + ' years</div>';
     if (r.onSale) h += '<div class="also">' + (view === 'sale' ? '' : 'On sale: ') + esc(saleWhy(r)) + '</div>';
     if (r.slipping === 'slipping') h += '<div class="ans"><b>Slipping:</b> ' + esc(slipWords(r)) + '.</div>';
-    else if (r.slipping === 'steady') pills.push('<span class="pill good" title="None of the four signs that a business is weakening">Holding up</span>');
-    else if (r.slipping === 'one') pills.push('<span class="pill mute" title="One sign of weakening: ' + esc(slipWords(r)) + '">One weak spot</span>');
+    else if (r.slipping === 'steady') pills.push(tag('good', 't_slip', 'Holding up', r));
+    else if (r.slipping === 'one') pills.push(tag('mute', 't_slip', 'One weak spot', r));
     if (view !== 'A' && trendPill(r)) pills.push(trendPill(r));
   } else if (view === 'moon') {
     h += '<div class="ans">Sales up ' + p0(r.revg) + ' · gross margin ' + p0(r.gm) + '</div><div class="also">' + (r.runway >= 99 ? 'Earns its own cash' : 'Cash for ' + (r.runway >= 10 ? 'over 10' : r.runway.toFixed(1).replace(/\.0$/, '')) + ' years at today\'s spending') + ' · share count ' + (r.sh < 0 ? 'down ' + p0(-r.sh) : 'up ' + p0(r.sh)) + '</div>';
@@ -1200,11 +1264,11 @@ function found(r) {
     const also = r.lists.filter(id => id !== view).map(id => LI[id][0]);
     h += !view && S.ui.need.length === 5 ? '' : answers(r);
     if (also.length) h += '<div class="also" title="' + esc(also.join(' · ')) + '">' + (view && view !== 'near' ? 'Also: ' : '') + esc(also.slice(0, 2).join(' · ')) + (also.length > 2 ? ' · +' + (also.length - 2) + ' more' : '') + '</div>';
-    if (r.alist) pills.push('<span class="pill good" title="Passes the six tests of an A-class business">A-list</span>');
-    if (r.slipping === 'slipping') pills.push('<span class="pill warn" title="The business shows signs of weakening: ' + esc(slipWords(r)) + '">Slipping</span>');
+    if (r.alist) pills.push(tag('good', 't_alist', 'A-list', r));
+    if (r.slipping === 'slipping') pills.push(tag('warn', 't_slip', 'Slipping', r));
     if (trendPill(r)) pills.push(trendPill(r));
   }
-  fl.slice(0, 2).forEach(f => pills.push('<span class="pill ' + (SEVERE[f] ? 'warn' : 'mute') + '" title="' + esc(FL[f][0]) + '">' + FSHORT[f] + '</span>'));
+  fl.slice(0, 2).forEach(f => pills.push(tag(SEVERE[f] ? 'warn' : 'mute', 'f_' + f, FSHORT[f], r)));
   if (pills.length) h += '<div class="row" style="gap:4px;margin-top:3px">' + pills.join('') + '</div>';
   return h || '<span class="also">–</span>';
 }
@@ -1245,7 +1309,7 @@ function aBox(r) {
   return h + '</div>';
 }
 function rowHTML(r) {
-  return '<tr class="main" data-sym="' + esc(r.sym) + '"><td class="c-co"><div class="s"><button type="button" class="symb" aria-expanded="' + (OPEN === r.sym) + '" title="Show how ' + esc(r.sym) + ' answered each question">' + esc(r.sym) + '</button>' + (NEW.has(r.sym) ? ' <span class="pill new">New</span>' : '') + '</div><div class="m">' + esc(r.name || '') + '</div><div class="m i">' + esc(r.industry || '') + '</div></td>' +
+  return '<tr class="main" data-sym="' + esc(r.sym) + '"><td class="c-co"><div class="s"><button type="button" class="symb" aria-expanded="' + (OPEN === r.sym) + '" title="Show how ' + esc(r.sym) + ' answered each question">' + esc(r.sym) + '</button>' + (NEW.has(r.sym) ? ' ' + tag('new', 't_new', 'New', r) : '') + '</div><div class="m">' + esc(r.name || '') + '</div><div class="m i">' + esc(r.industry || '') + '</div></td>' +
     '<td class="num c-size">' + money(r.cap) + '</td><td class="c-five">' + found(r) + '</td>' +
     '<td class="c-imp">' + (r.impg == null ? '–' : '<span class="lab">Price implies </span><span class="bk">' + BUCKET[r.bucket].toLowerCase() + '</span><div class="m">' + (r.impg >= 0.4 ? 'over 40%' : r.impg <= -0.15 ? 'under −15%' : pct(r.impg)) + ' a year' + (r.impgSpread > 0.1 ? ' (readings differ)' : '') + '</div>') + '</td>' +
     '<td class="num c-ceil"><span class="lab">Ceiling </span>' + (r.ceiling ? price(r.ceiling) : '–') + '<div class="m">price ' + price(r.price) + (r.ceiling ? ', ' + (r.price <= r.ceiling ? pct(1 - r.price / r.ceiling) + ' under' : pct(r.price / r.ceiling - 1) + ' over') : '') + '</div></td>' +
@@ -1253,7 +1317,7 @@ function rowHTML(r) {
 }
 function drawTable(rows) {
   const per = 40, pages = Math.max(1, Math.ceil(rows.length / per)); if (S.ui.page >= pages) S.ui.page = 0;
-  let h = '<tr class="hd"><th>Company</th><th>Size</th><th>What Prism found</th><th>Price implies</th><th>Entry ceiling</th><th>Verdict</th></tr>';
+  let h = '<tr class="hd"><th>Company</th><th>Size' + hb('size') + '</th><th>What Prism found' + hb('found') + '</th><th>Price implies' + hb('implies') + '</th><th>Entry ceiling' + hb('ceiling') + '</th><th>Verdict' + hb('verdict') + '</th></tr>';
   rows.slice(S.ui.page * per, (S.ui.page + 1) * per).forEach(r => { h += rowHTML(r); if (OPEN === r.sym) h += '<tr class="detail"><td colspan="6">' + detailHTML(r) + '</td></tr>'; });
   if (!rows.length) h += '<tr><td colspan="6"><p class="note" style="padding:8px 0">No company matches. Try "Near misses" under Show, or open More options to require fewer questions or include smaller companies.</p></td></tr>';
   $('tbl').innerHTML = h; fitDetail();
