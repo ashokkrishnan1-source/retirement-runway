@@ -45,7 +45,12 @@ section{display:flex;flex-direction:column;gap:12px}
 .tool .what{color:var(--fg2);font-size:15px}
 .tool .status{font-size:14.5px;border-top:1px solid var(--line);padding-top:10px;margin-top:auto;overflow-wrap:anywhere}
 .tool .status b{font-weight:600}
-.tool.soon{background:transparent;border-style:dashed;justify-content:center;color:var(--fg3);min-height:120px}
+/* a tool that is not ready yet: a quieter card with a dashed edge, a small heading and a plain link, no big button */
+.tool.soon{background:transparent;border-style:dashed;flex-direction:row;align-items:flex-start;gap:14px}
+.tool.soon .mark{flex:none;background:transparent;border:1.5px dashed var(--fg3);color:var(--fg3)}
+.tool.soon .t{display:flex;flex-direction:column;gap:6px;min-width:0}
+.tool.soon h3{font-size:18px}
+.tool.soon .lnk{padding:4px 0;min-height:36px;align-self:flex-start}
 .btn{font:500 15px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:10px 16px;border-radius:8px;cursor:pointer;min-height:44px;text-decoration:none;display:inline-flex;align-items:center}
 .btn:hover{border-color:var(--fg3)}
 .btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);align-self:flex-start}
@@ -81,20 +86,25 @@ ul.next li:first-child{border-top:0;padding-top:0}
         <div class="row"><a class="btn primary" id="goRunway" href="runway.html">Open Retirement Runway</a><a class="lnk" id="goGuide" href="runway-guide.html">Guide: how to use it</a></div>
       </div>
       <div class="tool">
-        <div class="mark" style="background:var(--otf)" aria-hidden="true">OF</div>
-        <h3>Open This First</h3>
-        <p class="what">A one-page guide for your family: who to call, where things are, what not to do yet, and what doesn't exist.</p>
-        <div class="status" id="stOtf"></div>
-        <a class="btn primary" id="goOtf" href="open-this-first.html">Go to Open This First</a>
-      </div>
-      <div class="tool">
         <div class="mark" style="background:var(--prism)" aria-hidden="true">PR</div>
         <h3>Prism</h3>
         <p class="what">Turns a whole-market stock screener download into a short reading list: the best businesses in it, and which of them are on sale.</p>
         <div class="status" id="stPrism"></div>
         <div class="row"><a class="btn primary" id="goPrism" href="prism.html">Open Prism</a><a class="lnk" id="goPrismGuide" href="prism-guide.html">Guide: how to use it</a></div>
       </div>
-      <div class="tool soon"><p>More tools coming.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="hSoon">
+    <h2 id="hSoon">Coming soon</h2>
+    <div class="tool soon">
+      <div class="mark" aria-hidden="true">OF</div>
+      <div class="t">
+        <h3>Open This First</h3>
+        <p class="what">A one-page guide for your family: who to call, where things are, what not to do yet, and what doesn't exist.</p>
+        <p class="note" id="stOtf"></p>
+        <a class="lnk" id="goOtf" href="open-this-first.html">Open the early version</a>
+      </div>
     </div>
   </section>
 
@@ -141,15 +151,14 @@ function draw(){
   [['goGuide',LINKS.guide],['goPrismGuide',LINKS.prismGuide]].forEach(([id,to])=>{if(to)$(id).href=to;else $(id).hidden=true});
   const r=get(KEYS.sumRunway),o=get(KEYS.sumOtf),hasR=r&&!r.example&&get(KEYS.runway),hasO=o&&get(KEYS.otf),next=[];
   $('stRunway').innerHTML=hasR?'<b>'+esc(r.line)+'</b><br><span class="note">Last opened '+esc(day(r.at))+'</span>':'Not started. It opens with a sample couple so you can see how it works.';
-  $('stOtf').innerHTML=hasO?'<b>'+o.essDone+' of '+o.ess+' essentials sorted</b>'+(o.open?' · '+o.open+' marked to sort out':'')+'<br><span class="note">Last changed '+esc(day(o.at))+'</span>':'Not started. It opens with a made-up example packet.';
+  /* Open This First is still being shaped (the owner moved it to "coming soon" on 2026-11-20): no nudges toward it
+     under Next steps, only a plain way in, and a word that answers already given are kept. */
+  $('stOtf').textContent='It is still being shaped. '+(hasO?'Your answers so far are kept: '+o.essDone+' of '+o.ess+' essentials sorted.':'An early version is here if you would like to try it.');
   const p=get(KEYS.sumPrism),daysOld=p?Math.round((Date.now()-new Date(p.date+'T12:00:00'))/864e5):0;
   $('stPrism').innerHTML=p?'<b>'+(p.sale!=null?p.sale+(p.sale===1?' A-class business is':' A-class businesses are')+' on sale':p.n+(p.n===1?' company passes':' companies pass')+' all five questions')+'</b>'+(p.watch?' · '+p.watch+' on your watch list':'')+'<br><span class="note">Screener file dated '+esc(day(p.date))+'</span>':'Not started. It opens with made-up companies so you can see how it works.';
   const add=(t,pill,cls,href,label)=>next.push('<li><span>'+t+'</span><span class="row">'+(pill?'<span class="pill '+cls+'">'+pill+'</span>':'')+'<a class="btn sm" href="'+href+'">'+label+'</a></span></li>');
   if(!hasR)add('Enter your own numbers in Retirement Runway.','','',LINKS.runway,'Start');
   else if(monthsSince(r.at)>=6)add('Your retirement plan was last opened '+esc(day(r.at))+'. Tax rules change each November; check it still holds.','Review','warn',LINKS.runway,'Open');
-  if(!hasO)add('Answer the essentials in Open This First. It takes about ten minutes.','','',LINKS.otf,'Start');
-  else{if(o.essDone<o.ess)add((o.ess-o.essDone)+' essentials are not sorted yet in Open This First.','To do','warn',LINKS.otf,'Continue');
-    if(monthsSince(o.at)>=12)add('Your family guide is over a year old. Check it is still true, then reprint it.','Review','warn',LINKS.otf,'Open')}
   if(p&&daysOld>7)add('Your screener file in Prism is from '+esc(day(p.date))+'. Load a newer one to refresh the lists.','Stale','warn',LINKS.prism,'Open');
   $('next').innerHTML=next.join('')||'<li><span>Nothing needs your attention. Look again after a move, a new account, or a change in the family.</span><span class="pill good">All set</span></li>';
 }

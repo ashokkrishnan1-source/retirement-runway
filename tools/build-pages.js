@@ -1,10 +1,10 @@
 // Builds the Financial Tools of Life collection from the page-format sources:
 //   home/index.html              the home page
-//   index.html                   Retirement Runway
-//   open-this-first/index.html   Open This First
-//   prism/index.html             Prism
+//   index.html                   Retirement Runway, tool no. 1
 //   guide/index.html             the guide to Retirement Runway (a page of lessons; no data of its own)
+//   prism/index.html             Prism, tool no. 2
 //   prism/guide/index.html       the guide to Prism
+//   open-this-first/index.html   Open This First: listed as "coming soon" on the home page; this is its early version
 // The sources are written for claude.ai, which adds the HTML document wrapper when publishing a page.
 // This script adds the same wrapper where a page needs one, and writes two outputs (both git-ignored):
 //   _site/       the standalone website for GitHub Pages: home at the top, each tool in its own folder

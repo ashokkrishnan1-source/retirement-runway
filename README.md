@@ -6,8 +6,8 @@ browser: nothing a user types or loads is sent anywhere.
 | Tool | What it does | Source |
 |---|---|---|
 | **Retirement Runway** | How long your money lasts, which account should pay the bills, and how much to move into a Roth each year, using real federal and state tax rules. | `index.html` |
-| **Open This First** | A short interview that makes a one-page guide for your family: who to call, where things are, and what not to do yet. | `open-this-first/index.html` |
 | **Prism** | Turns a whole-market stock screener download into a short reading list: the best businesses in it, and which of them are on sale. Bring your own screener file; none is included. | `prism/index.html` |
+| **Open This First** (coming soon) | A short interview that makes a one-page guide for your family: who to call, where things are, and what not to do yet. Still being shaped; an early version is on the site. | `open-this-first/index.html` |
 
 **Use them online:** https://ashokkrishnan1-source.github.io/retirement-runway/
 
@@ -37,7 +37,7 @@ Each of these two tools has a guide that walks through its page in short lessons
 |---|---|
 | `index.html` | Retirement Runway, the whole app. |
 | `guide/index.html`, `prism/guide/index.html` | The guides to Retirement Runway and to Prism: short lessons on how to use each. |
-| `open-this-first/index.html`, `prism/index.html`, `home/index.html` | The other tools and the home page. |
+| `prism/index.html`, `open-this-first/index.html`, `home/index.html` | Prism, the early version of Open This First, and the home page. |
 | `tests/check-rules.js` | Retirement Runway's checks against hand-worked answers, and that the guide names only what is on the page. Run with `node tests/check-rules.js`. |
 | `tests/check-prism.js` | Prism's engine checks, on invented companies, and that its guide names only what is on the page. Run with `node tests/check-prism.js`. |
 | `tests/README.md` | How to run the checks and what to update each year. |

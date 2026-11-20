@@ -155,25 +155,7 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
 - Write a guide the way the rest is written: as you would say it to a friend, one step per line, naming exactly
   what to tap. Not built, and offered to the owner: a copy of a guide to print.
 
-## Tool 2: Open This First (`open-this-first/index.html`)
-
-A family handoff guide: a short interview that produces a one-page "Open This First" cover sheet and a fuller map
-(who to call, where things are, what not to do yet, what doesn't exist). Same page format and rules as Runway:
-single file, no backend, answers stay in the browser (localStorage key `open-this-first-v1`) and in a save file.
-
-- **A map, not a vault.** Never add fields for passwords, account numbers, SSNs or combinations. The page warns
-  when an answer looks like one.
-- Content lives in the `Q` list (id, area, kind, essential, title, question, why, "doesn't exist" label), `INDIA`
-  hints, `DONT` and `FIRST`. These are general prompts, not legal advice; keep jurisdiction-specific claims soft
-  ("a lawyer there can confirm") unless verified.
-- claude.ai pages cannot open the print dialog: the packet downloads as a print-ready HTML file (`downloads`
-  capability); the standalone site also shows a Print button.
-- Published at https://claude.ai/artifact/8LVuAhJux3rvysgJx8Fw2H (owner's private link) and on GitHub Pages under
-  `/open-this-first/` (built by `tools/build-pages.js`). The example is the fictional "Dan Rivera".
-- Source: the owner's business requirements document (pilot stage). Accounts, sharing, payments and assisted
-  setup are deliberately out of scope until the free local version shows demand.
-
-## Tool 3: Prism (`prism/index.html`)
+## Tool 2: Prism (`prism/index.html`)
 
 A stock screener that runs on a file the user brings: one whole-market screener download (CSV or Excel, one row
 per stock). It grades each business on its own merits (the A-list), says which A-list companies are on sale, and
@@ -299,6 +281,33 @@ format as the other tools; no AI, no live data.
 - Deliberately left out, and said so to the owner: estimated option premiums (not in the file; a guess would
   mislead), analyst ratings and price targets, more chart indicators, any combined score.
 
+## Coming soon: Open This First (`open-this-first/index.html`)
+
+**Status (the owner, 2026-11-20): "still in a very formative stage".** He moved it out of the list of tools and
+into "Coming soon" on the home page, and moved Prism up to no. 2. So: the home page shows it in its own "Coming
+soon" section, as a quieter card with a plain link, "Open the early version", and no button; "Next steps" never
+points to it; its own page says "Early version" above the title; it has no guide yet. Its page is still published
+and still works, so answers already given are kept and the owner can go on shaping it. Do not give it a number,
+a guide or a place among the tools until he says it is mature. He has not asked for the page to be taken down or
+for the link to be removed; ask before doing either.
+
+
+A family handoff guide: a short interview that produces a one-page "Open This First" cover sheet and a fuller map
+(who to call, where things are, what not to do yet, what doesn't exist). Same page format and rules as Runway:
+single file, no backend, answers stay in the browser (localStorage key `open-this-first-v1`) and in a save file.
+
+- **A map, not a vault.** Never add fields for passwords, account numbers, SSNs or combinations. The page warns
+  when an answer looks like one.
+- Content lives in the `Q` list (id, area, kind, essential, title, question, why, "doesn't exist" label), `INDIA`
+  hints, `DONT` and `FIRST`. These are general prompts, not legal advice; keep jurisdiction-specific claims soft
+  ("a lawyer there can confirm") unless verified.
+- claude.ai pages cannot open the print dialog: the packet downloads as a print-ready HTML file (`downloads`
+  capability); the standalone site also shows a Print button.
+- Published at https://claude.ai/artifact/8LVuAhJux3rvysgJx8Fw2H (owner's private link) and on GitHub Pages under
+  `/open-this-first/` (built by `tools/build-pages.js`). The example is the fictional "Dan Rivera".
+- Source: the owner's business requirements document (pilot stage). Accounts, sharing, payments and assisted
+  setup are deliberately out of scope until the free local version shows demand.
+
 ## Encrypted and online copies (shared by all tools)
 
 `tools/vault-snippet.js` is the single source for the "Encrypted copies" feature. `node tools/sync-vault.js` copies
@@ -319,7 +328,9 @@ command also copies the two guide snippets (see "The guides").
 ## The collection: Financial Tools of Life (FTOL)
 
 The tools are published together behind a home page (`home/index.html`): tool cards with each person's status,
-next steps, and one "Your data" panel that saves every tool's state as a single encrypted copy.
+next steps, and one "Your data" panel that saves every tool's state as a single encrypted copy. The cards are in
+tool order: Retirement Runway (no. 1), then Prism (no. 2). Under them, "Coming soon" holds Open This First (see its
+section). The encrypted copy still includes Open This First's answers.
 
 - **One link, linked pages.** On claude.ai the collection is one artifact: the home page plus `runway.html`,
   `runway-guide.html`, `open-this-first.html`, `prism.html` and `prism-guide.html` beside it. Pages of one artifact share browser storage and the `db` store, and each keeps
