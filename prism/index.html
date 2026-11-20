@@ -86,6 +86,7 @@ td .s{font:600 14px var(--mono)}
 .symb{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 td .m{font-size:12.5px;color:var(--fg2);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 td .m.i{color:var(--fg3)}
+td .m.w{white-space:normal;overflow:visible;max-width:340px;min-width:200px}
 td .lab{display:none}
 td .bk{display:inline-block}
 td .bk::first-letter{text-transform:uppercase}
@@ -945,13 +946,13 @@ function detailHTML(r) {
     if (r.lists.length) h += '<div class="dbox"><h4>Ways in</h4>' + r.lists.map(id => '<p class="note"><b>' + LI[id][0] + '.</b> ' + LI[id][1] + ' <b>First check:</b> ' + LI[id][2] + ' <b>Wrong if:</b> ' + LI[id][3] + '</p>').join('') + '</div>';
     if (r.classes > 1) h += '<p class="note">This company has ' + r.classes + ' share classes in the file. The most traded one is scored.</p>';
   }
-  h += '<div class="dbox" data-vform="' + esc(r.sym) + '"><h4>Your verdict</h4><div class="fields">' +
+  h += '<div class="dbox" data-vform="' + esc(r.sym) + '"><h4>Your verdict</h4><p class="note">If you sell a put to get in, choose Act, write the strike and expiry under Entry, and set Review by to the expiry date. If the shares are assigned to you, change it to Own and note any call you sell the same way.</p><div class="fields">' +
     '<label class="f">Verdict<select data-vf="v"><option value="">None</option>' + VERDICTS.map(x => '<option' + (v.v === x ? ' selected' : '') + '>' + x + '</option>').join('') + '</select></label>' +
     '<label class="f">Review by<input type="date" data-vf="review" value="' + esc(v.review || '') + '"></label></div>' +
     '<label class="f">Thesis, in one line<input type="text" data-vf="thesis" value="' + esc(v.thesis || '') + '"></label>' +
     '<label class="f">Why it is cheap<input type="text" data-vf="why" value="' + esc(v.why || '') + '"></label>' +
     '<label class="f">Trigger: what would change this verdict<input type="text" data-vf="trigger" value="' + esc(v.trigger || '') + '"></label>' +
-    '<label class="f">How you would enter<input type="text" data-vf="entry" value="' + esc(v.entry || '') + '"></label>' +
+    '<label class="f">Entry: what you did, or plan to do<input type="text" data-vf="entry" placeholder="For example: sold a put, with its strike and expiry date" value="' + esc(v.entry || '') + '"></label>' +
     '<label class="f">Notes<textarea data-vf="notes">' + esc(v.notes || '') + '</textarea></label>' +
     '<div class="row"><button type="button" class="btn sm primary" data-vsave="' + esc(r.sym) + '">Save verdict</button>' + (v.v ? '<span class="note">' + esc(v.v) + ' since ' + day(v.date) + (v.price ? ' at ' + price(v.price) : '') + '</span>' : '') + '</div></div>';
   return h + '</div>';
@@ -967,9 +968,10 @@ function setVerdict(sym, patch) {
 function drawWatch() {
   const all = Object.keys(S.verdicts), live = all.filter(s => /^(Watch|Act|Own)$/.test(S.verdicts[s].v)).sort(), n = v => all.filter(s => S.verdicts[s].v === v).length;
   let h = '';
-  if (live.length) { h += '<div class="scroll"><table><tr><th>Company</th><th>Verdict</th><th>Since</th><th>Price then</th><th>Price now</th><th>The five questions today</th><th>Entry ceiling</th><th>Review by</th><th>Trigger</th></tr>';
+  if (live.length) { h += '<div class="scroll"><table><tr><th>Company</th><th>Verdict</th><th>Review by</th><th>Entry and trigger</th><th>Since</th><th>Price then</th><th>Price now</th><th>The five questions today</th><th>Entry ceiling</th></tr>';
     live.forEach(s => { const v = S.verdicts[s], r = BY[s], due = v.review && v.review <= today();
-      h += '<tr class="main" data-sym="' + esc(s) + '" data-look="1"><td><div class="s"><button type="button" class="symb">' + esc(s) + '</button></div><div class="m">' + esc(r ? r.name || '' : 'not in today\'s file') + '</div></td><td>' + esc(v.v) + '</td><td class="num">' + day(v.date) + '</td><td class="num">' + price(v.price) + '</td><td class="num">' + (r ? price(r.price) : '–') + '</td><td>' + (r && r.scored ? answers(r) : '–') + '</td><td class="num">' + (r && r.ceiling ? price(r.ceiling) : '–') + '</td><td>' + (v.review ? (due ? '<span class="pill warn">Due ' + day(v.review) + '</span>' : day(v.review)) : '–') + '</td><td><div class="m">' + esc(v.trigger || '') + '</div></td></tr>'; });
+      h += '<tr class="main" data-sym="' + esc(s) + '" data-look="1"><td><div class="s"><button type="button" class="symb">' + esc(s) + '</button></div><div class="m">' + esc(r ? r.name || '' : 'not in today\'s file') + '</div></td><td>' + esc(v.v) + '</td><td>' + (v.review ? (due ? '<span class="pill warn">Due ' + day(v.review) + '</span>' : day(v.review)) : '–') + '</td><td>' + (v.entry ? '<div class="m w">' + esc(v.entry) + '</div>' : '') + (v.trigger ? '<div class="m i w">' + esc(v.trigger) + '</div>' : '') + (v.entry || v.trigger ? '' : '–') +
+        '</td><td class="num">' + day(v.date) + '</td><td class="num">' + price(v.price) + '</td><td class="num">' + (r ? price(r.price) : '–') + '</td><td>' + (r && r.scored ? answers(r) : '–') + '</td><td class="num">' + (r && r.ceiling ? price(r.ceiling) : '–') + '</td></tr>'; });
     h += '</table></div>'; }
   else h += '<p class="note">No verdicts yet. Use the Verdict column in the table above, or open a row to add a thesis and a review date.</p>';
   if (all.length) h += '<p class="note">' + n('Reject') + ' rejected · ' + n('No action') + ' no action · ' + live.length + ' on watch, act or own.</p>';

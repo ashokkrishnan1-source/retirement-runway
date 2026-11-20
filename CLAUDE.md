@@ -138,6 +138,12 @@ shortlists, and works out what growth today's price implies. Same page format as
   collapsed "More options", whose summary line says when a setting is not the default. Keep the first company
   on the first screen at phone width.
 - **Unknown is never a pass.** Missing data gives "unknown", which fails a required question.
+- **Verdicts and the owner's put selling.** He mostly gets in by selling cash-secured puts, and sells a near call
+  if he is assigned and doesn't want to hold. The record for that: Act while a put is open (strike and expiry
+  under "Entry", the expiry as "Review by", which turns into a Due mark), then Own once assigned, with any call
+  noted the same way. The verdict form says so, and "Your verdicts" shows the review date and entry first. The
+  five verdict names come from his case-notes headings: don't add trade types as verdicts. Separate strike and
+  expiry boxes, with each file showing the distance from the strike, were offered and are not built.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
 - `FIELDS`: the first spelling of each of the 49 columns was checked against the owner's real downloads (a
   20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 49 headings.
