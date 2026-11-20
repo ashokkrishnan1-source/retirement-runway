@@ -98,6 +98,7 @@ td .also{font-size:12.5px;color:var(--fg2)}
 .hlp{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg2);font:600 11px/1 var(--body);cursor:pointer;vertical-align:1px;letter-spacing:0;text-transform:none;flex:none}
 .hlp:hover{border-color:var(--fg3);color:var(--fg)}
 button.pill{border:0;cursor:pointer;line-height:inherit}
+button.lnk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline dotted var(--fg3);text-underline-offset:3px}
 button.pill:hover{filter:brightness(.96)}
 #helpPop{position:absolute;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.16);font-size:13px;line-height:1.5;color:var(--fg2);text-transform:none;letter-spacing:0;font-weight:400}
 #helpPop b{color:var(--fg)}
@@ -1090,6 +1091,13 @@ const HELP = {
   t_alist: b => { const r = rowOf(b); return '<p><b>A-list.</b> ' + (r && r.pin === 'in' ? 'You put this company on your A-list.' : 'This company passes all six tests of the business itself: return on capital, years of profit, sales growth, cash earnings, share count and debt.') + '</p><p>Tap the row to see the six tests, or to take it off your list.</p>'; },
   t_earn: b => { const r = rowOf(b); return r && r.earn ? '<p><b>Earnings on ' + esc(day(r.earn)) + '</b>, in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days') + '.</p><p>An option that expires after that date carries whatever the report brings. The tag turns amber when the report is within ' + C.put_earn + ' days.</p>' : '<p>The date of the next earnings report.</p>'; },
   t_new: () => '<p><b>New.</b> This company was not on this list in your previous file.</p>',
+  t_ceil: b => { const r = rowOf(b); if (!r || !r.ceiling) return HELP.ceiling();
+    const gc = Math.max(C.exp_floor, Math.min(C.exp_cap, r.histg == null ? 0 : r.histg)), mult = annuity(gc, C.exp_hurdle, C.exp_gT, C.exp_N), need = impliedGrowth(r.fcfy, Object.assign({}, C, {exp_r: C.exp_hurdle}));
+    return '<p><b>Entry ceiling ' + price(r.ceiling) + '.</b> The most you could pay for ' + esc(r.sym) + ' and still expect ' + pct(C.exp_hurdle) + ' a year, if its cash flow grows no faster than ' + pct(gc) + ' a year.</p>' +
+      '<p>It is free cash flow of ' + price(r.price * r.fcfy) + ' a share, times ' + mult.toFixed(1) + '.</p>' +
+      (r.price <= r.ceiling ? '<p>Today\'s price of ' + price(r.price) + ' is ' + pct(1 - r.price / r.ceiling) + ' under it. On those cautious terms you would earn more than ' + pct(C.exp_hurdle) + ' a year.</p>'
+        : '<p>Today\'s price of ' + price(r.price) + ' is ' + (r.price / r.ceiling).toFixed(1) + ' times that. To earn ' + pct(C.exp_hurdle) + ' a year at today\'s price, cash flow would have to grow ' + (need >= 0.4 ? 'more than 40%' : 'about ' + pct(need)) + ' a year for ' + C.exp_N + ' years.</p><p>So the price is paying for growth. That is not a signal to sell: the ceiling is cautious on purpose.</p>') +
+      '<p>It is a hurdle for buying, not a fair value or a target.</p>'; },
   t_noceil: b => { const r = rowOf(b); return '<p><b>No entry ceiling.</b> ' + (r ? 'Prism shows none for ' + esc(r.sym) + ' because ' + noCeil(r)[1] + '.' : '') + '</p>' +
     '<p>The entry ceiling is the price at which a ' + pct(C.exp_hurdle) + ' yearly return still works on cautious growth. Where that sum can\'t be trusted, Prism leaves it out rather than guess.</p><p>The line below is today\'s share price.</p>'; }
 };
@@ -1232,6 +1240,8 @@ function saleWhy(r) {
 /* the four signs that a business is slipping, in words */
 const SW = {growth: 'sales have slowed', returns: 'returns have dropped', forecast: 'a weak forecast', profit: 'profit is falling'};
 const slipWords = r => r.slip ? SLIP.filter(k => r.slip.s[k] === true).map(k => SW[k]).join(', ') : '';
+/* today's price against the entry ceiling, in a few words; a price far above it reads better as a multiple */
+const gapWords = r => r.price <= r.ceiling ? pct(1 - r.price / r.ceiling) + ' under' : r.price >= 2 * r.ceiling ? (r.price / r.ceiling).toFixed(1) + '× ceiling' : pct(r.price / r.ceiling - 1) + ' over';
 /* Why a company has no entry ceiling: a few words for the row and a clause for the note and the detail.
    The order follows the engine, which works a ceiling only from positive cash flow, clean figures, a non-cyclical
    industry and a price that does not already assume very high growth. */
@@ -1324,7 +1334,7 @@ function rowHTML(r) {
   return '<tr class="main" data-sym="' + esc(r.sym) + '"><td class="c-co"><div class="s"><button type="button" class="symb" aria-expanded="' + (OPEN === r.sym) + '" title="Show how ' + esc(r.sym) + ' answered each question">' + esc(r.sym) + '</button>' + (NEW.has(r.sym) ? ' ' + tag('new', 't_new', 'New', r) : '') + '</div><div class="m">' + esc(r.name || '') + '</div><div class="m i">' + esc(r.industry || '') + '</div></td>' +
     '<td class="num c-size">' + money(r.cap) + '</td><td class="c-five">' + found(r) + '</td>' +
     '<td class="c-imp">' + (r.impg == null ? '–' : '<span class="lab">Price implies </span><span class="bk">' + BUCKET[r.bucket].toLowerCase() + '</span><div class="m">' + (r.impg >= 0.4 ? 'over 40%' : r.impg <= -0.15 ? 'under −15%' : pct(r.impg)) + ' a year' + (r.impgSpread > 0.1 ? ' (readings differ)' : '') + '</div>') + '</td>' +
-    '<td class="num c-ceil"><span class="lab">Ceiling </span>' + (r.ceiling ? price(r.ceiling) : tag('mute', 't_noceil', 'None: ' + noCeil(r)[0], r)) + '<div class="m">price ' + price(r.price) + (r.ceiling ? ', ' + (r.price <= r.ceiling ? pct(1 - r.price / r.ceiling) + ' under' : pct(r.price / r.ceiling - 1) + ' over') : '') + '</div></td>' +
+    '<td class="num c-ceil"><span class="lab">Entry ceiling </span>' + (r.ceiling ? '<button type="button" class="lnk tip" data-h="t_ceil" data-sym="' + esc(r.sym) + '">' + price(r.ceiling) + '</button>' : tag('mute', 't_noceil', 'None: ' + noCeil(r)[0], r)) + '<div class="m">price ' + price(r.price) + (r.ceiling ? ', ' + gapWords(r) : '') + '</div></td>' +
     '<td class="c-ver"><select class="vsel" data-sym="' + esc(r.sym) + '" aria-label="Verdict for ' + esc(r.sym) + '"><option value="">Verdict…</option>' + VERDICTS.map(v => '<option' + (verdictOf(r) === v ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></td></tr>';
 }
 function drawTable(rows) {
