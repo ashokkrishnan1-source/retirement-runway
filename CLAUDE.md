@@ -11,7 +11,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `tests/check-rules.js` | Checks against hand-worked answers (107 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
-| `tests/check-prism.js` | Prism's engine checks (200 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
+| `tests/check-prism.js` | Prism's engine checks (220 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -125,7 +125,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (200 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (220 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -150,6 +150,20 @@ format as the other tools; no AI, no live data.
 - **On sale (`saleOf`).** Two of three signs: P/E at most `sale_pe` of the company's own average (the lower of
   the five- and ten-year averages, capped at `sale_pecap` because thin years inflate an average); the price
   implying growth at least `sale_gap` under its sales record; `sale_dd` under the 52-week high.
+- **Holding up or slipping (`slipOf`, `slipState`).** A low price doesn't say whether the business has begun to
+  weaken. Four signs: latest-quarter sales growth far below the company's own pace (the lower of its five- and
+  ten-year growth), return on capital well under its five-year average, next year's forecast far below that pace,
+  and falling operating profit. Two or more is "slipping", none (with at least three judged) is "holding up". The
+  on-sale list puts companies that are holding up first. On the owner's file this split the 27 on sale into 11
+  holding up, 10 with one weak spot and 6 slipping, and the cheapest-looking name showed all four signs.
+- **One worry, many names (`crowd`).** When one sector holds `crowd_share` of the on-sale list, the put desk or
+  the moonshots, a line under the opening sentence says so and names the biggest industries: several companies
+  marked down by the same worry are one bet.
+- **What changed (`changes`, `drawDigest`).** A collapsed line above the list. After a second file it says who
+  joined and left the main lists and why (`whyGone`), and it flags the companies the reader follows (a Watch, Act
+  or Own verdict): review due, earnings within `alert_earn` days, a sharp weekly fall, leaving the A-list, starting
+  to slip, crossing the entry ceiling. `memberships` keeps `slip` and `under` only so the next file can compare.
+  It is hidden when there is nothing to say.
 - **Put desk.** A-list companies that are on sale or fell `put_drop` in a week, with listed options. Rows show the
   weekly fall, the average daily range, the entry ceiling with the price, and days to the next earnings (marked
   inside `put_earn` days). The file has no option prices, and Prism never suggests a strike.
@@ -173,8 +187,8 @@ format as the other tools; no AI, no live data.
   five verdict names come from his case-notes headings: don't add trade types as verdicts. Separate strike and
   expiry boxes, with each file showing the distance from the strike, were offered and are not built.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
-- `FIELDS`: the first spelling of each of the 63 columns was checked against the owner's real downloads (a
-  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 63 headings.
+- `FIELDS`: the first spelling of each of the 66 columns was checked against the owner's real downloads (a
+  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 66 headings.
   Later spellings are guesses for other files, and a match on one is reported on the page as "matched by name
   only". What the full file taught us, so nobody has to find it twice:
   - Statement figures are already in US dollars, whatever currency the company reports in.
@@ -203,8 +217,12 @@ format as the other tools; no AI, no live data.
 - The built-in example carries made-up values for the newer columns too (a second random stream, so the first
   twenty columns stay as they were), including a few young fast growers so the moonshot list has something to show.
 - Not built yet (ask the owner): scoring banks and property (needs P/B, ROE), ten-year divergence, adjusting for
-  share splits (the scorecard drops a split company instead), the owner's industry and override maps, strike and
-  expiry boxes for puts, a "copy a research brief" button.
+  share splits (the scorecard drops a split company instead), the owner's industry and override maps, a "copy a
+  research brief" button. Offered on 2026-11-20 and not chosen then: put arithmetic (he types strike, expiry and
+  premium; Prism works out the return on cash, the breakeven and what it assumes), a one-line market thermometer
+  (share of the A-list on sale, tracked across files), and a "heavily shorted" caution tag.
+- Deliberately left out, and said so to the owner: estimated option premiums (not in the file; a guess would
+  mislead), analyst ratings and price targets, more chart indicators, any combined score.
 
 ## Encrypted and online copies (shared by all tools)
 

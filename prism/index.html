@@ -93,7 +93,7 @@ td .bk::first-letter{text-transform:uppercase}
 td.c-five{min-width:210px;max-width:330px}
 td .ans{font-size:13px}
 td .also{font-size:12.5px;color:var(--fg2)}
-#askHint{text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg3)}
+#askHint,#digHint{text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg3)}
 select.vsel{min-width:96px;padding:5px 6px;min-height:34px}
 .detail>td>div{position:sticky;left:10px;width:var(--tw,100%);max-width:var(--tw,100%)}
 td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -150,9 +150,15 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
     <details id="fieldsBox"><summary>Columns found in the file</summary><div id="fields" class="how" style="margin-top:10px"></div></details>
   </section>
 
+  <details id="digest" hidden>
+    <summary id="digSum">What changed</summary>
+    <div class="card how" id="digBody" style="margin-top:10px;max-width:none"></div>
+  </details>
+
   <section id="listSec">
     <h2 id="tblTitle">Companies</h2>
     <p id="lede" style="max-width:80ch"></p>
+    <p class="note" id="crowd" hidden></p>
     <label class="f" for="show" style="max-width:460px">Show<select id="show"></select></label>
     <div class="card" id="listInfo" hidden></div>
     <details id="askBox">
@@ -275,7 +281,16 @@ var CONTROLS = {
   /* Put desk: an A-list company that is on sale or fell this much in a week. Earnings within put_earn days are marked. */
   put_drop: -0.08, put_earn: 45,
   /* Moonshots: small, fast-growing, and able to pay their own way for now */
-  moon_max: 2e10, moon_rev: 1e8, moon_growth: 0.30, moon_growth3: 0.20, moon_gm: 0.50, moon_runway: 3, moon_dil: 0.08, moon_r40: 0.40
+  moon_max: 2e10, moon_rev: 1e8, moon_growth: 0.30, moon_growth3: 0.20, moon_gm: 0.50, moon_runway: 3, moon_dil: 0.08, moon_r40: 0.40,
+  /* Is the business slipping? Four signs; two or more is "slipping". */
+  slip_half: 0.5,   /* latest-quarter sales growth, or next year's forecast, under this share of the company's own pace ... */
+  slip_gap: 0.05,   /* ... and at least this far under it */
+  slip_roic: 0.8,   /* return on capital under this share of its own five-year average */
+  slip_profit: 0.05, /* operating profit down by more than this over a year */
+  /* "What changed": earnings within this many days are called out for companies the reader is following */
+  alert_earn: 14,
+  /* "One worry, many names": a sector with this share of a list, and at least crowd_min companies, is called out */
+  crowd_share: 0.3, crowd_min: 4
 };
 
 /* Columns the engine understands: [name used here, kind, header spellings with letters and digits only].
@@ -309,7 +324,9 @@ var FIELDS = [
   ['py', 'n', 'profityears'], ['revg10', 'p', 'revgrowth10y'], ['ocf', 'n', 'operatingcf', 'operatingcashflow'], ['ni', 'n', 'netincome'],
   ['ndlev', 'n', 'ndebitda', 'netdebtebitda'], ['pe5', 'n', 'pe5y'], ['pe10', 'n', 'pe10y'],
   ['ret1w', 'p', 'return1w'], ['ret1m', 'p', 'return1m'], ['ma50', 'p', '50machg'], ['atr', 'n', 'atr'],
-  ['opt', 's', 'options'], ['earn', 'd', 'nextearnings'], ['revgn', 'p', 'revgrnexty']
+  ['opt', 's', 'options'], ['earn', 'd', 'nextearnings'], ['revgn', 'p', 'revgrnexty'],
+  /* for "is the business slipping?" */
+  ['revgq', 'p', 'revgrowthq'], ['oig', 'p', 'opincgrowth'], ['epsgq', 'p', 'epsgrowthq']
 ];
 var VERIFIED = FIELDS.length;   /* how many columns have a checked first spelling: all of them */
 
@@ -680,6 +697,43 @@ function moonOf(r, C) {
     r.gm >= C.moon_gm && r.netcash != null && r.netcash >= 0 && r.runway != null && r.runway >= C.moon_runway &&
     r.sh != null && r.sh <= C.moon_dil && (r.revg + (r.fcfm || 0)) >= C.moon_r40;
 }
+/* Has the business started to weaken? Four separate signs, each true (the sign is there), false or null (can't say):
+   growth   the latest quarter's sales growth is far below the company's own pace (the lower of its five- and ten-year growth)
+   returns  return on capital is well under its own five-year average
+   forecast analysts expect far less sales growth next year than that pace
+   profit   operating profit is falling (earnings per share in the latest quarter, when the file lacks that figure)
+   n counts the signs present and known the signs that could be judged. */
+var SLIP = ['growth', 'returns', 'forecast', 'profit'];
+function slipOf(r, C) {
+  var pace = r.revg5 != null && r.revg10 != null ? Math.min(r.revg5, r.revg10) : (r.revg5 != null ? r.revg5 : (r.revg10 != null ? r.revg10 : null));
+  var far = function (x) { return x == null || pace == null ? null : x < Math.min(C.slip_half * pace, pace - C.slip_gap); };
+  var s = {growth: far(r.revgq), returns: r.roic == null || r.roic5 == null ? null : r.roic < C.slip_roic * r.roic5, forecast: far(r.revgn),
+    profit: r.oig != null ? r.oig < -C.slip_profit : (r.epsgq != null ? r.epsgq < -C.slip_profit : null)};
+  var n = 0, known = 0; SLIP.forEach(function (k) { if (s[k] != null) known++; if (s[k] === true) n++; });
+  return {s: s, n: n, known: known, pace: pace};
+}
+/* 'slipping' with two or more signs, 'steady' with none and at least three judged, 'one' with a single sign, else null */
+function slipState(z) { return !z ? null : (z.n >= 2 ? 'slipping' : (z.n === 1 ? 'one' : (z.known >= 3 ? 'steady' : null))); }
+/* One worry, many names: the sector that holds the largest share of a list, with its biggest industries.
+   Returns null unless that sector has at least crowd_min companies and crowd_share of the list. */
+function crowd(rows, C) {
+  var bySec = {}, n = rows.length; rows.forEach(function (r) { var k = r.sector || ''; if (k) (bySec[k] = bySec[k] || []).push(r); });
+  var top = null; Object.keys(bySec).forEach(function (k) { if (!top || bySec[k].length > bySec[top].length) top = k; });
+  if (!top || bySec[top].length < C.crowd_min || bySec[top].length < C.crowd_share * n) return null;
+  var byInd = {}; bySec[top].forEach(function (r) { var k = r.industry || ''; if (k) byInd[k] = (byInd[k] || 0) + 1; });
+  var inds = Object.keys(byInd).filter(function (k) { return byInd[k] >= 3; }).sort(function (a, b) { return byInd[b] - byInd[a] || (a < b ? -1 : 1); }).slice(0, 2).map(function (k) { return [k, byInd[k]]; });
+  return {sector: top, count: bySec[top].length, of: n, inds: inds};
+}
+/* Who joined and who left each list between two files: {list: {in: [...], out: [...]}}, for lists both files have. */
+function changes(prev, cur) {
+  var out = {};
+  Object.keys(cur || {}).forEach(function (id) {
+    if (!prev || !Array.isArray(prev[id]) || !Array.isArray(cur[id])) return;
+    var a = {}, b = {}; prev[id].forEach(function (s) { a[s] = 1; }); cur[id].forEach(function (s) { b[s] = 1; });
+    out[id] = {in: cur[id].filter(function (s) { return !a[s]; }), out: prev[id].filter(function (s) { return !b[s]; })};
+  });
+  return out;
+}
 /* opt.pins: the reader's own choices, {symbol: 'in' or 'out'}, which win over the grade. opt.tierB also counts
    companies that miss exactly one test. opt.today is the date of the file, for counting days to the next earnings. */
 function judge(rows, C, opt) {
@@ -689,6 +743,7 @@ function judge(rows, C, opt) {
     r.trend = r.ma50 == null || r.ret1m == null ? null : (r.ma50 < 0 && r.ret1m < 0 ? 'down' : (r.ma50 > 0 ? 'up' : 'flat'));
     if (r.earn && opt.today) r.earnIn = daysBetween(opt.today, r.earn);
     if (r.scored) { r.a = gradeOf(r, C); r.grade = r.a.yes === 6 ? 'A' : (r.a.yes === 5 ? 'B' : null); }
+    r.slip = slipOf(r, C); r.slipping = slipState(r.slip);
     var pin = pins[r.sym] === 'in' || pins[r.sym] === 'out' ? pins[r.sym] : null;
     r.pin = pin;
     r.alist = r.primary !== false && r.price > 0 && (pin === 'in' || (pin !== 'out' && (r.grade === 'A' || (!!opt.tierB && r.grade === 'B'))));
@@ -749,9 +804,12 @@ function cardStats(card, rows) {
 }
 
 function memberships(rows, need) {
-  var out = {all: [], A: [], sale: [], put: [], moon: []}; LISTS.forEach(function (id) { out[id] = []; });
+  /* slip and under are not lists to read: they let the next file say what changed for a company the reader follows */
+  var out = {all: [], A: [], sale: [], put: [], moon: [], slip: [], under: []}; LISTS.forEach(function (id) { out[id] = []; });
   rows.forEach(function (r) {
     if (r.hold) return;
+    if (r.slipping === 'slipping' && r.scored) out.slip.push(r.sym);
+    if (r.ceiling && r.price <= r.ceiling) out.under.push(r.sym);
     if (r.moon) out.moon.push(r.sym);
     if (r.pool === 'main' && r.alist) { out.A.push(r.sym); if (r.onSale) out.sale.push(r.sym); if (r.put) out.put.push(r.sym); }
     if (!r.scored || r.blocks.length || r.pool !== 'main') return;
@@ -797,9 +855,10 @@ const LI = {
   cycle: ['Cycle survivors', 'A cyclical company that has fallen hard but has little debt and still earns cash.', 'Value it on mid-cycle earnings, then test two more bad years.', 'Demand has changed for good, or debt falls due before the cycle turns.', 'D09 · G']
 };
 const LISTSORT = {qos: r => Math.min(r.Q, r.V), decl: r => -r.impg, gwr: r => r.gap, cash: r => r.nc_cap, cannibal: r => -r.sh, fallen: r => r.Q, leader: r => r.indPrice, repair: r => r.fcfg, cycle: r => -r.ret1y};
-/* the newer views: most signs of a low price first, then the deepest discount to its own past; the biggest fall this week
+/* the newer views: on sale, businesses that are holding up come before those that are slipping, then
+   most signs of a low price first, then the deepest discount to its own past; the biggest fall this week
    first; the largest company first; growth plus cash margin first */
-Object.assign(LISTSORT, {sale: r => r.sale.n - (r.pe > 0 && r.sale.ownPE ? Math.min(0.99, r.pe / r.sale.ownPE / 2) : 0.5), put: r => -(r.ret1w == null ? 0 : r.ret1w), A: r => r.cap, moon: r => r.revg + (r.fcfm || 0)});
+Object.assign(LISTSORT, {sale: r => (r.slipping === 'steady' ? 20 : r.slipping === 'slipping' ? 0 : 10) + r.sale.n - (r.pe > 0 && r.sale.ownPE ? Math.min(0.99, r.pe / r.sale.ownPE / 2) : 0.5), put: r => -(r.ret1w == null ? 0 : r.ret1w), A: r => r.cap, moon: r => r.revg + (r.fcfm || 0)});
 const SORTS = {
   auto: ['Best fit first', null], weak: ['Fewest weak spots', r => r.weak], V: ['Lowest expectations', r => r.V], Q: ['Best business', r => r.Q],
   P: ['Fastest per-share progress', r => r.P], T: ['Most out of favor', r => r.T], cap: ['Largest company', r => r.cap],
@@ -812,7 +871,7 @@ const ML = {roic: 'Return on capital', roic5: 'Return on capital, 5-year', gm: '
 const FLABEL = {sym: 'Symbol', name: 'Company name', sector: 'Sector', industry: 'Industry', price: 'Stock price', cap: 'Market cap', vol: 'Average volume', rev: 'Revenue', pe: 'P/E ratio', ev_ebitda: 'EV/EBITDA', lev: 'Debt / EBITDA', cash: 'Total cash', debt: 'Total debt', netcash: 'Net cash', fcfy: 'FCF yield', roic: 'ROIC', revg: 'Revenue growth', fcfg: 'FCF growth', sh: 'Shares change (1 year)', ret1y: 'Return 1 year',
   country: 'Country', exchange: 'Exchange', cik: 'CIK', pdate: 'Price date', split: 'Last split date', ev: 'Enterprise value', fcf: 'Free cash flow', sbc: 'Stock-based compensation', shares: 'Shares outstanding', fpe: 'Forward P/E', ev_fcf: 'EV/FCF', pb: 'P/B ratio', cov: 'Interest coverage', altman: 'Altman Z-score', piotroski: 'Piotroski F-score', analysts: 'Analyst count', eyield: 'Earnings yield', roic5: 'ROIC 5-year', roe: 'ROE', gm: 'Gross margin', om: 'Operating margin', fcfm: 'FCF margin', revg3: 'Revenue growth 3-year', revg5: 'Revenue growth 5-year', epsg: 'EPS growth', buyback: 'Buyback yield', dd: '52-week high change', insider: 'Insider ownership', short: 'Short % of float',
   py: 'Profit years', revg10: 'Revenue growth 10-year', ocf: 'Operating cash flow', ni: 'Net income', ndlev: 'Net debt / EBITDA', pe5: 'P/E 5-year average', pe10: 'P/E 10-year average',
-  ret1w: 'Return 1 week', ret1m: 'Return 1 month', ma50: '50-day average change', atr: 'Average daily range', opt: 'Options', earn: 'Next earnings', revgn: 'Revenue growth next year'};
+  ret1w: 'Return 1 week', ret1m: 'Return 1 month', ma50: '50-day average change', atr: 'Average daily range', opt: 'Options', earn: 'Next earnings', revgn: 'Revenue growth next year', revgq: 'Revenue growth latest quarter', oig: 'Operating income growth', epsgq: 'EPS growth latest quarter'};
 /* label, explanation, whether it hides the row by default */
 const FL = {
   fcf_hi: ['Cash yield looks too high', 'A free-cash-flow yield this high is usually a one-off, customer money, a cycle peak or a data error.'],
@@ -895,7 +954,7 @@ function exampleData() {
     ['Communication Services', [['Telecom Services', 'Telecom'], ['Entertainment', 'Media']], 0.07, 0.08, 0.06, 30], ['Utilities', [['Utilities - Regulated Electric', 'Power']], 0.01, 0.055, 0.05, 22],
     ['Financials', [['Banks - Regional', 'Bank'], ['Insurance Brokers', 'Brokers'], ['Shell Companies', 'Acquisition']], 0.05, 0.10, 0.06, 40], ['Real Estate', [['REIT - Retail', 'Properties']], 0.04, 0.04, 0.04, 15]];
   const headers = ['Symbol', 'Stock Price', 'Market Cap', 'EV/EBITDA', 'FCF Yield', 'Company Name', 'Industry', 'Sector', 'Avg. Volume', 'Return 1Y', 'Revenue', 'PE Ratio', 'Shares Ch. (YoY)', 'Total Cash', 'Total Debt', 'Net Cash', 'Debt / EBITDA', 'ROIC', 'Rev. Growth', 'FCF Growth',
-    'ROIC (5Y)', 'Profit Years', 'Rev. Growth 3Y', 'Rev. Growth 5Y', 'Rev. Growth 10Y', 'Net Income', 'Operating CF', 'ND / EBITDA', 'Int. Cov.', 'PE (5Y)', 'PE (10Y)', '52W High Chg', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR', 'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Gross Margin', 'FCF'];
+    'ROIC (5Y)', 'Profit Years', 'Rev. Growth 3Y', 'Rev. Growth 5Y', 'Rev. Growth 10Y', 'Net Income', 'Operating CF', 'ND / EBITDA', 'Int. Cov.', 'PE (5Y)', 'PE (10Y)', '52W High Chg', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR', 'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Gross Margin', 'FCF', 'Rev. Growth (Q)', 'OpInc Growth'];
   /* a second stream of made-up numbers for the newer columns, so the first twenty stay as they were */
   let a2 = 20261120; const rnd2 = () => { a2 |= 0; a2 = a2 + 0x6D2B79F5 | 0; let t = Math.imul(a2 ^ a2 >>> 15, 1 | a2); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const n2 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd2(); return (u - 3) / 0.7071; };
@@ -921,7 +980,9 @@ function exampleData() {
       Math.round(ni), Math.round(ni > 0 ? ni * (1.15 + 0.25 * n2()) : cap * 0.01), debt > 0 && lev > 0 ? +(lev * (debt - cash2) / debt).toFixed(2) : -1, lev > 0 ? +Math.max(0.5, 14 / lev + 2 * n2()).toFixed(1) : null,
       own ? +(own * (0.9 + 0.2 * rnd2())).toFixed(2) : null, own ? +own.toFixed(2) : null, +(-Math.min(0.8, Math.max(0.01, 0.10 - 0.14 * zt + 0.05 * Math.abs(n2())))).toFixed(4),
       +(0.035 * n2() - 0.005).toFixed(4), +m1.toFixed(4), +(0.6 * m1 + 0.02 * n2()).toFixed(4), +(px * (0.018 + 0.02 * rnd2())).toFixed(2), cap >= 4e8 ? 'Yes' : 'No', due.toISOString().slice(0, 10),
-      +(0.8 * revg + 0.01 + 0.02 * n2()).toFixed(4), +gm.toFixed(4), Math.round(fcfy * cap)]));
+      +(0.8 * revg + 0.01 + 0.02 * n2()).toFixed(4), +gm.toFixed(4), Math.round(fcfy * cap),
+      /* a share price that has fallen hard sometimes has a business that has slowed behind it */
+      +(revg + 0.03 * n2() - (zt < -0.8 && rnd2() < 0.5 ? 0.6 * Math.abs(revg) + 0.05 : 0)).toFixed(4), +(revg + 0.05 * n2() + 0.03 * zq).toFixed(4)]));
   } });
   const m = mapTable(headers, data);
   return {rows: m.rows, meta: {file: '', n: m.rows.length, date: today(), dateFrom: 'load', report: m.report, example: true}};
@@ -1015,7 +1076,7 @@ function render() {
   const one = rows.length === 1, cntc = n(rows.length) + (one ? ' company' : ' companies');
   let title, lede;
   if (view === 'sale') { title = n(rows.length) + (one ? ' A-class business is on sale' : ' A-class businesses are on sale');
-    lede = 'Read these first. Each one passes six tests of the business itself, and its price is low on at least two of three counts: against its own past, against the growth it has delivered, and against its high. That is ' + cnt('sale') + ' of the ' + cnt('A') + ' on the A-list.'; }
+    lede = 'Each one passes six tests of the business, and its price is low on two of three counts: its own past, its growth record and its high. That is ' + cnt('sale') + ' of the ' + cnt('A') + ' on the A-list. Businesses that are holding up come first.'; }
   else if (view === 'put') { title = cntc + ' on the put desk';
     lede = 'A-list companies that are on sale, or fell ' + pct(-C.put_drop) + ' or more in a week, and have listed options. Each row gives the price against the entry ceiling, how much the price moves in a day and when earnings are due. Option prices are not in the file: read those at your broker.'; }
   else if (view === 'A') { title = n(rows.length) + (one ? ' A-class business' : ' A-class businesses');
@@ -1029,6 +1090,11 @@ function render() {
       : k ? 'Each one answers yes to what you require: ' + need.map(q => GQ[q][0].replace('?', '').toLowerCase()).join(', ') + '.' : 'No question is required, so every scored company is listed.';
     if (k) lede += ' That is ' + cnt('') + ' of ' + n(base5.length) + ' eligible companies.'; }
   $('tblTitle').textContent = title; $('lede').textContent = lede + since;
+  /* one worry, many names: say so when one sector fills a large part of a list of things to buy or sell puts on */
+  const cw = view === 'sale' || view === 'put' || view === 'moon' ? crowd(viewRows(base, view), C) : null, low = x => x.split(' - ').reverse().join(' ').toLowerCase();
+  $('crowd').hidden = !cw;
+  if (cw) $('crowd').textContent = cw.count + ' of the ' + cw.of + ' are ' + low(cw.sector) + ' companies' + (cw.inds.length ? ', including ' + cw.inds.map(x => x[1] + ' in ' + low(x[0])).join(' and ') : '') + '. ' + (view === 'put' ? 'Selling puts on' : 'Buying') + ' several of them is one bet, not several.';
+  drawDigest();
   const hint = [];
   if (k < 5) hint.push(k + ' of 5 questions required');
   if (S.tierB) hint.push('A-list includes companies that miss one test');
@@ -1099,6 +1165,9 @@ function saleWhy(r) {
   if (z.high === true) a.push(p0(-r.dd) + ' off its high');
   return a.join(' · ');
 }
+/* the four signs that a business is slipping, in words */
+const SW = {growth: 'sales have slowed', returns: 'returns have dropped', forecast: 'a weak forecast', profit: 'profit is falling'};
+const slipWords = r => r.slip ? SLIP.filter(k => r.slip.s[k] === true).map(k => SW[k]).join(', ') : '';
 const trendPill = r => r.trend === 'down' ? '<span class="pill mute" title="Below its 50-day average and down over the past month">Falling</span>' : r.trend === 'up' ? '<span class="pill mute" title="Above its 50-day average">Rising</span>' : '';
 /* why a company is on the A-list when it did not pass all six tests */
 function gradeLine(r) {
@@ -1120,6 +1189,9 @@ function found(r) {
       if (r.earnIn != null && r.earnIn >= 0) pills.push('<span class="pill ' + (r.earnIn <= C.put_earn ? 'warn' : 'mute') + '" title="Next earnings ' + esc(day(r.earn)) + '">Earnings in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days') + '</span>'); }
     if (view === 'A' && r.a && r.roic5 != null && r.py != null) h += '<div class="ans">Earns ' + p0(r.roic5) + ' on its capital · profitable ' + r.py + ' years</div>';
     if (r.onSale) h += '<div class="also">' + (view === 'sale' ? '' : 'On sale: ') + esc(saleWhy(r)) + '</div>';
+    if (r.slipping === 'slipping') h += '<div class="ans"><b>Slipping:</b> ' + esc(slipWords(r)) + '.</div>';
+    else if (r.slipping === 'steady') pills.push('<span class="pill good" title="None of the four signs that a business is weakening">Holding up</span>');
+    else if (r.slipping === 'one') pills.push('<span class="pill mute" title="One sign of weakening: ' + esc(slipWords(r)) + '">One weak spot</span>');
     if (view !== 'A' && trendPill(r)) pills.push(trendPill(r));
   } else if (view === 'moon') {
     h += '<div class="ans">Sales up ' + p0(r.revg) + ' · gross margin ' + p0(r.gm) + '</div><div class="also">' + (r.runway >= 99 ? 'Earns its own cash' : 'Cash for ' + (r.runway >= 10 ? 'over 10' : r.runway.toFixed(1).replace(/\.0$/, '')) + ' years at today\'s spending') + ' · share count ' + (r.sh < 0 ? 'down ' + p0(-r.sh) : 'up ' + p0(r.sh)) + '</div>';
@@ -1129,6 +1201,7 @@ function found(r) {
     h += !view && S.ui.need.length === 5 ? '' : answers(r);
     if (also.length) h += '<div class="also" title="' + esc(also.join(' · ')) + '">' + (view && view !== 'near' ? 'Also: ' : '') + esc(also.slice(0, 2).join(' · ')) + (also.length > 2 ? ' · +' + (also.length - 2) + ' more' : '') + '</div>';
     if (r.alist) pills.push('<span class="pill good" title="Passes the six tests of an A-class business">A-list</span>');
+    if (r.slipping === 'slipping') pills.push('<span class="pill warn" title="The business shows signs of weakening: ' + esc(slipWords(r)) + '">Slipping</span>');
     if (trendPill(r)) pills.push(trendPill(r));
   }
   fl.slice(0, 2).forEach(f => pills.push('<span class="pill ' + (SEVERE[f] ? 'warn' : 'mute') + '" title="' + esc(FL[f][0]) + '">' + FSHORT[f] + '</span>'));
@@ -1156,6 +1229,12 @@ function aBox(r) {
       [r.pe > 0 && z.ownPE ? 'P/E of ' + r.pe.toFixed(1) + ' against its own long-run ' + (z.ownPE >= C.sale_pecap ? 'average of over ' + C.sale_pecap : z.ownPE.toFixed(1)) : 'No P/E to set against its own past', z.own, 'needs ' + pct(1 - C.sale_pe) + ' under'],
       [z.imp != null && z.rec != null ? 'Price implies ' + gtxt(z.imp) + '; sales grew ' + pct(z.rec) + ' a year' : 'No growth record to set the price against', z.implied, 'needs ' + Math.round(C.sale_gap * 100) + ' points under'],
       [r.dd != null ? pct(-r.dd) + ' below its 52-week high' : 'No 52-week high in the file', z.high, 'needs ' + pct(-C.sale_dd)]]); }
+  if (r.slip && r.slip.known) { const z = r.slip, st = r.slipping, good = v => v == null ? null : !v;
+    h += '<p class="note"><b>Is the business slipping?</b> ' + (st === 'slipping' ? 'Yes: ' + z.n + ' of 4 signs.' : st === 'one' ? 'One sign of 4. Two would count as slipping.' : st === 'steady' ? 'No: none of 4 signs.' : 'Too little in the file to say.') + '</p>' + kv([
+      [r.revgq != null && z.pace != null ? 'Sales grew ' + pct(r.revgq) + ' in the latest quarter; its usual pace is ' + pct(z.pace) + ' a year' : 'No latest-quarter sales growth to compare', good(z.s.growth), 'a sign if far below'],
+      [r.roic != null && r.roic5 != null ? 'Return on capital is ' + pct(r.roic) + ' now, ' + pct(r.roic5) + ' over five years' : 'No return on capital to compare', good(z.s.returns), 'a sign under ' + pct(C.slip_roic) + ' of it'],
+      [r.revgn != null && z.pace != null ? 'Analysts expect sales to grow ' + pct(r.revgn) + ' next year' : 'No forecast in the file', good(z.s.forecast), 'a sign if far below'],
+      [r.oig != null ? 'Operating profit ' + (r.oig < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.oig)) + ' over the year' : r.epsgq != null ? 'Earnings per share ' + (r.epsgq < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.epsgq)) + ' in the latest quarter' : 'No profit trend in the file', good(z.s.profit), 'a sign if down ' + pct(C.slip_profit)]]); }
   if (r.alist) { const a = [];
     if (r.earnIn != null) a.push('next earnings ' + day(r.earn) + (r.earnIn >= 0 ? ', in ' + r.earnIn + ' days' : ''));
     if (r.atr != null && r.price > 0) a.push('the price moves about ' + pct(r.atr / r.price) + ' a day');
@@ -1258,6 +1337,45 @@ function drawWatch() {
   $('watch').innerHTML = h;
 }
 const CARDNAME = {sale: 'A-list on sale', put: 'Put desk', A: 'The whole A-list', all: 'Yes to all five', moon: 'Moonshots'};
+/* Why a company is no longer on a list, in a few words. */
+function whyGone(id, sym) {
+  const r = BY[sym]; if (!r) return 'not in this file';
+  if (verdictOf(r) === 'Reject') return 'rejected by you';
+  if (r.hold) return 'data warning';
+  if (r.pool !== 'main' && id !== 'moon') return 'now under ' + money(C.size_main);
+  if ((id === 'A' || id === 'sale' || id === 'put') && !r.alist) return r.pin === 'out' ? 'taken off by you' : r.a && r.a.yes < 6 ? 'off the A-list: ' + r.a.no.concat(r.a.unk).map(k => AT[k]).join(', ') : 'off the A-list';
+  if (id === 'sale') return 'no longer cheap enough';
+  if (id === 'put') return r.opt && /^n/i.test(r.opt) ? 'no listed options' : 'no longer on sale or falling';
+  if (id === 'moon') return 'no longer passes the tests';
+  if (id === 'all') return r.blocks.length ? 'blocked for now' : 'now ' + r.n5 + ' of 5';
+  return '';
+}
+/* What changed: notes on the companies the reader follows (a Watch, Act or Own verdict), then who joined and left the
+   main lists since the previous file. Hidden when there is nothing to say. */
+function drawDigest() {
+  const box = $('digest'), m = DATA.meta, H = S.hist, two = !!(H && H.prev && !m.example && H.cur.date === m.date), ch = two ? changes(H.prev.m, H.cur.m) : {};
+  const had = (id, x) => !!(ch[id] && ch[id].in.includes(x)), lost = (id, x) => !!(ch[id] && ch[id].out.includes(x)), canA = two && H.prev.can && H.prev.can.grade;
+  const mine = m.example ? [] : Object.keys(S.verdicts).filter(x => /^(Watch|Act|Own)$/.test(S.verdicts[x].v)).sort(), notes = [];
+  mine.forEach(x => { const r = BY[x], v = S.verdicts[x], a = [];
+    if (!r) a.push('not in this file');
+    else {
+      if (v.review && v.review <= m.date) a.push('review was due ' + day(v.review));
+      if (r.earnIn != null && r.earnIn >= 0 && r.earnIn <= C.alert_earn) a.push('earnings in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days'));
+      if (r.ret1w != null && r.ret1w <= C.put_drop) a.push('down ' + p0(-r.ret1w) + ' this week');
+      if (canA && lost('A', x)) a.push(whyGone('A', x)); else if (canA && had('A', x)) a.push('joined the A-list');
+      if (canA && had('sale', x)) a.push('now on sale'); else if (canA && lost('sale', x) && r.alist) a.push('no longer on sale');
+      if (had('slip', x)) a.push('now slipping: ' + slipWords(r)); else if (lost('slip', x)) a.push('no longer slipping');
+      if (had('under', x)) a.push('price is now under its entry ceiling'); else if (lost('under', x) && r.ceiling) a.push('price is back above its entry ceiling');
+    }
+    if (a.length) notes.push('<b>' + esc(x) + '</b> (' + esc(v.v) + '): ' + esc(a.join('; ')) + '.'); });
+  const groups = !two ? [] : [['sale', canA], ['put', canA], ['A', canA], ['moon', H.prev.can && H.prev.can.moon], ['all', true]].filter(g => g[1] && ch[g[0]] && (ch[g[0]].in.length || ch[g[0]].out.length)).map(g => g[0]);
+  const moves = groups.reduce((n, id) => n + ch[id].in.length + ch[id].out.length, 0);
+  box.hidden = !notes.length && !moves; if (box.hidden) return;
+  const few = (a, f) => a.slice(0, 10).map(f).join(', ') + (a.length > 10 ? ' and ' + (a.length - 10) + ' more' : '');
+  $('digSum').innerHTML = (two ? 'Since your last file (' + esc(day(H.prev.date)) + ')' : 'Today') + '<span id="digHint"> · ' + [notes.length ? notes.length + (notes.length === 1 ? ' note' : ' notes') + ' on companies you follow' : '', moves ? moves + (moves === 1 ? ' change' : ' changes') + ' to the lists' : ''].filter(Boolean).join(' · ') + '</span>';
+  $('digBody').innerHTML = (notes.length ? '<div><b>Companies you follow.</b></div>' + notes.map(x => '<div>' + x + '</div>').join('') : '') +
+    groups.map(id => '<div><b>' + CARDNAME[id] + '.</b> ' + (ch[id].in.length ? 'Joined: ' + esc(few(ch[id].in, x => x)) + '. ' : '') + (ch[id].out.length ? 'Left: ' + esc(few(ch[id].out, x => { const w = whyGone(id, x); return x + (w ? ' (' + w + ')' : ''); })) + '.' : '') + '</div>').join('');
+}
 function drawCard() {
   const c = S.card, st = DATA.meta.example ? null : cardStats(c, RES.rows), sp = x => x == null ? '–' : (x > 0 ? '+' : '') + pct(x);
   let h = '<p class="note">Each time you load a newer file, Prism notes which companies have joined each list and at what price. Later files show how they have done since, next to the typical large company over the same days. It is the way to find out which list deserves your time.</p>';
@@ -1299,6 +1417,9 @@ function drawHow() {
     '<div><b>What it does.</b> Prism reads one screener download with a row for every listed company. It grades each business on its own merits, says which of the good ones are on sale, and keeps a second set of lists for companies that are simply cheap and out of favor. It runs in your browser from the file you give it. There is no live data and no AI behind it.</div>' +
     '<div><b>The A-list.</b> Six tests of the business itself, with the price left out: a return on capital of at least ' + pct(C.a_roic5) + ' averaged over five years and ' + pct(C.a_roic) + ' now; a profit in each of the last ' + C.a_years + ' years; sales growing at least ' + pct(C.a_grow) + ' a year over five years, and over ten when the file has it; cash from operations of at least ' + pct(C.a_cash) + ' of reported profit; a share count growing no more than ' + pct(C.a_dil) + ' a year; and more cash than debt, or net debt of at most ' + C.a_lev + ' times EBITDA with interest covered ' + C.a_cov + ' times. A company must pass all six, and a test the file can\'t answer does not count as passed. Open any row to put a company on your A-list or take it off: your choice wins.</div>' +
     '<div><b>On sale.</b> An A-list company is on sale when at least two of three signs are present. Its P/E is ' + pct(1 - C.sale_pe) + ' or more below its own five- or ten-year average, whichever is lower (an average above ' + C.sale_pecap + ' counts as ' + C.sale_pecap + ', because a few thin years can inflate it). The price implies growth at least ' + Math.round(C.sale_gap * 100) + ' points below what its sales have done over five and ten years. It stands ' + pct(-C.sale_dd) + ' or more below its 52-week high.</div>' +
+    '<div><b>Holding up or slipping.</b> A low price says nothing about whether the business has begun to weaken. Prism looks for four signs: sales growth in the latest quarter far below the company\'s own pace; return on capital under ' + pct(C.slip_roic) + ' of its five-year average; a forecast for next year far below that pace; and operating profit down more than ' + pct(C.slip_profit) + '. Two or more signs is "slipping", none is "holding up". On the on-sale list, companies that are holding up come first.</div>' +
+    '<div><b>One worry, many names.</b> When one sector fills ' + pct(C.crowd_share) + ' or more of the on-sale list, the put desk or the moonshots, Prism says so. Several companies marked down by the same worry are one bet.</div>' +
+    '<div><b>What changed.</b> After a second file is loaded, a line above the list says who joined and left the main lists and why, and flags the companies you follow: a review that is due, earnings within ' + C.alert_earn + ' days, a sharp fall, a company that left the A-list or began to slip, and a price that crossed its entry ceiling.</div>' +
     '<div><b>Put desk.</b> A-list companies that are on sale or fell ' + pct(-C.put_drop) + ' or more in a week, and have listed options. Each row shows the days to the next earnings report, marked when it falls within ' + C.put_earn + ' days, and how far the price typically moves in a day. Prism does not know option prices and does not suggest a strike.</div>' +
     '<div><b>Rising or falling.</b> "Falling" means the price is below its 50-day average and lower than a month ago. "Rising" means it is above its 50-day average. A cheap share that is still falling often gets cheaper.</div>' +
     '<div><b>Moonshots.</b> Companies worth up to ' + money(C.moon_max) + ' with sales of at least ' + money(C.moon_rev) + ', growing ' + pct(C.moon_growth) + ' or more (' + pct(C.moon_growth3) + ' over three years and expected next year, where the file says), a gross margin of at least ' + pct(C.moon_gm) + ', more cash than debt, at least ' + C.moon_runway + ' years of cash at today\'s spending, and a share count growing no more than ' + pct(C.moon_dil) + ' a year. Cyclical industries are left out. Most companies like these disappoint: the tests check that a company can survive, not that its story is true.</div>' +
@@ -1355,8 +1476,8 @@ $('exBtn').onclick = () => { DATA = exampleData(); OPEN = null; say('Showing mad
 ['dragover', 'dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return; e.preventDefault(); $('loadCard').classList.toggle('drop', ev === 'dragover'); if (ev === 'drop' && e.dataTransfer.files[0]) ingest(e.dataTransfer.files[0]); }));
 $('dlList').onclick = () => {
   const rows = sorted(viewRows(baseFor(viewNow()), viewNow()));
-  const head = ['Symbol', 'Company', 'Sector', 'Industry', 'Market cap', 'Price', 'Questions passed', 'Quality', 'Price', 'Strength', 'Progress', 'Timing', 'FCF yield', 'Implied growth', 'Price implies', 'Entry ceiling', 'Ways in', 'Warnings', 'Verdict', 'A-list', 'On sale', 'Rising or falling'];
-  const body = rows.map(r => [r.sym, r.name, r.sector, r.industry, r.cap, r.price, r.n5, r.Q == null ? '' : Math.round(r.Q), r.V == null ? '' : Math.round(r.V), r.g.S === true ? 'yes' : r.g.S === false ? 'no' : '', r.P == null ? '' : Math.round(r.P), r.T == null ? '' : Math.round(r.T), r.fcfy == null ? '' : +r.fcfy.toFixed(4), r.impg == null ? '' : +r.impg.toFixed(4), r.bucket ? BUCKET[r.bucket] : '', r.ceiling ? +r.ceiling.toFixed(2) : '', r.lists.map(id => LI[id][0]).join('; '), r.flags.map(f => FL[f][0]).join('; '), verdictOf(r), r.alist ? 'yes' : '', r.onSale ? saleWhy(r) : '', r.trend === 'down' ? 'falling' : r.trend === 'up' ? 'rising' : '']);
+  const head = ['Symbol', 'Company', 'Sector', 'Industry', 'Market cap', 'Price', 'Questions passed', 'Quality', 'Price', 'Strength', 'Progress', 'Timing', 'FCF yield', 'Implied growth', 'Price implies', 'Entry ceiling', 'Ways in', 'Warnings', 'Verdict', 'A-list', 'On sale', 'Rising or falling', 'Business'];
+  const body = rows.map(r => [r.sym, r.name, r.sector, r.industry, r.cap, r.price, r.n5, r.Q == null ? '' : Math.round(r.Q), r.V == null ? '' : Math.round(r.V), r.g.S === true ? 'yes' : r.g.S === false ? 'no' : '', r.P == null ? '' : Math.round(r.P), r.T == null ? '' : Math.round(r.T), r.fcfy == null ? '' : +r.fcfy.toFixed(4), r.impg == null ? '' : +r.impg.toFixed(4), r.bucket ? BUCKET[r.bucket] : '', r.ceiling ? +r.ceiling.toFixed(2) : '', r.lists.map(id => LI[id][0]).join('; '), r.flags.map(f => FL[f][0]).join('; '), verdictOf(r), r.alist ? 'yes' : '', r.onSale ? saleWhy(r) : '', r.trend === 'down' ? 'falling' : r.trend === 'up' ? 'rising' : '', r.slipping === 'slipping' ? 'slipping: ' + slipWords(r) : r.slipping === 'steady' ? 'holding up' : r.slipping === 'one' ? 'one weak spot: ' + slipWords(r) : '']);
   offer('prism-list-' + (DATA.meta.date || today()) + '.csv', [head].concat(body).map(a => a.map(csvCell).join(',')).join('\n') + '\n');
 };
 $('dlNotes').onclick = () => { const syms = Object.keys(S.verdicts).sort();

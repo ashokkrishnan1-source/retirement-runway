@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'prism', 'index.html'), 'utf8');
 const eng = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
-const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats};')();
+const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes};')();
 let pass = 0, fail = 0;
 const check = (name, actual, expected, tol) => {
   const ok = typeof expected === 'number' ? Math.abs(actual - expected) <= (tol == null ? 1e-6 : tol) : JSON.stringify(actual) === JSON.stringify(expected);
@@ -53,7 +53,7 @@ check('date: text date', E.toDate('2026-11-04'), '2026-11-04');
 }
 
 console.log('--- The provider\'s full download ---');
-// The headings of the 63 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
+// The headings of the 66 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
 // them. Headings only: the values below are invented.
 { const FULL = ['Symbol', 'Company Name', 'Sector', 'Industry', 'Stock Price', 'Market Cap', 'Avg. Volume', 'Revenue', 'PE Ratio', 'EV/EBITDA',
     'Debt / EBITDA', 'Total Cash', 'Total Debt', 'Net Cash', 'FCF Yield', 'ROIC', 'Rev. Growth', 'FCF Growth', 'Shares Ch. (YoY)', 'Return 1Y',
@@ -61,9 +61,9 @@ console.log('--- The provider\'s full download ---');
     'Int. Cov.', 'Z-Score', 'F-Score', 'Analysts', 'Earnings Yield', 'ROIC (5Y)', 'ROE', 'Gross Margin', 'Oper. Margin', 'FCF Margin',
     'Rev. Growth 3Y', 'Rev. Growth 5Y', 'EPS Growth', 'Buyback Yield', '52W High Chg', 'Shares Insiders', 'Short % Float',
     'Profit Years', 'Rev. Growth 10Y', 'Operating CF', 'Net Income', 'ND / EBITDA', 'PE (5Y)', 'PE (10Y)', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR',
-    'Options', 'Next Earnings', 'Rev Gr. Next Y'];
+    'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Rev. Growth (Q)', 'OpInc Growth', 'EPS Growth (Q)'];
   // look-alike headings that are also in the download and must not be mistaken for the ones above
-  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (Q)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', 'ROE (5Y)', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date'];
+  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth (Q)', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', 'ROE (5Y)', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date'];
   const row = FULL.map(() => ''), set = (h, v) => { row[FULL.indexOf(h)] = v; };
   set('Symbol', 'zzz.x'); set('Stock Price', '40'); set('Market Cap', '2000000000'); set('FCF Yield', '9.00%'); set('FCF', '100000000'); set('ROIC', '12.50%');
   set('Shares Ch. (YoY)', '-0.21%'); set('CIK Code', '0000123456'); set('Price Date', '2026-11-19'); set('Ent. Value', '2500000000'); set('Int. Cov.', '-4.5');
@@ -157,6 +157,42 @@ console.log('--- Rising or falling, the put desk, pins ---');
   check('put desk: no listed options keeps it off', J({ret1w: -0.09, opt: 'No'}).put, false);
   check('put desk: not on the A-list keeps it off', J({py: 3, ret1w: -0.09}).put, false);
 }
+console.log('--- Is the business slipping? ---');
+// Signs: the latest quarter's sales growth, or next year's forecast, under half the company's own pace and at least 5 points
+// under it; return on capital under 80% of its five-year average; operating profit down more than 5%.
+{ const C = E.CONTROLS, base = {revg5: 0.12, revg10: 0.10, revgq: 0.11, revgn: 0.09, roic: 0.19, roic5: 0.20, oig: 0.08}, Z = o => E.slipOf(Object.assign({}, base, o), C);
+  check('slip: the pace is the lower of five- and ten-year growth', Z({}).pace, 0.10);
+  check('slip: nothing wrong', [Z({}).n, Z({}).known, E.slipState(Z({}))], [0, 4, 'steady']);
+  // pace 10%: half is 5%, five points under is 5%, so the line is 5%
+  check('slip: 4% in the latest quarter against a 10% pace is a sign', Z({revgq: 0.04}).s.growth, true);
+  check('slip: 6% is not', Z({revgq: 0.06}).s.growth, false);
+  // pace 20%: half is 10%, five points under is 15%: the line is the lower, 10%
+  check('slip: against a 20% pace, 12% is fine and 9% is a sign', [Z({revg5: 0.20, revg10: null, revgq: 0.12}).s.growth, Z({revg5: 0.20, revg10: null, revgq: 0.09}).s.growth], [false, true]);
+  // pace 4%: half is 2%, five points under is -1%: only shrinking sales count
+  check('slip: a slow grower is flagged only when sales shrink', [Z({revg5: 0.04, revg10: 0.04, revgq: 0}).s.growth, Z({revg5: 0.04, revg10: 0.04, revgq: -0.02}).s.growth], [false, true]);
+  check('slip: return of 15% against a five-year 20% is under 80% of it', [Z({roic: 0.15}).s.returns, Z({roic: 0.17}).s.returns], [true, false]);
+  check('slip: a 3% forecast against a 10% pace is a sign', Z({revgn: 0.03}).s.forecast, true);
+  check('slip: operating profit down 6% is a sign, down 4% is not', [Z({oig: -0.06}).s.profit, Z({oig: -0.04}).s.profit], [true, false]);
+  check('slip: without operating profit, quarterly earnings per share stand in', [Z({oig: null, epsgq: -0.10}).s.profit, Z({oig: null}).s.profit], [true, null]);
+  check('slip: two signs is slipping', [Z({revgq: 0.04, revgn: 0.03}).n, E.slipState(Z({revgq: 0.04, revgn: 0.03}))], [2, 'slipping']);
+  check('slip: one sign is one weak spot', E.slipState(Z({roic: 0.15})), 'one');
+  check('slip: too little to judge says nothing', [Z({revgq: null, revgn: null}).known, E.slipState(Z({revgq: null, revgn: null}))], [2, null]);
+}
+console.log('--- One worry, many names; what changed ---');
+{ const C = E.CONTROLS, mk = (sec, ind) => ({sector: sec, industry: ind});
+  const ten = [mk('Technology', 'Software - Application'), mk('Technology', 'Software - Application'), mk('Technology', 'Software - Application'), mk('Technology', 'Semiconductors'),
+    mk('Healthcare', 'Medical Devices'), mk('Healthcare', 'Medical Devices'), mk('Healthcare', 'Biotechnology'), mk('Industrials', 'Railroads'), mk('Industrials', 'Railroads'), mk('Industrials', 'Airlines')];
+  check('crowd: four of ten in one sector, three of them one industry', E.crowd(ten, C), {sector: 'Technology', count: 4, of: 10, inds: [['Software - Application', 3]]});
+  check('crowd: three in a sector is under the minimum of four', E.crowd(ten.slice(1), C), null);
+  check('crowd: four of twenty is under the 30% share', E.crowd(ten.concat(Array.from({length: 10}, (_, i) => mk('Sector ' + i, 'x'))), C), null);
+  check('crowd: an empty list', E.crowd([], C), null);
+  check('changes: who joined and who left, only for lists both files have', E.changes({x: ['A', 'B'], y: ['C']}, {x: ['B', 'D'], z: ['E']}), {x: {in: ['D'], out: ['A']}});
+  check('changes: nothing to compare without an earlier file', E.changes(null, {x: ['A']}), {});
+  const row = o => Object.assign({sym: 'S', scored: true, pool: 'main', hold: false, blocks: [], lists: [], g: {}}, o);
+  const m = E.memberships([row({sym: 'S1', slipping: 'slipping'}), row({sym: 'S2', slipping: 'one'}), row({sym: 'U1', ceiling: 50, price: 40}), row({sym: 'U2', ceiling: 50, price: 60})], []);
+  check('members: slipping companies and those under their ceiling are remembered', [m.slip, m.under], [['S1'], ['U1']]);
+}
+
 console.log('--- Moonshots ---');
 // Up to $20B in size, $100M of sales, sales up 30% (20% over three years and expected next year), gross margin 50%,
 // more cash than debt, three years of cash, share count up at most 8%, and growth plus cash margin of at least 40 points.
