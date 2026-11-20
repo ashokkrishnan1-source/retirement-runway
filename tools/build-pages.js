@@ -36,6 +36,8 @@ write('_site/prism/index.html', wrap(pages.prism, 'window.FTOL_HOME="../";'));
 fs.writeFileSync(path.join(root, '_site', '.nojekyll'), '');
 
 // The tool pages that sit beside the home page on the claude.ai collection link
-write('_artifact/runway.html', wrap(pages.runway, 'window.FTOL_HOME="index.html";'));
-write('_artifact/open-this-first.html', wrap(pages.otf, 'window.FTOL_HOME="index.html";'));
-write('_artifact/prism.html', wrap(pages.prism, 'window.FTOL_HOME="index.html";'));
+// FTOL_SELF is the page's own file name. On claude.ai the address belongs to the whole collection, so a refresh reloads
+// the home page; a tool uses its name to leave a note saying it was on show, and the home page goes back to it.
+write('_artifact/runway.html', wrap(pages.runway, 'window.FTOL_HOME="index.html";window.FTOL_SELF="runway.html";'));
+write('_artifact/open-this-first.html', wrap(pages.otf, 'window.FTOL_HOME="index.html";window.FTOL_SELF="open-this-first.html";'));
+write('_artifact/prism.html', wrap(pages.prism, 'window.FTOL_HOME="index.html";window.FTOL_SELF="prism.html";'));

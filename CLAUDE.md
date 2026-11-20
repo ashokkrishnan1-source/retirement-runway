@@ -261,6 +261,14 @@ next steps, and one "Your data" panel that saves every tool's state as a single 
 - **Standalone site:** the home page is at the top, tools at `/retirement-runway/`, `/open-this-first/` and `/prism/`.
 - The build tells each page where the others are: `window.FTOL_LINKS` (home) and `window.FTOL_HOME` (tools, which
   then show a link back). A tool opened on its own has neither and works unchanged.
+- **A refresh must not throw the reader back to the home page.** On claude.ai the address belongs to the whole
+  collection, so refreshing the browser reloads `index.html` whatever tool was on show (the owner hit this on
+  2026-11-20). The build gives each collection page its own file name (`window.FTOL_SELF`); the shared snippet
+  makes a tool write `localStorage` key `ftol-at` (`{p: file, t: time}`) on load, every 20 seconds, when it becomes
+  visible and as it is left; the home page, when the note is under three minutes old, goes straight back with
+  `location.replace`. It does not when the reader came home on purpose: the link back clears the note, and the
+  browser's Back button is recognised by its navigation type. Only the three tool file names are accepted. The
+  standalone site and a tool opened on its own have their own addresses and do none of this.
 - Tools tell the home page their status through `localStorage` keys `ftol-summary-runway`, `ftol-summary-otf` and
   `ftol-summary-prism`.
   The home page's encrypted copy holds each tool's own storage key verbatim (`app: 'ftol'`).

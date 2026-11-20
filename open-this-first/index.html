@@ -472,7 +472,14 @@ function makeVault(o){
 /* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
    window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
 (function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
-  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a)}catch(e){}})();
+  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a);
+  /* Inside the claude.ai collection the address belongs to the collection, not to this tool, so refreshing the browser
+     reloads the home page. This tool therefore leaves a note that it is the page on show and keeps the note fresh while it
+     is open; the home page reads it and comes straight back. Going home on purpose, by the link above, clears the note. */
+  if(window.FTOL_SELF){let leaving=false;const mark=()=>{if(leaving)return;try{localStorage.setItem('ftol-at',JSON.stringify({p:window.FTOL_SELF,t:Date.now()}))}catch(e){}};
+    mark();setInterval(mark,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)mark()});window.addEventListener('pagehide',mark);
+    a.addEventListener('click',()=>{leaving=true;try{localStorage.removeItem('ftol-at')}catch(e){}})}
+  }catch(e){}})();
 /* VAULT:END */
 makeVault({mount:$('vault'),app:'otf',what:'your map',getState:()=>S,download:(n,d)=>offer(n,d,'application/json'),
   setState:o=>{if(!o||!o.items)throw 0;S=Object.assign(blank(),o);isExample=false;save();init()}});

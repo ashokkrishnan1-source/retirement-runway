@@ -114,6 +114,18 @@ ul.next li:first-child{border-top:0;padding-top:0}
 
 <script>
 'use strict';
+/* On claude.ai the address belongs to the whole collection, so refreshing the browser reloads this page even when a tool
+   was on show. Each tool leaves a note while it is open (see the shared snippet). If the note is fresh, go straight back
+   to that tool. Not when the reader came here on purpose: the link back from a tool clears the note, and the browser's
+   Back button is recognised. The standalone website gives each tool its own address, so it needs none of this. */
+(function(){try{
+  if(window.FTOL_LINKS)return;
+  const at=JSON.parse(localStorage.getItem('ftol-at')||'null'),nav=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];
+  if(!at||!/^(runway|open-this-first|prism)\.html$/.test(at.p)||!(Date.now()-at.t<180000))return;
+  if(nav&&nav.type==='back_forward')return;
+  if(document.referrer&&document.referrer.indexOf(location.origin+'/')===0)return;
+  location.replace(at.p);
+}catch(e){}})();
 /* The build sets window.FTOL_LINKS for the standalone website, where each tool has its own folder. */
 const LINKS=window.FTOL_LINKS||{runway:'runway.html',otf:'open-this-first.html',prism:'prism.html'};
 const KEYS={runway:'retirement-runway-v2',otf:'open-this-first-v1',prism:'prism-v1',sumRunway:'ftol-summary-runway',sumOtf:'ftol-summary-otf',sumPrism:'ftol-summary-prism'};
@@ -217,7 +229,14 @@ function makeVault(o){
 /* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
    window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
 (function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
-  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a)}catch(e){}})();
+  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a);
+  /* Inside the claude.ai collection the address belongs to the collection, not to this tool, so refreshing the browser
+     reloads the home page. This tool therefore leaves a note that it is the page on show and keeps the note fresh while it
+     is open; the home page reads it and comes straight back. Going home on purpose, by the link above, clears the note. */
+  if(window.FTOL_SELF){let leaving=false;const mark=()=>{if(leaving)return;try{localStorage.setItem('ftol-at',JSON.stringify({p:window.FTOL_SELF,t:Date.now()}))}catch(e){}};
+    mark();setInterval(mark,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)mark()});window.addEventListener('pagehide',mark);
+    a.addEventListener('click',()=>{leaving=true;try{localStorage.removeItem('ftol-at')}catch(e){}})}
+  }catch(e){}})();
 /* VAULT:END */
 /* one encrypted copy holds every tool's saved state, exactly as each tool stores it */
 makeVault({mount:$('vault'),app:'ftol',what:'everything in your tools',download:offer,
