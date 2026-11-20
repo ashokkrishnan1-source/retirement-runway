@@ -65,10 +65,6 @@ textarea{min-height:60px;resize:vertical}
 .gate .d{font-size:12.5px;color:var(--fg2)}
 .gate .c{font:500 13px var(--mono);margin-top:auto}
 .gate .st{font-size:12px;color:var(--fg3)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font:500 13.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:99px;padding:6px 12px;cursor:pointer;min-height:36px}
-.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
-.chip .n{font-family:var(--mono);opacity:.75;margin-left:4px}
 .pill{display:inline-flex;gap:4px;align-items:center;font:500 12px var(--body);padding:2px 8px;border-radius:99px;white-space:nowrap}
 .pill.good{background:var(--good-bg);color:var(--good)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
 .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.mute{background:var(--mute-bg);color:var(--mute)}
@@ -93,11 +89,13 @@ td .m.i{color:var(--fg3)}
 td .lab{display:none}
 td .bk{display:inline-block}
 td .bk::first-letter{text-transform:uppercase}
-td.c-notes{max-width:170px}
+td.c-five{min-width:210px;max-width:330px}
+td .ans{font-size:13px}
+td .also{font-size:12.5px;color:var(--fg2)}
+#askHint{text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg3)}
 select.vsel{min-width:96px;padding:5px 6px;min-height:34px}
 .detail>td>div{position:sticky;left:10px;width:var(--tw,100%);max-width:var(--tw,100%)}
 td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-.five{display:flex;gap:3px}
 .five span{font:500 11.5px var(--mono);border-radius:5px;padding:3px 0;width:46px;text-align:center;white-space:nowrap}
 .five .y{background:var(--good-bg);color:var(--good)}
 .five .n{background:var(--mute-bg);color:var(--mute)}
@@ -122,7 +120,7 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
   #tbl tr.main{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:12px;border-top:1px solid var(--line)}
   #tbl tr.main td{border:0;padding:0;position:static;background:transparent;max-width:none}
   #tbl td.c-size,#tbl td.c-ceil{text-align:right}
-  #tbl td.c-five,#tbl td.c-notes,#tbl td.c-ver{grid-column:1/-1}
+  #tbl td.c-five,#tbl td.c-ver{grid-column:1/-1;min-width:0;max-width:none}
   #tbl td .lab{display:inline;color:var(--fg3);font:12.5px var(--body)}
   #tbl td .bk::first-letter{text-transform:none}
   #tbl td .m{max-width:none;white-space:normal}
@@ -143,43 +141,40 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
       <div style="min-width:0"><h3>Today's file</h3><p id="fileStatus" style="font-weight:600"></p></div>
       <div class="row">
         <label class="btn primary" for="file">Load a screener file</label><input type="file" id="file" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden>
-        <button type="button" class="btn" id="exBtn">Show the example</button>
+        <button type="button" class="btn" id="exBtn">Show example</button>
       </div>
     </div>
-    <p class="note">Download the whole-market screener from your data provider with every column you can get. CSV is fastest; Excel also works. You can drop the file anywhere on this page. It is read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.</p>
+    <p class="note" id="loadNote"></p>
     <p class="note" id="msg" role="status" hidden></p>
     <details id="fieldsBox"><summary>Columns found in the file</summary><div id="fields" class="how" style="margin-top:10px"></div></details>
   </section>
 
-  <section>
-    <h2>Five questions</h2>
-    <p class="note">Each question looks at different facts, so a yes on all five is five separate reasons, not one reason counted five times. Press a question to stop requiring it.</p>
-    <div class="gates" id="gates"></div>
-    <div class="card" id="tally"></div>
-  </section>
-
-  <section>
-    <h2>Nine ways in</h2>
-    <p class="note">Named situations that are often worth a look. Pick one to see only those companies. It combines with the questions above.</p>
-    <div class="chips" id="chips"></div>
-    <div class="card" id="listInfo" hidden></div>
-  </section>
-
-  <section>
+  <section id="listSec">
     <h2 id="tblTitle">Companies</h2>
-    <div class="toolbar">
-      <label class="f" for="pool">Company size<select id="pool"><option value="main">Large: $2B and up</option><option value="ext">Large and mid: $1B and up</option><option value="all">Everything scored</option></select></label>
-      <label class="f" for="slack">Must pass<select id="slack"><option value="0">Every selected question</option><option value="1">All but one of them</option></select></label>
-      <label class="f" for="sort">Order<select id="sort"></select></label>
-      <label class="f" for="q">Find in this list<input type="search" id="q" placeholder="Symbol or name" autocomplete="off"></label>
-    </div>
-    <div class="row">
-      <label class="chk" for="hideWarn"><input type="checkbox" id="hideWarn"> Hide companies with data warnings</label>
-      <label class="chk" for="showRej"><input type="checkbox" id="showRej"> Show companies I rejected</label>
-      <button type="button" class="btn sm" id="dlList">Download this list (CSV)</button>
-    </div>
+    <p id="lede" style="max-width:80ch"></p>
+    <label class="f" for="show" style="max-width:460px">Show<select id="show"></select></label>
+    <div class="card" id="listInfo" hidden></div>
+    <details id="askBox">
+      <summary>More options<span id="askHint"></span></summary>
+      <div class="card" style="gap:12px;margin-top:10px">
+        <div class="toolbar">
+          <label class="f" for="pool">Company size<select id="pool"><option value="main">Large: $2B and up</option><option value="ext">Large and mid: $1B and up</option><option value="all">Everything scored</option></select></label>
+          <label class="f" for="sort">Order<select id="sort"></select></label>
+          <label class="f" for="q">Find in this list<input type="search" id="q" placeholder="Symbol or name" autocomplete="off"></label>
+        </div>
+        <div class="row">
+          <label class="chk" for="hideWarn"><input type="checkbox" id="hideWarn"> Hide companies with data warnings</label>
+          <label class="chk" for="showRej"><input type="checkbox" id="showRej"> Show companies I rejected</label>
+        </div>
+        <h3>The five questions</h3>
+        <p class="note">The short list needs a yes to every question below. Each one looks at different facts, so five yeses are five separate reasons, not one reason counted five times. Press a question to stop requiring it.</p>
+        <div class="gates" id="gates"></div>
+        <div id="tally" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </details>
     <div class="scroll"><table id="tbl"></table></div>
     <div class="row" id="pager"></div>
+    <div class="row"><button type="button" class="btn sm" id="dlList">Download this list (CSV)</button></div>
   </section>
 
   <section class="card">
@@ -770,7 +765,16 @@ function compute() {
 const verdictOf = r => (S.verdicts[r.sym] || {}).v || '';
 const inPool = r => S.ui.pool === 'all' || r.pool === 'main' || (S.ui.pool === 'ext' && r.pool === 'ext');
 function baseRows() { return RES.rows.filter(r => r.scored && inPool(r) && !r.blocks.length && (!S.ui.hideWarn || !r.hold) && (S.ui.showRej || verdictOf(r) !== 'Reject')); }
-function passes(r) { const need = S.ui.need; if (!need.length) return true; const yes = need.filter(k => r.g[k] === true).length; return yes >= need.length - (need.length > 1 ? S.ui.slack : 0); }
+/* What the table shows. '' is the short list: a yes to every required question. 'near' is one question short of that.
+   Anything else is a named list, shown in full whatever its companies answered. */
+const yesCount = r => S.ui.need.filter(k => r.g[k] === true).length;
+const viewNow = () => S.ui.list || (S.ui.slack ? 'near' : '');
+function viewRows(base, view) {
+  const k = S.ui.need.length;
+  if (view === 'near') return k > 1 ? base.filter(r => yesCount(r) === k - 1) : [];
+  if (view) return base.filter(r => r.lists.includes(view));
+  return base.filter(r => yesCount(r) === k);
+}
 function sorted(rows) {
   let key = S.ui.sort === 'auto' ? (S.ui.list ? LISTSORT[S.ui.list] : SORTS.weak[1]) : SORTS[S.ui.sort][1];
   if (S.ui.sort === 'sym') return rows.slice().sort((a, b) => a.sym < b.sym ? -1 : 1);
@@ -785,21 +789,41 @@ function render() {
   drawFields(m.report);
   $('gates').innerHTML = GK.map(k => { const yes = base.filter(r => r.g[k] === true).length, unk = base.filter(r => r.g[k] == null).length, on = S.ui.need.includes(k);
     return '<button type="button" class="gate" data-g="' + k + '" aria-pressed="' + on + '"><span class="q">' + GQ[k][0] + '</span><span class="d">' + GQ[k][1] + '</span><span class="c">' + yes.toLocaleString('en-US') + ' yes' + (unk ? ' · ' + unk + ' unknown' : '') + '</span><span class="st">' + (on ? 'Required' : 'Not required') + '</span></button>'; }).join('');
-  const hits = base.filter(passes), need = S.ui.need;
-  drawTally(base, hits);
-  $('chips').innerHTML = LISTS.map(id => '<button type="button" class="chip" data-l="' + id + '" aria-pressed="' + (S.ui.list === id) + '">' + LI[id][0] + '<span class="n">' + base.filter(r => r.lists.includes(id)).length + '</span></button>').join('');
+  const need = S.ui.need, k = need.length; if (S.ui.slack && k < 2) S.ui.slack = 0;
+  const view = viewNow(), short = viewRows(base, ''), near = viewRows(base, 'near'), n = x => x.toLocaleString('en-US');
+  drawTally(base);
+  $('loadNote').textContent = m.example ? 'To use Prism, download the whole-market screener from your data provider with every column you can get, and load the file here. CSV is fastest; Excel also works. You can drop the file anywhere on this page. It is read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.' : 'Read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.';
+  $('show').innerHTML = '<option value="">' + (k === 5 ? 'The short list: yes to all five' : k ? 'The short list: yes to the ' + (k === 1 ? 'one' : k) + ' you require' : 'Every scored company') + ' (' + n(short.length) + ')</option>' +
+    (k > 1 ? '<option value="near">Near misses: one question short (' + n(near.length) + ')</option>' : '') +
+    '<optgroup label="Nine named lists">' + LISTS.map(id => '<option value="' + id + '">' + LI[id][0] + ' (' + n(base.filter(r => r.lists.includes(id)).length) + ')</option>').join('') + '</optgroup>';
+  $('show').value = view;
+  let rows = viewRows(base, view);
   const li = $('listInfo'); li.hidden = !S.ui.list;
-  let rows = hits;
-  if (S.ui.list) { const L = LI[S.ui.list], inList = base.filter(r => r.lists.includes(S.ui.list)); rows = hits.filter(r => r.lists.includes(S.ui.list));
-    li.innerHTML = '<h2>' + L[0] + '</h2><p>' + L[1] + '</p><p class="note"><b>First check.</b> ' + L[2] + '</p><p class="note"><b>It is wrong if.</b> ' + L[3] + '</p><p class="note">' + inList.length + ' companies are in this situation' + (need.length ? '; ' + rows.length + ' of them also pass the questions you require.' : '.') + ' Atlas route ' + L[4].replace(' · ', ', angle families ') + '.</p>' +
-      (need.length && rows.length < inList.length ? '<div><button type="button" class="btn sm" id="dropNeed">Show all ' + inList.length + ' (stop requiring the questions)</button></div>' : ''); }
+  if (S.ui.list) { const L = LI[S.ui.list]; li.innerHTML = '<p class="note"><b>First check.</b> ' + L[2] + '</p><p class="note"><b>It is wrong if.</b> ' + L[3] + '</p>'; }
   if (FIND) { const f = FIND.toLowerCase(); rows = rows.filter(r => r.sym.toLowerCase().includes(f) || (r.name || '').toLowerCase().includes(f)); }
   rows = sorted(rows);
-  const what = need.length === 5 ? 'yes to all five' : need.length ? 'yes to ' + need.map(k => GQ[k][0].replace('?', '').toLowerCase()).join(', ') : 'every scored company';
-  $('tblTitle').textContent = rows.length.toLocaleString('en-US') + (rows.length === 1 ? ' company: ' : ' companies: ') + (S.ui.list ? LI[S.ui.list][0] + (need.length ? ', and ' : '') : '') + (need.length || !S.ui.list ? what : '') + (S.ui.slack && need.length > 1 ? ' (one miss allowed)' : '');
+  const one = rows.length === 1, cnt = n(rows.length) + (one ? ' company' : ' companies');
+  $('tblTitle').textContent = view === 'near' ? cnt + (one ? ' misses' : ' miss') + ' just one question' : view ? cnt + ': ' + LI[view][0]
+    : k === 5 ? cnt + (one ? ' passes' : ' pass') + ' all five questions' : k ? cnt + (one ? ' passes' : ' pass') + ' the ' + (k === 1 ? 'question' : k + ' questions') + ' you require' : cnt + ' scored';
+  let lede = view === 'near' ? 'Each one answers yes to every question but one. Its row names the one it misses.'
+    : view ? LI[view][1] + ' Every company in this situation is listed, and its row says how it answered the five questions.'
+    : k === 5 ? 'Read these first. Each one passed five separate tests: a good business, a price that expects little, strong enough to wait, growing per share, and out of favor.'
+    : k ? 'Each one answers yes to what you require: ' + need.map(q => GQ[q][0].replace('?', '').toLowerCase()).join(', ') + '.' : 'No question is required, so every scored company is listed.';
+  if (!view && k) lede += ' That is ' + n(short.length) + ' of ' + n(base.length) + ' eligible companies.';
+  if (!view && S.hist && S.hist.prev && !m.example && S.hist.cur.date === m.date) { const a = Array.from(NEW);
+    lede += ' Since your last file (' + day(S.hist.prev.date) + '), ' + (a.length ? a.length + (a.length === 1 ? ' name is' : ' names are') + ' new on the all-five list: ' + a.slice(0, 12).join(', ') + (a.length > 12 ? '…' : '') + '.' : 'no name is new on the all-five list.'); }
+  $('lede').textContent = lede;
+  const hint = [];
+  if (k < 5) hint.push(k + ' of 5 questions required');
+  if (S.ui.pool !== 'main') hint.push(S.ui.pool === 'ext' ? 'mid-size companies included' : 'every size included');
+  if (S.ui.sort !== 'auto') hint.push('order: ' + SORTS[S.ui.sort][0].toLowerCase());
+  if (FIND) hint.push('finding "' + FIND + '"');
+  if (!S.ui.hideWarn) hint.push('data warnings shown');
+  if (S.ui.showRej) hint.push('rejected companies shown');
+  $('askHint').textContent = hint.length ? ' · ' + hint.join(' · ') : '';
   drawTable(rows);
   drawWatch(); drawAside(base); drawLook(); drawHow();
-  ['pool', 'slack', 'sort'].forEach(id => { $(id).value = String(S.ui[id]); }); $('hideWarn').checked = S.ui.hideWarn; $('showRej').checked = S.ui.showRej;
+  ['pool', 'sort'].forEach(id => { $(id).value = String(S.ui[id]); }); $('hideWarn').checked = S.ui.hideWarn; $('showRej').checked = S.ui.showRej;
 }
 /* The column headings of the loaded file, as plain text: which ones Prism reads and as what, then the ones it does not use.
    Headings only, never a figure from the file, so the list can be shared when asking for more columns to be read. */
@@ -831,36 +855,42 @@ function drawFields(rep) {
   };
   $('colSave').onclick = () => offer('prism-columns-' + (DATA.meta.date || today()) + '.txt', ta.value);
 }
-function drawTally(base, hits) {
-  const need = S.ui.need, k = need.length, n5 = [0, 0, 0, 0, 0, 0]; base.forEach(r => { n5[r.n5]++; });
+function drawTally(base) {
+  const n5 = [0, 0, 0, 0, 0, 0]; base.forEach(r => { n5[r.n5]++; });
   const four = base.filter(r => r.n5 === 4), miss = {}; four.forEach(r => GK.forEach(g => { if (r.g[g] !== true) miss[g] = (miss[g] || 0) + 1; }));
   const top = Object.keys(miss).sort((a, b) => miss[b] - miss[a]).slice(0, 3).map(g => GQ[g][0].replace('?', '').toLowerCase() + ' (' + miss[g] + ')');
-  let h = '<p style="font-size:17px"><b>' + hits.length.toLocaleString('en-US') + '</b> of ' + base.length.toLocaleString('en-US') + ' companies ' + (k === 5 ? 'answer yes to all five questions.' : k ? 'answer yes to ' + (k === 1 ? 'the question' : 'all ' + k + ' questions') + ' you require' + (S.ui.slack && k > 1 ? ', or miss just one.' : '.') : 'are shown, because no question is required.') + '</p>';
-  if (S.hist && S.hist.prev && !DATA.meta.example && S.hist.cur.date === DATA.meta.date) { const a = Array.from(NEW);
-    h += '<p class="note">Since your last file (' + day(S.hist.prev.date) + '): ' + (a.length ? '<b>' + a.length + ' new</b> on the all-five list: ' + esc(a.slice(0, 12).join(', ')) + (a.length > 12 ? '…' : '') : 'no new names on the all-five list') + '.</p>'; }
-  h += '<div class="bar" role="img" aria-label="How many of the five questions each company passes">' + [5, 4, 3, 2, 1, 0].map(i => n5[i] ? '<div style="flex:' + n5[i] + ' 1 6px;background:var(--b' + i + ')" title="' + n5[i] + ' companies pass ' + i + ' of five"></div>' : '').join('') + '</div>' +
+  $('tally').innerHTML = '<p class="note">How the ' + base.length.toLocaleString('en-US') + ' eligible companies answered all five:</p>' +
+    '<div class="bar" role="img" aria-label="How many of the five questions each company passes">' + [5, 4, 3, 2, 1, 0].map(i => n5[i] ? '<div style="flex:' + n5[i] + ' 1 6px;background:var(--b' + i + ')" title="' + n5[i] + ' companies pass ' + i + ' of five"></div>' : '').join('') + '</div>' +
     '<div class="legend">' + [5, 4, 3, 2, 1, 0].map(i => '<span><i style="background:var(--b' + i + ')"></i>' + i + ' of five: ' + n5[i].toLocaleString('en-US') + '</span>').join('') + '</div>' +
-    (four.length ? '<p class="note">' + four.length + ' companies miss just one question, most often ' + top.join(', ') + '. Choose "All but one of them" below to see them.</p>' : '');
-  $('tally').innerHTML = h;
+    (four.length ? '<p class="note">' + four.length + ' companies miss just one question, most often ' + top.join(', ') + '. Choose "Near misses" under Show to see them.</p>' : '');
 }
-function five(r) {
-  return '<div class="five">' + GK.map(k => { const g = r.g[k], v = k === 'S' ? '' : (r[k] == null ? '' : ' ' + Math.round(r[k]));
-    return '<span class="' + (g === true ? 'y' : g === false ? 'n' : 'u') + '" title="' + esc(GQ[k][0] + ' ' + (g === true ? 'Yes' : g === false ? 'No' : 'Not enough data')) + '">' + k + v + (g === true ? ' ✓' : g === false ? ' ✗' : ' ?') + '</span>'; }).join('') + '</div>';
+/* The five answers in words: "Yes to all five", or how many it passes and which it misses or has no data for. */
+function answers(r) {
+  const no = GK.filter(k => r.g[k] === false), unk = GK.filter(k => r.g[k] == null), nm = a => a.map(k => GQ[k][0].replace('?', '').toLowerCase()).join(', ');
+  return no.length || unk.length ? '<div class="ans"><b>' + (5 - no.length - unk.length) + ' of 5.</b>' + (no.length ? ' No: ' + nm(no) + '.' : '') + (unk.length ? ' Unknown: ' + nm(unk) + '.' : '') + '</div>'
+    : '<div><span class="pill good">Yes to all five</span></div>';
+}
+/* What a row says about a company: its answers, the named lists it is on, and any caution.
+   On the short list every row is a yes to all five, so the answers are left out there. */
+function found(r) {
+  const view = viewNow(), also = r.lists.filter(id => id !== view).map(id => LI[id][0]), fl = r.flags.filter(f => f !== 'cyc' || !r.flags.includes('peak'));
+  let h = !view && S.ui.need.length === 5 ? '' : answers(r);
+  if (also.length) h += '<div class="also" title="' + esc(also.join(' · ')) + '">' + (view && view !== 'near' ? 'Also: ' : '') + esc(also.slice(0, 2).join(' · ')) + (also.length > 2 ? ' · +' + (also.length - 2) + ' more' : '') + '</div>';
+  if (fl.length) h += '<div class="row" style="gap:4px;margin-top:3px">' + fl.slice(0, 2).map(f => '<span class="pill ' + (SEVERE[f] ? 'warn' : 'mute') + '" title="' + esc(FL[f][0]) + '">' + FSHORT[f] + '</span>').join('') + '</div>';
+  return h || '<span class="also">–</span>';
 }
 function rowHTML(r) {
-  const fl = r.flags.filter(f => f !== 'cyc' || !r.flags.includes('peak'));
   return '<tr class="main" data-sym="' + esc(r.sym) + '"><td class="c-co"><div class="s"><button type="button" class="symb" aria-expanded="' + (OPEN === r.sym) + '" title="Show how ' + esc(r.sym) + ' answered each question">' + esc(r.sym) + '</button>' + (NEW.has(r.sym) ? ' <span class="pill new">New</span>' : '') + '</div><div class="m">' + esc(r.name || '') + '</div><div class="m i">' + esc(r.industry || '') + '</div></td>' +
-    '<td class="num c-size">' + money(r.cap) + '</td><td class="c-five">' + five(r) + '</td>' +
+    '<td class="num c-size">' + money(r.cap) + '</td><td class="c-five">' + found(r) + '</td>' +
     '<td class="c-imp">' + (r.impg == null ? '–' : '<span class="lab">Price implies </span><span class="bk">' + BUCKET[r.bucket].toLowerCase() + '</span><div class="m">' + (r.impg >= 0.4 ? 'over 40%' : r.impg <= -0.15 ? 'under −15%' : pct(r.impg)) + ' a year' + (r.impgSpread > 0.1 ? ' (readings differ)' : '') + '</div>') + '</td>' +
-    '<td class="num c-ceil">' + (r.ceiling ? '<span class="lab">Ceiling </span>' + price(r.ceiling) + '<div class="m">' + (r.ceiling >= r.price ? pct(r.ceiling / r.price - 1) + ' above price' : pct(1 - r.ceiling / r.price) + ' below price') + '</div>' : '–') + '</td>' +
-    '<td class="c-notes"><div class="row" style="gap:4px">' + fl.slice(0, 2).map(f => '<span class="pill ' + (SEVERE[f] ? 'warn' : 'mute') + '" title="' + esc(FL[f][0]) + '">' + FSHORT[f] + '</span>').join('') + (r.lists.length ? '<span class="pill mute">' + r.lists.length + (r.lists.length > 1 ? ' ways in' : ' way in') + '</span>' : '') + '</div></td>' +
-    '<td class="c-ver"><select class="vsel" data-sym="' + esc(r.sym) + '" aria-label="Verdict for ' + esc(r.sym) + '"><option value="">–</option>' + VERDICTS.map(v => '<option' + (verdictOf(r) === v ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></td></tr>';
+    '<td class="num c-ceil"><span class="lab">Ceiling </span>' + (r.ceiling ? price(r.ceiling) + '<div class="m">' + (r.price <= r.ceiling ? 'price is ' + pct(1 - r.price / r.ceiling) + ' under it' : 'price is ' + pct(r.price / r.ceiling - 1) + ' over it') + '</div>' : '–') + '</td>' +
+    '<td class="c-ver"><select class="vsel" data-sym="' + esc(r.sym) + '" aria-label="Verdict for ' + esc(r.sym) + '"><option value="">Verdict…</option>' + VERDICTS.map(v => '<option' + (verdictOf(r) === v ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></td></tr>';
 }
 function drawTable(rows) {
   const per = 40, pages = Math.max(1, Math.ceil(rows.length / per)); if (S.ui.page >= pages) S.ui.page = 0;
-  let h = '<tr class="hd"><th>Company</th><th>Size</th><th>The five questions</th><th>Price implies</th><th>Entry ceiling</th><th>Notes</th><th>Verdict</th></tr>';
-  rows.slice(S.ui.page * per, (S.ui.page + 1) * per).forEach(r => { h += rowHTML(r); if (OPEN === r.sym) h += '<tr class="detail"><td colspan="7">' + detailHTML(r) + '</td></tr>'; });
-  if (!rows.length) h += '<tr><td colspan="7"><p class="note" style="padding:8px 0">No company matches. Stop requiring a question, allow one miss, or choose a wider company size.</p></td></tr>';
+  let h = '<tr class="hd"><th>Company</th><th>Size</th><th>What Prism found</th><th>Price implies</th><th>Entry ceiling</th><th>Verdict</th></tr>';
+  rows.slice(S.ui.page * per, (S.ui.page + 1) * per).forEach(r => { h += rowHTML(r); if (OPEN === r.sym) h += '<tr class="detail"><td colspan="6">' + detailHTML(r) + '</td></tr>'; });
+  if (!rows.length) h += '<tr><td colspan="6"><p class="note" style="padding:8px 0">No company matches. Try "Near misses" under Show, or open More options to require fewer questions or include smaller companies.</p></td></tr>';
   $('tbl').innerHTML = h; fitDetail();
   $('pager').innerHTML = pages > 1 ? '<button type="button" class="btn sm" id="pgPrev"' + (S.ui.page ? '' : ' disabled') + '>← Previous</button><span class="note">Page ' + (S.ui.page + 1) + ' of ' + pages + '</span><button type="button" class="btn sm" id="pgNext"' + (S.ui.page < pages - 1 ? '' : ' disabled') + '>Next →</button>' : '';
 }
@@ -932,7 +962,7 @@ function drawWatch() {
   let h = '';
   if (live.length) { h += '<div class="scroll"><table><tr><th>Company</th><th>Verdict</th><th>Since</th><th>Price then</th><th>Price now</th><th>The five questions today</th><th>Entry ceiling</th><th>Review by</th><th>Trigger</th></tr>';
     live.forEach(s => { const v = S.verdicts[s], r = BY[s], due = v.review && v.review <= today();
-      h += '<tr class="main" data-sym="' + esc(s) + '" data-look="1"><td><div class="s"><button type="button" class="symb">' + esc(s) + '</button></div><div class="m">' + esc(r ? r.name || '' : 'not in today\'s file') + '</div></td><td>' + esc(v.v) + '</td><td class="num">' + day(v.date) + '</td><td class="num">' + price(v.price) + '</td><td class="num">' + (r ? price(r.price) : '–') + '</td><td>' + (r && r.scored ? five(r) : '–') + '</td><td class="num">' + (r && r.ceiling ? price(r.ceiling) : '–') + '</td><td>' + (v.review ? (due ? '<span class="pill warn">Due ' + day(v.review) + '</span>' : day(v.review)) : '–') + '</td><td><div class="m">' + esc(v.trigger || '') + '</div></td></tr>'; });
+      h += '<tr class="main" data-sym="' + esc(s) + '" data-look="1"><td><div class="s"><button type="button" class="symb">' + esc(s) + '</button></div><div class="m">' + esc(r ? r.name || '' : 'not in today\'s file') + '</div></td><td>' + esc(v.v) + '</td><td class="num">' + day(v.date) + '</td><td class="num">' + price(v.price) + '</td><td class="num">' + (r ? price(r.price) : '–') + '</td><td>' + (r && r.scored ? answers(r) : '–') + '</td><td class="num">' + (r && r.ceiling ? price(r.ceiling) : '–') + '</td><td>' + (v.review ? (due ? '<span class="pill warn">Due ' + day(v.review) + '</span>' : day(v.review)) : '–') + '</td><td><div class="m">' + esc(v.trigger || '') + '</div></td></tr>'; });
     h += '</table></div>'; }
   else h += '<p class="note">No verdicts yet. Use the Verdict column in the table above, or open a row to add a thesis and a review date.</p>';
   if (all.length) h += '<p class="note">' + n('Reject') + ' rejected · ' + n('No action') + ' no action · ' + live.length + ' on watch, act or own.</p>';
@@ -963,6 +993,7 @@ function drawHow() {
   $('how').innerHTML =
     '<div><b>What it does.</b> Prism reads one screener download with a row for every listed company. It sets aside companies it can\'t judge fairly, asks the rest five separate questions, and shows the few that pass them all. It runs in your browser from the file you give it. There is no live data and no AI behind it.</div>' +
     '<div><b>The five questions.</b> Quality, price, progress and timing are each a rank from 0 to 100 against other companies in the same sector worth ' + money(C.size_min) + ' or more. A yes needs a rank of ' + C.gate + ' or better. Quality also needs a return on capital of at least ' + pct(C.q_roic) + ', and price a free-cash-flow yield of at least ' + pct(C.v_fcf) + '. Strength is a plain test: more cash than debt, or debt of at most ' + C.s_lev + ' times EBITDA, and a share count growing no more than ' + pct(C.s_dil) + ' a year.</div>' +
+    '<div><b>Near misses and named lists.</b> Under "Show" you can swap the short list for the companies that miss just one question, or for one of nine named situations that are often worth a look, such as a good business at a low price. A named list shows every company in that situation, and each row says how it answered the five questions.</div>' +
     '<div><b>Why five answers and not one score.</b> A single score lets a very cheap price make up for a weak business. Here a company must pass each question on its own, and the default order puts first the companies whose weakest answer is strongest.</div>' +
     '<div><b>What the price implies.</b> Instead of calling a stock cheap, Prism works out the growth today\'s price needs. It assumes a ' + pct(C.exp_r) + ' yearly return, ' + C.exp_N + ' years of steady growth, then ' + pct(C.exp_gT) + ' a year. On those terms a yield of ' + pct(y0) + ' needs no growth at all, and a yield of ' + pct(y10) + ' needs 10% a year. The result is the average of the cash-flow and earnings readings.</div>' +
     '<div><b>Entry ceiling.</b> The price at which a ' + pct(C.exp_hurdle) + ' yearly return still works if cash flow grows no faster than ' + pct(C.exp_cap) + ' a year (or slower, if recent sales growth was slower). It is a hurdle for buying, not a fair value, a target or a forecast.</div>' +
@@ -983,10 +1014,8 @@ const csvCell = v => { const s = v == null ? '' : String(v); return /[",\n\t]/.t
 const NOTE_HEAD = ['Symbol', 'Date', 'Verdict', 'Surfaced by', 'Thesis (one line)', 'Why cheap', 'Trigger (what changes the verdict)', 'Entry mechanics', 'Review by', 'Notes'];
 const NOTE_KEYS = [null, 'date', 'v', 'by', 'thesis', 'why', 'trigger', 'entry', 'review', 'notes'];
 document.addEventListener('click', e => {
-  const t = e.target, g = t.closest('.gate'), chip = t.closest('.chip'), vs = t.closest('[data-vsave]');
+  const t = e.target, g = t.closest('.gate'), vs = t.closest('[data-vsave]');
   if (g) { const k = g.dataset.g, i = S.ui.need.indexOf(k); if (i >= 0) S.ui.need.splice(i, 1); else S.ui.need = GK.filter(x => x === k || S.ui.need.includes(x)); S.ui.page = 0; save(); render(); return; }
-  if (chip) { S.ui.list = S.ui.list === chip.dataset.l ? '' : chip.dataset.l; S.ui.page = 0; save(); render(); return; }
-  if (t.id === 'dropNeed') { S.ui.need = []; save(); render(); return; }
   if (t.id === 'pgPrev' || t.id === 'pgNext') { S.ui.page += t.id === 'pgNext' ? 1 : -1; OPEN = null; render(); $('tblTitle').scrollIntoView({block: 'start'}); return; }
   if (vs) { const box = vs.closest('[data-vform]'), p = {}; box.querySelectorAll('[data-vf]').forEach(el => { p[el.dataset.vf] = el.value.trim(); }); setVerdict(vs.dataset.vsave, p); return; }
   const tr = t.closest('tr.main');
@@ -994,7 +1023,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => { const t = e.target; if (t.classList && t.classList.contains('vsel')) setVerdict(t.dataset.sym, {v: t.value}); });
 $('pool').onchange = e => { S.ui.pool = e.target.value; S.ui.page = 0; save(); render(); };
-$('slack').onchange = e => { S.ui.slack = +e.target.value; S.ui.page = 0; save(); render(); };
+$('show').onchange = e => { const v = e.target.value; S.ui.list = v === 'near' ? '' : v; S.ui.slack = v === 'near' ? 1 : 0; S.ui.page = 0; OPEN = null; save(); render(); };
 $('sort').innerHTML = Object.keys(SORTS).map(k => '<option value="' + k + '">' + SORTS[k][0] + '</option>').join('');
 $('sort').onchange = e => { S.ui.sort = e.target.value; S.ui.page = 0; save(); render(); };
 $('hideWarn').onchange = e => { S.ui.hideWarn = e.target.checked; save(); render(); };
@@ -1009,7 +1038,7 @@ $('file').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if
 $('exBtn').onclick = () => { DATA = exampleData(); OPEN = null; say('Showing made-up companies. Your own file, if you loaded one, comes back when you reload the page.'); compute(); };
 ['dragover', 'dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return; e.preventDefault(); $('loadCard').classList.toggle('drop', ev === 'dragover'); if (ev === 'drop' && e.dataTransfer.files[0]) ingest(e.dataTransfer.files[0]); }));
 $('dlList').onclick = () => {
-  let rows = baseRows().filter(passes); if (S.ui.list) rows = rows.filter(r => r.lists.includes(S.ui.list)); rows = sorted(rows);
+  const rows = sorted(viewRows(baseRows(), viewNow()));
   const head = ['Symbol', 'Company', 'Sector', 'Industry', 'Market cap', 'Price', 'Questions passed', 'Quality', 'Price', 'Strength', 'Progress', 'Timing', 'FCF yield', 'Implied growth', 'Price implies', 'Entry ceiling', 'Ways in', 'Warnings', 'Verdict'];
   const body = rows.map(r => [r.sym, r.name, r.sector, r.industry, r.cap, r.price, r.n5, r.Q == null ? '' : Math.round(r.Q), r.V == null ? '' : Math.round(r.V), r.g.S === true ? 'yes' : r.g.S === false ? 'no' : '', r.P == null ? '' : Math.round(r.P), r.T == null ? '' : Math.round(r.T), r.fcfy == null ? '' : +r.fcfy.toFixed(4), r.impg == null ? '' : +r.impg.toFixed(4), r.bucket ? BUCKET[r.bucket] : '', r.ceiling ? +r.ceiling.toFixed(2) : '', r.lists.map(id => LI[id][0]).join('; '), r.flags.map(f => FL[f][0]).join('; '), verdictOf(r)]);
   offer('prism-list-' + (DATA.meta.date || today()) + '.csv', [head].concat(body).map(a => a.map(csvCell).join(',')).join('\n') + '\n');

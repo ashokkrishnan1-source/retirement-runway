@@ -84,6 +84,10 @@ publication date, generated from `RULES`.
 - Colors are CSS tokens on `:root` with dark-mode overrides; chart palettes were checked for color-blind
   safety; layout must work at phone width without sideways scrolling.
 - Every input and result can carry a `?` help note (`HELP` map): what it is, the assumption, typical values.
+- **The owner's bar (said on 2026-11-20): a tool must make life easier, not become "a nobel prize initiative".**
+  He found the 20-tab workbook his Claude-chat Prism produces too complex. So: the answer comes first on the page,
+  in plain words; dials and extras sit collapsed below or behind one "More options" box; no codes or letter
+  abbreviations on the first screen; add a feature only when he asks for it. When in doubt, leave it out.
 
 ## Views (lenses)
 
@@ -126,13 +130,23 @@ shortlists, and works out what growth today's price implies. Same page format as
   warnings, shortlists), `impliedGrowth` / `annuity` (reverse valuation and the entry ceiling), `memberships`.
 - **Five separate answers, no combined score.** Q quality, V price, P progress and T timing are sector percentiles;
   S strength is an absolute test. The default order is by the weakest of Q, V, P, T. Do not add a weighted score.
+- **Page layout: the short list first.** After the file card comes the list itself: a title with the count, one
+  plain sentence, and a "Show" menu that swaps the short list (a yes to every required question) for the near
+  misses (one question short) or one of the nine named lists (shown in full). Rows say what was found in words
+  ("4 of 5. No: out of favor.", the named lists a company is on, cautions); the Q/V/S/P/T letters and ranks
+  appear only in a row's detail. Company size, order, find, the question toggles and the tally sit in the
+  collapsed "More options", whose summary line says when a setting is not the default. Keep the first company
+  on the first screen at phone width.
 - **Unknown is never a pass.** Missing data gives "unknown", which fails a required question.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
 - `FIELDS`: only the first 20 header spellings (`VERIFIED`) were checked against a real download. The rest are
   guesses and are reported on the page under "Columns found in the file". When the owner supplies the full header
   row, correct the spellings, raise `VERIFIED`, and add a check.
-- Sources: the owner's Prism requirements document and "Investment Opportunity Atlas" workbook (neither is in the
-  repo). The page's case-notes file uses the owner's existing column headings exactly (`NOTE_HEAD`); keep them.
+- Sources: the owner's Prism requirements document, his "Investment Opportunity Atlas" workbook, and the
+  "Atlas & Prism latest" workbook that his Claude-chat Prism produces (none is in the repo). That last one has 20
+  tabs and about 130 coded columns, and its watchlist is empty: he finds it too complex. Do not rebuild its boards
+  (changes since the last run, decade divergence, leader league, specialist lane) unless he asks. Its dashboard
+  says the full screener export has 336 fields. The page's case-notes file uses the owner's existing column headings exactly (`NOTE_HEAD`); keep them.
 - "Columns found in the file" has a list of every column heading in the loaded file (`colText`), to copy or save.
   It holds headings only, never figures, so the owner can send it when asking for more columns to be read.
 - State: `localStorage` key `prism-v1` (settings, verdicts, last two list memberships); IndexedDB `prism` keeps the
