@@ -144,7 +144,7 @@ shortlists, and works out what growth today's price implies. Same page format as
   row, correct the spellings, raise `VERIFIED`, and add a check.
 - Sources: the owner's Prism requirements document, his "Investment Opportunity Atlas" workbook, and the
   "Atlas & Prism latest" workbook that his Claude-chat Prism produces (none is in the repo). That last one has 20
-  tabs and about 130 coded columns, and its watchlist is empty: he finds it too complex. Do not rebuild its boards
+  tabs and 106 coded column names, and its watchlist is empty: he finds it too complex. Do not rebuild its boards
   (changes since the last run, decade divergence, leader league, specialist lane) unless he asks. Its dashboard
   says the full screener export has 336 fields. The page's case-notes file uses the owner's existing column headings exactly (`NOTE_HEAD`); keep them.
 - "Columns found in the file" has a list of every column heading in the loaded file (`colText`), to copy or save.
