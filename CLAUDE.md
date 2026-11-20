@@ -147,6 +147,11 @@ format as the other tools; no AI, no live data.
   hover note is no use on a phone; any other tap or Escape closes them. They build their figures from `C`, so they
   stay true when a setting changes. When you add a tag, a column or an option, add its note: the browser test
   checks that every `data-h` on the page has one.
+  Write a note the way you would say it to a friend. The owner read the first entry-ceiling note and asked for it
+  to be explained simply (2026-11-20). So: "the most to pay", "spare cash" (not free cash flow), the company's
+  own figures, what it means at today's price, and no multiples or terms such as hurdle, yield or fair value. A
+  bare dash or a bare percentage is not an answer either: say the reason ("None: cyclical") or the plain
+  comparison ("3.1× ceiling"). The ceiling figure in each row opens such a note (`t_ceil`).
 - **The A-list (`gradeOf`, `judge`).** Six tests of the business, price ignored, all absolute rather than ranked
   within a sector: return on capital (five-year and latest), years of profit in a row, sales growth (five and ten
   years), cash from operations against profit, share-count growth, and debt (net cash, or net debt over EBITDA
