@@ -801,14 +801,35 @@ function render() {
   drawWatch(); drawAside(base); drawLook(); drawHow();
   ['pool', 'slack', 'sort'].forEach(id => { $(id).value = String(S.ui[id]); }); $('hideWarn').checked = S.ui.hideWarn; $('showRej').checked = S.ui.showRej;
 }
+/* The column headings of the loaded file, as plain text: which ones Prism reads and as what, then the ones it does not use.
+   Headings only, never a figure from the file, so the list can be shared when asking for more columns to be read. */
+function colText(rep) {
+  const found = Object.keys(rep.found);
+  return 'Prism column check. Column names only, no company data.\n\nUSED BY PRISM (' + found.length + ' of the ' + FIELDS.length + ' it can use)\n' +
+    found.map(k => rep.found[k] + '  ->  ' + (FLABEL[k] || k) + (rep.guessed.includes(k) ? '  (matched by name only)' : '')).join('\n') +
+    '\n\nNOT FOUND IN THIS FILE (' + rep.missing.length + ')\n' + rep.missing.map(k => FLABEL[k] || k).join('\n') +
+    '\n\nIN THE FILE BUT NOT USED (' + rep.unknown.length + ')\n' + rep.unknown.join('\n') + '\n';
+}
+let FIELDS_FOR = null;
 function drawFields(rep) {
-  const found = Object.keys(rep.found), want = FIELDS.length;
+  if (FIELDS_FOR === rep) return; FIELDS_FOR = rep;   /* rebuilt only when the file changes, so an opened list stays open */
+  const found = Object.keys(rep.found), want = FIELDS.length, own = !DATA.meta.example;
   $('fields').innerHTML = '<div>Prism can use ' + want + ' columns and found <b>' + found.length + '</b> of them in this file. The more it finds, the fewer "unknown" answers.</div>' +
     '<div><b>Found:</b> ' + found.map(k => esc(FLABEL[k] || k)).join(', ') + '.</div>' +
     (rep.missing.length ? '<div><b>Not found:</b> ' + rep.missing.map(k => esc(FLABEL[k] || k)).join(', ') + '. Add these to your download if your provider offers them.</div>' : '') +
     (rep.guessed.length ? '<div><b>Matched by name only:</b> ' + rep.guessed.map(k => esc(FLABEL[k] || k) + ' (from "' + esc(rep.found[k]) + '")').join(', ') + '. These column names have not been checked against a real file yet, so glance at a few values.</div>' : '') +
     (rep.unknown.length ? '<div>' + rep.unknown.length + ' other columns in the file are not used.</div>' : '') +
-    (rep.percentUnits ? '<div>Percentages in this file are written as whole numbers (12 for 12%). They were converted.</div>' : '');
+    (rep.percentUnits ? '<div>Percentages in this file are written as whole numbers (12 for 12%). They were converted.</div>' : '') +
+    (own ? '<details id="colBox"><summary>Every column name in this file</summary><div class="how" style="margin-top:8px"><div>This list holds column names only, with no company figures. Copy it or save it when you ask for Prism to be taught more of your download\'s columns.</div>' +
+      '<textarea id="colNames" readonly rows="9" spellcheck="false" aria-label="Column names in this file" style="font:12.5px/1.5 var(--mono)"></textarea>' +
+      '<div class="row"><button type="button" class="btn sm" id="colCopy">Copy the list</button><button type="button" class="btn sm" id="colSave">Save the list as a file</button></div></div></details>' : '');
+  if (!own) return;
+  const ta = $('colNames'); ta.value = colText(rep);
+  $('colCopy').onclick = () => {
+    const byHand = () => { ta.focus(); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} say(ok ? 'Column names copied.' : 'The list is selected. Copy it from your keyboard or the Copy menu.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(() => say('Column names copied.'), byHand); else byHand();
+  };
+  $('colSave').onclick = () => offer('prism-columns-' + (DATA.meta.date || today()) + '.txt', ta.value);
 }
 function drawTally(base, hits) {
   const need = S.ui.need, k = need.length, n5 = [0, 0, 0, 0, 0, 0]; base.forEach(r => { n5[r.n5]++; });
@@ -994,7 +1015,9 @@ $('dlList').onclick = () => {
   offer('prism-list-' + (DATA.meta.date || today()) + '.csv', [head].concat(body).map(a => a.map(csvCell).join(',')).join('\n') + '\n');
 };
 $('dlNotes').onclick = () => { const syms = Object.keys(S.verdicts).sort();
-  offer('prism-case-notes-' + today() + '.tsv', [NOTE_HEAD.join('\t')].concat(syms.map(s => NOTE_KEYS.map((k, i) => i ? String(S.verdicts[s][k] || '').replace(/[\t\n]/g, ' ') : s).join('\t'))).join('\n') + '\n'); };
+  /* A CSV, because claude.ai lets a page save only certain kinds of file and .tsv is not one of them. The leading mark
+     makes Excel read accented letters correctly; "Load case notes" ignores it and still reads tab-separated files. */
+  offer('prism-case-notes-' + today() + '.csv', '\uFEFF' + [NOTE_HEAD].concat(syms.map(s => NOTE_KEYS.map((k, i) => i ? S.verdicts[s][k] || '' : s))).map(a => a.map(csvCell).join(',')).join('\n') + '\n'); };
 $('upNotes').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   try { const rows = parseCSV(await f.text()), H = rows[0].map(normHeader), col = k => H.findIndex(h => h.indexOf(k) === 0), ix = {sym: col('symbol'), date: col('date'), v: col('verdict'), by: col('surfaced'), thesis: col('thesis'), why: col('why'), trigger: col('trigger'), entry: col('entry'), review: col('review'), notes: col('notes')};
     if (ix.sym < 0 || ix.v < 0) throw 0; let n = 0;

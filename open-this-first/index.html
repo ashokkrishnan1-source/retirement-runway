@@ -147,6 +147,7 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
         <button type="button" class="btn" id="cpNote">Copy a note for people you trust</button>
       </div>
       <textarea id="noteFallback" hidden readonly aria-label="Note for people you trust"></textarea>
+      <p class="note" id="icsNote" hidden aria-live="polite"></p>
     </div>
     <div class="paper" id="paper"></div>
   </section>
@@ -394,6 +395,8 @@ let armed=false;$('clearBtn').onclick=e=>{if(!armed&&!isExample&&Object.keys(S.i
 $('dlPacket').onclick=()=>offer('open-this-first-packet-'+stamp()+'.html',packetFile(),'text/html');
 $('dlText').onclick=()=>offer('open-this-first-'+stamp()+'.md',packetText(),'text/markdown');
 $('dlIcs').onclick=()=>{const n=new Date(),y=n.getFullYear()+1,dt=y+String(n.getMonth()+1).padStart(2,'0')+'01';
+  /* claude.ai lets a page save only certain kinds of file, and calendar files (.ics) are not among them. There, say what to add by hand. */
+  if(!STANDALONE){const e=$('icsNote');e.textContent='A page inside claude.ai can\'t save calendar files. Add this to your own calendar, repeating every year: "Review Open This First", starting '+n.toLocaleString('en-US',{month:'long'})+' 1, '+y+'.';e.hidden=false;e.scrollIntoView({block:'nearest'});return}
   offer('review-open-this-first.ics','BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Open This First//EN\r\nBEGIN:VEVENT\r\nUID:otf-review-'+Date.now()+'@open-this-first\r\nDTSTAMP:'+n.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z\r\nDTSTART;VALUE=DATE:'+dt+'\r\nRRULE:FREQ=YEARLY\r\nSUMMARY:Review "Open This First"\r\nDESCRIPTION:Check that the family packet is still true. Update it after any move\\, new account\\, marriage or death in the family. Reprint and replace the old copy.\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n','text/calendar')};
 $('cpNote').onclick=()=>{const t='I have written a short guide called "Open This First" for my family. It says who to call, where my important papers are, and what to do first if I die or can\'t act for myself. It holds no passwords or account numbers.\n\nIt is kept: [where]\nA copy is with: [who]\n\nYou don\'t need to do anything now. I just want you to know it exists.\n\n'+(S.name||'');
   const fb=()=>{const ta=$('noteFallback');ta.value=t;ta.hidden=false;ta.select();say('Select the note below and copy it.')};

@@ -11,7 +11,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `tests/check-rules.js` | Checks against hand-worked answers (107 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
-| `tests/check-prism.js` | Prism's engine checks (83 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
+| `tests/check-prism.js` | Prism's engine checks (84 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -34,6 +34,11 @@ and republish the artifact.
 The page detects where it runs: inside claude.ai it saves files through `claude.use('downloads')`;
 on its own website (`STANDALONE`) it uses ordinary browser downloads. Keep both paths working, and
 never assume `window.claude` exists.
+
+claude.ai lets a page save only certain kinds of file: among them `txt`, `json`, `md`, `csv`, `html`, `pdf`, `xlsx`
+and `zip`. Others are refused, including `.tsv` and `.ics`. So every download uses an allowed type (Prism's case
+notes are a CSV), or the page says what to do instead (Open This First's calendar reminder, which only the
+standalone site can save). Check the list in the `downloads` capability's type definitions before adding a new kind.
 
 ## Accuracy rules (this is about people's money)
 
@@ -114,7 +119,7 @@ shortlists, and works out what growth today's price implies. Same page format as
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (83 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (84 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -128,6 +133,8 @@ shortlists, and works out what growth today's price implies. Same page format as
   row, correct the spellings, raise `VERIFIED`, and add a check.
 - Sources: the owner's Prism requirements document and "Investment Opportunity Atlas" workbook (neither is in the
   repo). The page's case-notes file uses the owner's existing column headings exactly (`NOTE_HEAD`); keep them.
+- "Columns found in the file" has a list of every column heading in the loaded file (`colText`), to copy or save.
+  It holds headings only, never figures, so the owner can send it when asking for more columns to be read.
 - State: `localStorage` key `prism-v1` (settings, verdicts, last two list memberships); IndexedDB `prism` keeps the
   last file in that browser only; `ftol-summary-prism` feeds the home page. The vault copy holds verdicts and
   settings, never the file.

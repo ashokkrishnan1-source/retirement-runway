@@ -17,8 +17,10 @@ console.log('--- Reading a download ---');
 check('header: punctuation and case ignored', E.normHeader('Shares Ch. (YoY)'), 'shareschyoy');
 check('CSV: quotes, commas and doubled quotes', E.parseCSV('a,b\n"x,1","y ""q"""\n'), [['a', 'b'], ['x,1', 'y "q"']]);
 check('CSV: Windows line ends and a blank last line', E.parseCSV('a,b\r\n1,2\r\n\r\n'), [['a', 'b'], ['1', '2']]);
-check('CSV: semicolons and a byte-order mark', E.parseCSV('﻿a;b\n1;2'), [['a', 'b'], ['1', '2']]);
+check('CSV: semicolons and a byte-order mark', E.parseCSV('\uFEFFa;b\n1;2'), [['a', 'b'], ['1', '2']]);
 check('CSV: empty last cell kept', E.parseCSV('a,b\n1,'), [['a', 'b'], ['1', '']]);
+// The case-notes file keeps a note's line breaks inside a quoted cell; the row must not split there.
+check('CSV: a line break inside quotes stays in the cell', E.parseCSV('a,b\n"line one\nline two",2\n'), [['a', 'b'], ['line one\nline two', '2']]);
 check('number: thousands separators', E.toNumber('1,234'), 1234);
 check('number: $5.2B', E.toNumber('$5.2B'), 5.2e9, 1);
 check('number: 3.4M', E.toNumber('3.4M'), 3.4e6, 1e-3);
