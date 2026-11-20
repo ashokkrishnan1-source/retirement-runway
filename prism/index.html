@@ -1059,7 +1059,7 @@ function drawFields(rep) {
     '<div><b>Found:</b> ' + found.map(k => esc(FLABEL[k] || k)).join(', ') + '.</div>' +
     (rep.missing.length ? '<div><b>Not found:</b> ' + rep.missing.map(k => esc(FLABEL[k] || k)).join(', ') + '. Add these to your download if your provider offers them.</div>' : '') +
     (rep.guessed.length ? '<div><b>Matched by name only:</b> ' + rep.guessed.map(k => esc(FLABEL[k] || k) + ' (from "' + esc(rep.found[k]) + '")').join(', ') + '. These column names have not been checked against a real file yet, so glance at a few values.</div>' : '') +
-    (rep.unknown.length ? '<div>' + rep.unknown.length + ' other columns in the file are not used.</div>' : '') +
+    (rep.unknown.length ? '<div>The file has ' + (found.length + rep.unknown.length) + ' columns in all. Prism reads the ' + found.length + ' its tests need and ignores the other ' + rep.unknown.length + '. That is expected: nothing is missing.</div>' : '') +
     (rep.percentUnits ? '<div>Percentages in this file are written as whole numbers (12 for 12%). They were converted.</div>' : '') +
     (own ? '<details id="colBox"><summary>Every column name in this file</summary><div class="how" style="margin-top:8px"><div>This list holds column names only, with no company figures. Copy it or save it when you ask for Prism to be taught more of your download\'s columns.</div>' +
       '<textarea id="colNames" readonly rows="9" spellcheck="false" aria-label="Column names in this file" style="font:12.5px/1.5 var(--mono)"></textarea>' +
