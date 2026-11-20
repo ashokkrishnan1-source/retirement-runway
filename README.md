@@ -1,13 +1,17 @@
-# Retirement Runway
+# Financial Tools of Life
 
-The first of the **Financial Tools of Life**: a single-page retirement planner that shows
-how long your money lasts, which account should pay the bills, and how much to move into
-a Roth each year, using real federal and state tax rules.
+Plain tools for the money decisions that matter. Each one is a single page that runs in the
+browser: nothing a user types or loads is sent anywhere.
 
-Everything runs in the browser. Nothing a user types is sent anywhere; inputs are saved in
-that browser only, and plans can be downloaded and reopened as a report (.md), CSV or PDF.
+| Tool | What it does | Source |
+|---|---|---|
+| **Retirement Runway** | How long your money lasts, which account should pay the bills, and how much to move into a Roth each year, using real federal and state tax rules. | `index.html` |
+| **Open This First** | A short interview that makes a one-page guide for your family: who to call, where things are, and what not to do yet. | `open-this-first/index.html` |
+| **Prism** | Turns a whole-market stock screener download into a short reading list: the few companies that pass five separate tests. Bring your own screener file; none is included. | `prism/index.html` |
 
-## What it does
+**Use them online:** https://ashokkrishnan1-source.github.io/retirement-runway/
+
+## Retirement Runway: what it does
 
 - Year-by-year projection for a single person or a couple: wages, 401(k)/IRA/Roth,
   brokerage with cost basis, cash, Social Security (own, spousal, survivor, earnings
@@ -23,17 +27,16 @@ that browser only, and plans can be downloaded and reopened as a report (.md), C
   subsidies before 65, Medicare surcharges from 65) and **Legacy** (what heirs receive by
   account type, heirs' tax rates, charitable giving from an IRA).
 
-**Use it online:** https://ashokkrishnan1-source.github.io/retirement-runway/ (published
-automatically from `main` once GitHub Pages is switched on).
-
 ## Files
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app. Open it in a browser, or publish it as a page. |
-| `tests/check-rules.js` | 41 checks against hand-worked answers. Run with `node tests/check-rules.js`. |
+| `index.html` | Retirement Runway, the whole app. |
+| `open-this-first/index.html`, `prism/index.html`, `home/index.html` | The other tools and the home page. |
+| `tests/check-rules.js` | Retirement Runway's checks against hand-worked answers. Run with `node tests/check-rules.js`. |
+| `tests/check-prism.js` | Prism's engine checks, on invented companies. Run with `node tests/check-prism.js`. |
 | `tests/README.md` | How to run the checks and what to update each year. |
-| `tools/build-pages.js` | Builds the standalone website version into `_site/`. |
+| `tools/build-pages.js` | Builds the standalone website into `_site/`. |
 | `.github/workflows/pages.yml` | Runs the checks, then publishes to GitHub Pages on every push to `main`. |
 | `CLAUDE.md` | Project notes for Claude sessions: structure, accuracy rules, yearly update steps. |
 
@@ -52,5 +55,6 @@ After updating, run the checks and republish.
 
 ## Disclaimer
 
-A planning tool, not tax or investment advice. Use it to explore decisions and to start a
-conversation with a tax preparer or adviser.
+Planning tools, not tax, legal or investment advice. Use them to explore decisions and to start
+a conversation with a tax preparer or adviser. Prism lists companies to research; it does not
+say what to buy, and its thresholds have not been tested against later returns.

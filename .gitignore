@@ -5,3 +5,5 @@
 retirement-runway-*.md
 _site/
 _artifact/
+*.xlsx
+*.tsv

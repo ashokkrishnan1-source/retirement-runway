@@ -1,0 +1,1088 @@
+<title>Prism Stock Screener</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a funnel read top to bottom. The whole market goes in; five questions and nine named situations narrow it; a table of what is left. */
+:root{
+  --bg:#f4f3f6; --surface:#ffffff; --sunk:#eae8ef; --line:#d9d5e2;
+  --fg:#1a1624; --fg2:#514a60; --fg3:#6b6380;
+  --accent:#4b3a8c; --accent-soft:#e6e1f5; --on-accent:#ffffff;
+  --good:#0a7d32; --warn:#8f5600; --bad:#b42828; --mute:#5d566e;
+  --good-bg:#e1f3e7; --warn-bg:#fbf0dc; --bad-bg:#fbe5e5; --mute-bg:#eae8ef;
+  --b5:#3a2c75; --b4:#6552ae; --b3:#9486cf; --b2:#bfb6e3; --b1:#dcd7ef; --b0:#eceaf3;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121019; --surface:#1a1724; --sunk:#221e2e; --line:#342d45;
+  --fg:#ece9f3; --fg2:#b1aac2; --fg3:#8f88a3;
+  --accent:#b9a6f0; --accent-soft:#2a2342; --on-accent:#121019;
+  --good:#4cc46f; --warn:#e3a640; --bad:#f07a7a; --mute:#b1aac2;
+  --good-bg:#15301f; --warn-bg:#33270f; --bad-bg:#3a1a1a; --mute-bg:#221e2e;
+  --b5:#cdbdf7; --b4:#a691e6; --b3:#7d68c4; --b2:#57478f; --b1:#3a2f61; --b0:#2a2342; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121019; --surface:#1a1724; --sunk:#221e2e; --line:#342d45;
+  --fg:#ece9f3; --fg2:#b1aac2; --fg3:#8f88a3;
+  --accent:#b9a6f0; --accent-soft:#2a2342; --on-accent:#121019;
+  --good:#4cc46f; --warn:#e3a640; --bad:#f07a7a; --mute:#b1aac2;
+  --good-bg:#15301f; --warn-bg:#33270f; --bad-bg:#3a1a1a; --mute-bg:#221e2e;
+  --b5:#cdbdf7; --b4:#a691e6; --b3:#7d68c4; --b2:#57478f; --b1:#3a2f61; --b0:#2a2342; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 56px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font:500 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg3)}
+h1{font:700 34px/1.1 var(--display);margin:0}
+h2{font:600 20px/1.25 var(--display);margin:0}
+h3{font:600 13px/1.2 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--fg2);margin:0}
+p{margin:0}
+.sub{color:var(--fg2);font-size:16px;max-width:68ch}
+.note{font-size:13.5px;color:var(--fg2);max-width:80ch}
+section{display:flex;flex-direction:column;gap:10px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 14px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;border-radius:8px;cursor:pointer;min-height:40px;display:inline-flex;align-items:center}
+.btn:hover{border-color:var(--fg3)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn.sm{font-size:13px;padding:5px 10px;min-height:32px}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--fg2);min-width:0}
+label.f .h{font-size:12px;color:var(--fg3)}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:13.5px;color:var(--fg2)}
+input[type=text],input[type=number],input[type=date],input[type=search],select,textarea{font:14px var(--body);color:var(--fg);background:var(--sunk);border:1px solid transparent;border-radius:7px;padding:7px 10px;min-height:38px;width:100%}
+textarea{min-height:60px;resize:vertical}
+.gates{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+@media (max-width:980px){.gates{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.gates{grid-template-columns:1fr}h1{font-size:28px}}
+.gate{font:inherit;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-width:0}
+.gate[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.gate .q{font:600 16px/1.2 var(--display)}
+.gate .d{font-size:12.5px;color:var(--fg2)}
+.gate .c{font:500 13px var(--mono);margin-top:auto}
+.gate .st{font-size:12px;color:var(--fg3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 13.5px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:99px;padding:6px 12px;cursor:pointer;min-height:36px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.chip .n{font-family:var(--mono);opacity:.75;margin-left:4px}
+.pill{display:inline-flex;gap:4px;align-items:center;font:500 12px var(--body);padding:2px 8px;border-radius:99px;white-space:nowrap}
+.pill.good{background:var(--good-bg);color:var(--good)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.mute{background:var(--mute-bg);color:var(--mute)}
+.pill.new{background:var(--accent);color:var(--on-accent)}
+.bar{display:flex;height:26px;border-radius:6px;overflow:hidden;gap:2px;background:var(--surface)}
+.bar>div{display:flex;align-items:center;justify-content:center;font:500 11.5px var(--mono);min-width:0;overflow:hidden;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--fg2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.toolbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font:600 11.5px var(--body);letter-spacing:.05em;text-transform:uppercase;color:var(--fg2);text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+td{padding:9px 10px;border-top:1px solid var(--line);vertical-align:top}
+tr.main{cursor:pointer}
+tr.main:hover td{background:var(--sunk)}
+tr.main>td:first-child,th:first-child{position:sticky;left:0;background:var(--surface);z-index:1}
+tr.main:hover>td:first-child{background:var(--sunk)}
+td .s{font:600 14px var(--mono)}
+.symb{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+td .m{font-size:12.5px;color:var(--fg2);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td .m.i{color:var(--fg3)}
+td .lab{display:none}
+td .bk{display:inline-block}
+td .bk::first-letter{text-transform:uppercase}
+td.c-notes{max-width:170px}
+select.vsel{min-width:96px;padding:5px 6px;min-height:34px}
+.detail>td>div{position:sticky;left:10px;width:var(--tw,100%);max-width:var(--tw,100%)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.five{display:flex;gap:3px}
+.five span{font:500 11.5px var(--mono);border-radius:5px;padding:3px 0;width:46px;text-align:center;white-space:nowrap}
+.five .y{background:var(--good-bg);color:var(--good)}
+.five .n{background:var(--mute-bg);color:var(--mute)}
+.five .u{border:1px dashed var(--line);color:var(--fg3)}
+.detail td{background:var(--sunk)}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.dbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0;white-space:normal}
+.dbox h4{font:600 14px var(--display);margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dbox .kv{display:grid;grid-template-columns:1fr auto auto;gap:2px 10px;font-size:12.5px;color:var(--fg2)}
+.dbox .kv b{font:500 12.5px var(--mono);color:var(--fg);text-align:right}
+.dbox .kv i{font-style:normal;font-family:var(--mono);color:var(--fg3);text-align:right}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat .v{font:600 20px var(--display)}.stat .k{font-size:12.5px;color:var(--fg2)}
+details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--fg2)}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.how{display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--fg2);max-width:80ch}
+.drop{outline:2px dashed var(--accent);outline-offset:4px}
+@media (max-width:760px){
+  #tbl,#tbl tbody,#tbl tr,#tbl td{display:block}
+  #tbl tr.hd{display:none}
+  #tbl tr.main{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:12px;border-top:1px solid var(--line)}
+  #tbl tr.main td{border:0;padding:0;position:static;background:transparent;max-width:none}
+  #tbl td.c-size,#tbl td.c-ceil{text-align:right}
+  #tbl td.c-five,#tbl td.c-notes,#tbl td.c-ver{grid-column:1/-1}
+  #tbl td .lab{display:inline;color:var(--fg3);font:12.5px var(--body)}
+  #tbl td .bk::first-letter{text-transform:none}
+  #tbl td .m{max-width:none;white-space:normal}
+  #tbl tr.detail td{padding:10px;border-top:0}
+  .detail>td>div{position:static;width:auto;max-width:none}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Financial Tools of Life · Tool 3</div>
+    <h1>Prism</h1>
+    <p class="sub">Turn a whole-market screener download into a short reading list. Every company is asked five separate questions. The short list is the few that pass them all.</p>
+  </header>
+
+  <section class="card" id="loadCard">
+    <div class="row" style="justify-content:space-between">
+      <div style="min-width:0"><h3>Today's file</h3><p id="fileStatus" style="font-weight:600"></p></div>
+      <div class="row">
+        <label class="btn primary" for="file">Load a screener file</label><input type="file" id="file" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden>
+        <button type="button" class="btn" id="exBtn">Show the example</button>
+      </div>
+    </div>
+    <p class="note">Download the whole-market screener from your data provider with every column you can get. CSV is fastest; Excel also works. You can drop the file anywhere on this page. It is read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.</p>
+    <p class="note" id="msg" role="status" hidden></p>
+    <details id="fieldsBox"><summary>Columns found in the file</summary><div id="fields" class="how" style="margin-top:10px"></div></details>
+  </section>
+
+  <section>
+    <h2>Five questions</h2>
+    <p class="note">Each question looks at different facts, so a yes on all five is five separate reasons, not one reason counted five times. Press a question to stop requiring it.</p>
+    <div class="gates" id="gates"></div>
+    <div class="card" id="tally"></div>
+  </section>
+
+  <section>
+    <h2>Nine ways in</h2>
+    <p class="note">Named situations that are often worth a look. Pick one to see only those companies. It combines with the questions above.</p>
+    <div class="chips" id="chips"></div>
+    <div class="card" id="listInfo" hidden></div>
+  </section>
+
+  <section>
+    <h2 id="tblTitle">Companies</h2>
+    <div class="toolbar">
+      <label class="f" for="pool">Company size<select id="pool"><option value="main">Large: $2B and up</option><option value="ext">Large and mid: $1B and up</option><option value="all">Everything scored</option></select></label>
+      <label class="f" for="slack">Must pass<select id="slack"><option value="0">Every selected question</option><option value="1">All but one of them</option></select></label>
+      <label class="f" for="sort">Order<select id="sort"></select></label>
+      <label class="f" for="q">Find in this list<input type="search" id="q" placeholder="Symbol or name" autocomplete="off"></label>
+    </div>
+    <div class="row">
+      <label class="chk" for="hideWarn"><input type="checkbox" id="hideWarn"> Hide companies with data warnings</label>
+      <label class="chk" for="showRej"><input type="checkbox" id="showRej"> Show companies I rejected</label>
+      <button type="button" class="btn sm" id="dlList">Download this list (CSV)</button>
+    </div>
+    <div class="scroll"><table id="tbl"></table></div>
+    <div class="row" id="pager"></div>
+  </section>
+
+  <section class="card">
+    <h3>Look up any stock</h3>
+    <p class="note">Wondering why a company isn't on the list? Type its symbol to see how it answered each question, or why it was set aside.</p>
+    <label class="f" for="look" style="max-width:260px">Symbol<input type="search" id="look" placeholder="e.g. a symbol from your file" autocomplete="off"></label>
+    <div id="lookOut"></div>
+  </section>
+
+  <section>
+    <h2>Your verdicts</h2>
+    <p class="note">Record a verdict on any row so you don't read the same company again tomorrow. Rejected companies drop off every list until you bring them back.</p>
+    <div id="watch"></div>
+    <div class="row">
+      <button type="button" class="btn sm" id="dlNotes">Download case notes</button>
+      <label class="btn sm" for="upNotes">Load case notes</label><input type="file" id="upNotes" accept=".tsv,.csv,.txt" hidden>
+    </div>
+  </section>
+
+  <section>
+    <h2>Set aside</h2>
+    <p class="note">Nothing is deleted. These companies are in the file but were not scored, or are blocked for now.</p>
+    <div class="stats" id="aside"></div>
+  </section>
+
+  <details class="card" id="ctlBox">
+    <summary>Settings</summary>
+    <p class="note">Starting points, not tested rules. Change one and every list updates.</p>
+    <div class="fields" id="ctl"></div>
+    <div class="row">
+      <label class="chk" for="noMining"><input type="checkbox" id="noMining"> Leave out mining and coal companies</label>
+      <button type="button" class="btn sm" id="ctlReset">Back to the starting values</button>
+    </div>
+    <label class="f" for="leaveOut">Symbols to leave out<span class="h">separated by commas or spaces</span><textarea id="leaveOut"></textarea></label>
+    <div class="row"><span class="note">The last file you loaded is kept in this browser, so the page reopens where you left off.</span><button type="button" class="btn sm" id="forget">Forget the stored file</button></div>
+  </details>
+
+  <details class="card">
+    <summary>How this works, and its limits</summary>
+    <div class="how" id="how"></div>
+  </details>
+
+  <details class="card" id="vaultWrap"><summary>Encrypted and online copies</summary><div id="vault" style="display:flex;flex-direction:column;gap:12px;margin-top:6px"></div></details>
+</div>
+
+<script id="engine">
+'use strict';
+/* ================= Prism engine =================
+   Pure functions with no reference to the page: the same text runs in the browser and in Node (tests/check-prism.js).
+   It reads one screener download (one row per stock) and answers five separate questions about each company,
+   builds named shortlists, and works out what growth today's price implies.
+   Nothing here is advice or a forecast. Every threshold is an editable starting point in CONTROLS;
+   none has been tested against later returns. */
+
+var CONTROLS = {
+  /* size pools, by market value in dollars */
+  size_main: 2e9, size_ext: 1e9, size_min: 3e8,
+  /* the five questions */
+  gate: 60,        /* sector percentile needed for a "yes" on quality, price, progress and timing */
+  q_roic: 0.08,    /* a good business also needs at least this return on invested capital */
+  v_fcf: 0.03,     /* low expectations also needs at least this free-cash-flow yield */
+  s_lev: 3,        /* strong enough: net cash, or debt at most this many times EBITDA */
+  s_dil: 0.03,     /* ... and the share count growing no faster than this in a year */
+  s_cov: 3,        /* ... and interest covered at least this many times, when the file reports it */
+  /* "not now" blocks */
+  blk_lev: 6, blk_dil: 0.10, blk_shrink: 0.15,
+  /* cyclical industries lose this many percentile points on quality and price: today's figures may be a peak */
+  cyc_haircut: 15,
+  /* data warnings */
+  flag_fcf: 0.25, flag_sh: 0.5, flag_pe: 2, flag_nc: 1,
+  /* what the price implies */
+  exp_r: 0.10, exp_hurdle: 0.12, exp_N: 10, exp_gT: 0.025, exp_cap: 0.06, exp_floor: -0.05, exp_perf: 0.20,
+  /* shortlists */
+  qos: 70, cash_min: 0.20, fallen: -0.20, cannibal: -0.03, gwr_growth: 0.10, gwr_ret: 0.10, gwr_gap: 0.05,
+  repair_fcfg: 0.20, repair_fcfy: 0.05, repair_lev: 4, cycle_lev: 2, ind_min: 6, ind_cheap: 60,
+  min_group: 20
+};
+
+/* Columns the engine understands: [name used here, kind, header spellings with letters and digits only].
+   kind: s text, n number, p percentage, d date. Only the first twenty were checked against a real download
+   (see VERIFIED); the rest are best guesses at the provider's headers and show up under "Fields" if not found. */
+var FIELDS = [
+  ['sym', 's', 'symbol', 'ticker'], ['name', 's', 'companyname', 'company', 'name'],
+  ['sector', 's', 'sector'], ['industry', 's', 'industry'],
+  ['price', 'n', 'stockprice', 'price'], ['cap', 'n', 'marketcap', 'marketcapitalization'],
+  ['vol', 'n', 'avgvolume', 'averagevolume'], ['rev', 'n', 'revenue'],
+  ['pe', 'n', 'peratio', 'pe'], ['ev_ebitda', 'n', 'evebitda'], ['lev', 'n', 'debtebitda'],
+  ['cash', 'n', 'totalcash'], ['debt', 'n', 'totaldebt'], ['netcash', 'n', 'netcash', 'netcashdebt'],
+  ['fcfy', 'p', 'fcfyield'], ['roic', 'p', 'roic'], ['revg', 'p', 'revgrowth', 'revenuegrowth'],
+  ['fcfg', 'p', 'fcfgrowth'], ['sh', 'p', 'shareschyoy', 'shareschangeyoy'], ['ret1y', 'p', 'return1y', 'totalreturn1y'],
+  /* not yet checked against a real download */
+  ['country', 's', 'country'], ['exchange', 's', 'exchange'], ['cik', 's', 'cik'],
+  ['pdate', 'd', 'pricedate'], ['split', 'd', 'lastsplitdate'],
+  ['ev', 'n', 'enterprisevalue', 'ev'], ['fcf', 'n', 'fcf', 'freecashflow'],
+  ['sbc', 'n', 'stockbasedcomp', 'sharebasedcomp', 'stockbasedcompensation', 'sbc'],
+  ['shares', 'n', 'sharesout', 'sharesoutstanding'],
+  ['fpe', 'n', 'forwardpe', 'fwdpe'], ['ev_fcf', 'n', 'evfcf'], ['pb', 'n', 'pbratio', 'pb'],
+  ['cov', 'n', 'interestcoverage', 'intcoverage', 'intcov', 'interestcov'],
+  ['altman', 'n', 'altmanzscore', 'altmanz'], ['piotroski', 'n', 'piotroskifscore', 'piotroskif'],
+  ['analysts', 'n', 'analysts', 'analystcount'],
+  ['eyield', 'p', 'earningsyield'], ['roic5', 'p', 'roic5y'], ['roe', 'p', 'roe'],
+  ['gm', 'p', 'grossmargin'], ['om', 'p', 'opermargin', 'operatingmargin', 'opmargin'], ['fcfm', 'p', 'fcfmargin'],
+  ['revg3', 'p', 'revgrowth3y'], ['revg5', 'p', 'revgrowth5y'], ['epsg', 'p', 'epsgrowth'],
+  ['buyback', 'p', 'buybackyield'], ['dd', 'p', '52whighchg', '52whighchange'],
+  ['insider', 'p', 'sharesinsiders', 'insiderownership'], ['short', 'p', 'shortfloat', 'shortpercentfloat']
+];
+var VERIFIED = 20;
+
+/* Financial-sector industries that are ordinary fee businesses and can be scored like any other company. */
+var FIN_STD = {'Insurance Brokers': 1, 'Financial Data & Stock Exchanges': 1};
+/* Industries whose profits swing with a cycle or a commodity price. Midstream is included because the provider
+   files tanker companies there. */
+var CYCLICAL = {};
+['Oil & Gas Exploration & Production', 'Oil & Gas Midstream', 'Oil & Gas Equipment & Services', 'Oil & Gas Integrated',
+ 'Oil & Gas Refining & Marketing', 'Oil & Gas Drilling', 'Thermal Coal', 'Coking Coal', 'Uranium', 'Steel', 'Chemicals',
+ 'Agricultural Inputs', 'Lumber & Wood Production', 'Paper & Paper Products', 'Gold', 'Silver', 'Copper', 'Aluminum',
+ 'Other Precious Metals & Mining', 'Other Industrial Metals & Mining', 'Building Materials', 'Marine Shipping', 'Airlines',
+ 'Farm & Heavy Construction Machinery', 'Trucking', 'Auto Manufacturers', 'Auto Parts', 'Auto & Truck Dealerships',
+ 'Residential Construction', 'Recreational Vehicles', 'Semiconductors', 'Semiconductor Equipment & Materials', 'Solar'
+].forEach(function (k) { CYCLICAL[k] = 1; });
+var MINING = ['Gold', 'Silver', 'Copper', 'Aluminum', 'Other Precious Metals & Mining', 'Other Industrial Metals & Mining',
+  'Coking Coal', 'Thermal Coal', 'Uranium'];
+
+/* which measures feed each question, and how many of them a company needs before it gets a score */
+var LENS = {
+  Q: {keys: ['roic', 'roic5', 'gm', 'om', 'fcfm'], need: 2},
+  V: {keys: ['fcf_ev', 'ey', 'ebitda_ev', 'fey', 'owner'], need: 2},
+  P: {keys: ['revg', 'revg3', 'fcfps_g', 'epsg', 'sh', 'buyback'], need: 2},
+  T: {keys: ['ret1y', 'dd'], need: 1}
+};
+var LOWER_IS_BETTER = {sh: 1, ret1y: 1, dd: 1};
+var LISTS = ['qos', 'decl', 'gwr', 'cash', 'cannibal', 'fallen', 'leader', 'repair', 'cycle'];
+
+/* ---------- reading a download ---------- */
+function normHeader(h) { return String(h == null ? '' : h).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  var nl = text.indexOf('\n'), first = nl < 0 ? text : text.slice(0, nl);
+  var cnt = function (ch) { return first.split(ch).length - 1; };
+  var d = cnt('\t') > cnt(',') ? '\t' : (cnt(';') > cnt(',') ? ';' : ',');
+  var rows = [], row = [], i = 0, n = text.length;
+  while (i < n) {
+    var cell;
+    if (text[i] === '"') {
+      cell = ''; i++;
+      while (i < n) {
+        var j = text.indexOf('"', i);
+        if (j < 0) { cell += text.slice(i); i = n; break; }
+        cell += text.slice(i, j);
+        if (text[j + 1] === '"') { cell += '"'; i = j + 2; } else { i = j + 1; break; }
+      }
+    } else {
+      var k = i;
+      while (k < n) { var ch = text[k]; if (ch === d || ch === '\n' || ch === '\r') break; k++; }
+      cell = text.slice(i, k); i = k;
+    }
+    row.push(cell);
+    if (i >= n) break;
+    var c = text[i];
+    if (c === d) { i++; if (i >= n) row.push(''); continue; }
+    if (c === '\r' && text[i + 1] === '\n') i++;
+    i++; rows.push(row); row = [];
+  }
+  if (row.length) rows.push(row);
+  return rows.filter(function (r) { return r.length > 1 || (r[0] != null && r[0] !== ''); });
+}
+
+/* "1,234", "$5.2B", "12.5%", 0.125 -> number; blanks and dashes -> null. pct.seen is set when a % sign was read. */
+function toNumber(v, pct) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return isFinite(v) ? v : null;
+  var s = String(v).trim();
+  if (!s || s === '-' || /^(n\/?a|nan|null|none)$/i.test(s)) return null;
+  var isPct = /%$/.test(s);
+  s = s.replace(/[$,%\s]/g, '');
+  var m = /^(-?\d*\.?\d+(?:[eE][-+]?\d+)?)([KkMmBbTt])?$/.exec(s);
+  if (!m) return null;
+  var x = parseFloat(m[1]);
+  if (m[2]) x *= {k: 1e3, m: 1e6, b: 1e9, t: 1e12}[m[2].toLowerCase()];
+  if (isPct) { x /= 100; if (pct) pct.seen = true; }
+  return isFinite(x) ? x : null;
+}
+function toDate(v) {
+  if (v == null || v === '') return null;
+  if (v instanceof Date) return isNaN(v) ? null : v.toISOString().slice(0, 10);
+  if (typeof v === 'number') { var d = new Date(Math.round((v - 25569) * 86400000)); return isNaN(d) ? null : d.toISOString().slice(0, 10); }
+  var s = String(v).trim(), m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  if (m) return m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
+  var t = new Date(s); return isNaN(t) ? null : t.toISOString().slice(0, 10);
+}
+
+/* Turns a header row and data rows into the engine's rows, and reports which columns were found. */
+function mapTable(headers, data) {
+  var H = headers.map(normHeader), col = {}, used = {}, report = {found: {}, missing: [], unknown: [], guessed: []};
+  FIELDS.forEach(function (f, fi) {
+    for (var a = 2; a < f.length; a++) {
+      var ix = H.indexOf(f[a]);
+      if (ix >= 0) { col[f[0]] = {ix: ix, kind: f[1]}; used[ix] = 1; report.found[f[0]] = String(headers[ix]); if (fi >= VERIFIED) report.guessed.push(f[0]); return; }
+    }
+    report.missing.push(f[0]);
+  });
+  headers.forEach(function (h, ix) { if (!used[ix] && h != null && h !== '') report.unknown.push(String(h)); });
+  if (!col.sym) return {rows: [], report: report, error: 'No "Symbol" column found.'};
+  var keys = Object.keys(col), pctSeen = {}, rows = [], seen = {};
+  for (var i = 0; i < data.length; i++) {
+    var src = data[i], sym = src[col.sym.ix];
+    if (sym == null || String(sym).trim() === '') continue;
+    sym = String(sym).trim().toUpperCase();
+    if (seen[sym]) continue; seen[sym] = 1;
+    var r = {sym: sym};
+    for (var k = 0; k < keys.length; k++) {
+      var key = keys[k]; if (key === 'sym') continue;
+      var c = col[key], v = src[c.ix];
+      if (c.kind === 's') r[key] = v == null || String(v).trim() === '' ? null : String(v).trim();
+      else if (c.kind === 'd') r[key] = toDate(v);
+      else if (c.kind === 'p') { var flag = {}; r[key] = toNumber(v, flag); if (flag.seen) pctSeen[key] = 1; }
+      else r[key] = toNumber(v);
+    }
+    rows.push(r);
+  }
+  /* A download writes percentages either as fractions (0.12) or as percent numbers (12). Decide once for the whole
+     file, from columns whose typical size makes the two readings easy to tell apart. */
+  var votes = 0, total = 0;
+  ['ret1y', 'revg', 'roic', 'gm', 'om'].forEach(function (key) {
+    if (!col[key] || pctSeen[key]) return;
+    var a = []; rows.forEach(function (r) { if (r[key] != null) a.push(Math.abs(r[key])); });
+    if (a.length < 20) return;
+    a.sort(function (x, y) { return x - y; }); total++;
+    if (a[Math.floor(a.length * 0.75)] > 3) votes++;
+  });
+  report.percentUnits = total > 0 && votes * 2 > total;
+  if (report.percentUnits) keys.forEach(function (key) {
+    if (col[key].kind === 'p' && !pctSeen[key]) rows.forEach(function (r) { if (r[key] != null) r[key] /= 100; });
+  });
+  var dates = {}; rows.forEach(function (r) { if (r.pdate) dates[r.pdate] = (dates[r.pdate] || 0) + 1; });
+  report.asOf = Object.keys(dates).sort(function (a, b) { return dates[b] - dates[a]; })[0] || null;
+  return {rows: rows, report: report, error: null};
+}
+
+/* ---------- what the price implies ---------- */
+/* Value of a stream that starts at 1, grows at g for N years, then at gT for ever, discounted at r. */
+function annuity(g, r, gT, N) {
+  var q = (1 + g) / (1 + r), s = 0, p = 1;
+  for (var t = 0; t < N; t++) { p *= q; s += p; }
+  return s + p * (1 + gT) / (r - gT);
+}
+/* The yearly growth, held for N years, at which a yield y is worth exactly today's price (return exp_r). */
+function impliedGrowth(y, C) {
+  if (!(y > 0)) return null;
+  var target = 1 / y, lo = -0.15, hi = 0.40;
+  if (annuity(hi, C.exp_r, C.exp_gT, C.exp_N) <= target) return hi;
+  if (annuity(lo, C.exp_r, C.exp_gT, C.exp_N) >= target) return lo;
+  for (var i = 0; i < 50; i++) { var m = (lo + hi) / 2; if (annuity(m, C.exp_r, C.exp_gT, C.exp_N) < target) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+function bucketOf(g, C) { return g == null ? null : g < 0 ? 'decline' : g < 0.04 ? 'stagnation' : g < 0.10 ? 'moderate' : g <= C.exp_perf ? 'high' : 'perfection'; }
+
+/* ---------- scoring ---------- */
+function derive(r) {
+  var has = function (x) { return x != null; };
+  if (!has(r.netcash) && has(r.cash) && has(r.debt)) r.netcash = r.cash - r.debt;
+  if (!has(r.fcf) && has(r.fcfy) && has(r.cap)) r.fcf = r.fcfy * r.cap;
+  if (!has(r.fcfy) && has(r.fcf) && r.cap > 0) r.fcfy = r.fcf / r.cap;
+  if (!has(r.ev) && has(r.cap) && has(r.netcash)) r.ev = r.cap - r.netcash;
+  r.fcf_ev = has(r.fcf) && r.ev > 0 ? r.fcf / r.ev : (r.ev_fcf > 0 ? 1 / r.ev_fcf : null);
+  r.ey = has(r.eyield) ? r.eyield : (r.pe > 0 ? 1 / r.pe : null);
+  r.ebitda_ev = r.ev_ebitda > 0 ? 1 / r.ev_ebitda : null;
+  r.fey = r.fpe > 0 ? 1 / r.fpe : null;
+  r.owner = has(r.fcf) && has(r.sbc) && r.cap > 0 ? (r.fcf - Math.abs(r.sbc)) / r.cap : null;
+  if (!has(r.fcfm) && has(r.fcf) && r.rev > 0) r.fcfm = r.fcf / r.rev;
+  r.nc_cap = has(r.netcash) && r.cap > 0 ? r.netcash / r.cap : null;
+  r.fcfps_g = has(r.fcfg) && has(r.sh) && r.sh > -0.9 ? (1 + r.fcfg) / (1 + r.sh) - 1 : null;
+  r.dv = has(r.price) && has(r.vol) ? r.price * r.vol : null;
+}
+function laneOf(r, over, excl) {
+  if (over && over[r.sym]) return over[r.sym];
+  var ind = r.industry || '', sec = r.sector || '';
+  if (excl && excl[ind]) return 'excluded';
+  if (/^shell/i.test(ind)) return 'shell';
+  if (!ind && !sec) return 'unknown';
+  if (sec === 'Real Estate' || /^REIT/.test(ind)) return 'property';
+  if ((sec === 'Financials' || sec === 'Financial Services') && !FIN_STD[ind]) return 'financial';
+  if (ind === 'Healthcare Plans') return 'financial';
+  return 'standard';
+}
+/* Percentile of each company's value among a group, 0 to 100, ties sharing the middle rank. */
+function rankGroup(list, key, lowerIsBetter) {
+  var a = [];
+  for (var i = 0; i < list.length; i++) { var v = list[i][key]; if (v != null && isFinite(v)) a.push(list[i]); }
+  a.sort(function (x, y) { return x[key] - y[key]; });
+  var n = a.length; i = 0;
+  while (i < n) {
+    var j = i; while (j < n && a[j][key] === a[i][key]) j++;
+    var p = 100 * (i + 0.5 * (j - i)) / n; if (lowerIsBetter) p = 100 - p;
+    for (var k = i; k < j; k++) a[k].pc[key] = p;
+    i = j;
+  }
+}
+function strengthOf(r, C, lev) {
+  var fund = r.netcash != null && r.netcash >= 0 ? true : r.lev != null ? (r.lev >= 0 && r.lev <= lev) : (r.netcash != null && r.fcfy != null && r.fcfy < 0 ? false : null);
+  var dil = r.sh == null ? null : r.sh <= C.s_dil;
+  var cov = r.cov == null || r.cov < 0 || (r.netcash != null && r.netcash >= 0) ? true : r.cov >= C.s_cov;
+  return {fund: fund, dil: dil, cov: cov, ok: (fund === false || dil === false || cov === false) ? false : (fund === null || dil === null) ? null : true};
+}
+
+/* Scores every row in place and returns the rows plus what was available. opt: {overrides:{SYM:lane}, exclude:{industry:1}} */
+function run(rows, controls, opt) {
+  var C = {}, k; for (k in CONTROLS) C[k] = CONTROLS[k]; for (k in (controls || {})) if (controls[k] != null && isFinite(controls[k])) C[k] = +controls[k];
+  opt = opt || {};
+  var i, r;
+  for (i = 0; i < rows.length; i++) {
+    r = rows[i]; derive(r); r.lane = laneOf(r, opt.overrides, opt.exclude); r.pc = {}; r.lists = []; r.blocks = []; r.flags = [];
+    r.Q = r.V = r.P = r.T = r.g = r.weak = r.fund = r.impg = r.impg_f = r.impg_e = r.impg_o = r.bucket = r.histg = r.gap = r.ceiling = r.vp = r.leadRank = r.indPrice = null;
+    r.n5 = 0; r.hold = false; r.peak = false; r.indN = 0; r.impgSpread = 0;
+  }
+  /* share classes of one company: keep the most traded line */
+  var groups = {};
+  rows.forEach(function (r) { var key = r.cik ? 'c' + r.cik : 'n' + normHeader(r.name || r.sym); (groups[key] = groups[key] || []).push(r); });
+  Object.keys(groups).forEach(function (key) {
+    var g = groups[key], best = g[0];
+    g.forEach(function (x) { if ((x.dv || 0) > (best.dv || 0)) best = x; });
+    g.forEach(function (x) { x.primary = x === best; x.classes = g.length; });
+  });
+  rows.forEach(function (r) {
+    r.pool = r.cap == null ? null : r.cap >= C.size_main ? 'main' : r.cap >= C.size_ext ? 'ext' : r.cap >= C.size_min ? 'small' : 'micro';
+    r.aside = r.lane !== 'standard' ? r.lane : !r.primary ? 'class' : r.pool === null ? 'nocap' : r.pool === 'micro' ? 'micro' : null;
+    r.scored = !r.aside; r.cyc = !!CYCLICAL[r.industry || ''];
+  });
+  var ref = rows.filter(function (r) { return r.scored; });
+  /* percentiles within each sector; small sectors are ranked together */
+  var bySector = {}, count = {};
+  ref.forEach(function (r) { var s = r.sector || '?'; count[s] = (count[s] || 0) + 1; });
+  ref.forEach(function (r) { var s = r.sector || '?'; if (count[s] < C.min_group) s = '*'; (bySector[s] = bySector[s] || []).push(r); });
+  var avail = {}, metrics = [];
+  Object.keys(LENS).forEach(function (L) { LENS[L].keys.forEach(function (m) { metrics.push(m); }); });
+  metrics.forEach(function (m) {
+    avail[m] = ref.some(function (r) { return r[m] != null; });
+    if (avail[m]) Object.keys(bySector).forEach(function (s) { rankGroup(bySector[s], m, !!LOWER_IS_BETTER[m]); });
+  });
+  function lens(r, L) {
+    var keys = LENS[L].keys, s = 0, n = 0, have = 0;
+    keys.forEach(function (m) { if (avail[m]) have++; var v = r.pc[m]; if (v != null) { s += v; n++; } });
+    if (!have || n < Math.min(LENS[L].need, have)) return null;
+    var x = s / n; if (r.cyc && (L === 'Q' || L === 'V')) x = Math.max(0, x - C.cyc_haircut);
+    return x;
+  }
+  ref.forEach(function (r) {
+    r.Q = lens(r, 'Q'); r.V = lens(r, 'V'); r.P = lens(r, 'P'); r.T = lens(r, 'T');
+    var st = strengthOf(r, C, C.s_lev); r.fund = st.fund;
+    r.g = {
+      Q: r.Q == null || r.roic == null ? null : (r.Q >= C.gate && r.roic >= C.q_roic),
+      V: r.V == null || r.fcfy == null ? null : (r.V >= C.gate && r.fcfy >= C.v_fcf),
+      S: st.ok,
+      P: r.P == null || r.revg == null ? null : (r.P >= C.gate && r.revg >= 0),
+      T: r.T == null ? null : r.T >= C.gate
+    };
+    r.n5 = 0; ['Q', 'V', 'S', 'P', 'T'].forEach(function (x) { if (r.g[x] === true) r.n5++; });
+    var w = [r.Q, r.V, r.P, r.T].filter(function (x) { return x != null; });
+    r.weak = w.length === 4 ? Math.min.apply(null, w) : null;
+    /* not now */
+    if (r.netcash != null && r.netcash < 0 && r.lev != null && r.lev > C.blk_lev) r.blocks.push('lev');
+    if (r.sh != null && r.sh > C.blk_dil && r.sh <= C.flag_sh) r.blocks.push('dil');
+    if (r.revg != null && r.revg < -C.blk_shrink) r.blocks.push('shrink');
+    if (r.fcfy != null && r.fcfy < 0) r.blocks.push('burn');
+    /* data warnings */
+    if (r.fcfy != null && r.fcfy > C.flag_fcf) r.flags.push('fcf_hi');
+    if (r.pe != null && r.pe > 0 && r.pe < C.flag_pe) r.flags.push('pe_lo');
+    if (r.nc_cap != null && r.nc_cap > C.flag_nc) r.flags.push('nc_hi');
+    if (r.sh != null && Math.abs(r.sh) > C.flag_sh) r.flags.push('sh_odd');
+    r.hold = r.flags.length > 0;
+    if (r.fcfy > 0.08 && r.ey > 0 && r.fcfy > 2 * r.ey) r.flags.push('basis');
+    r.peak = r.cyc && ((r.ret1y != null && r.ret1y >= 0.25) || (r.fcfg != null && r.fcfg >= 0.5));
+    if (r.peak) r.flags.push('peak'); else if (r.cyc) r.flags.push('cyc');
+    if (r.country && !/^(united states|usa|us)$/i.test(r.country)) r.flags.push('foreign');
+    if (r.altman != null && r.altman < 1.8 && r.netcash != null && r.netcash < 0) r.flags.push('altman');
+    /* what the price implies */
+    r.impg_f = impliedGrowth(r.fcfy, C); r.impg_e = impliedGrowth(r.ey, C); r.impg_o = impliedGrowth(r.owner, C);
+    var gs = [r.impg_f, r.impg_e, r.impg_o].filter(function (x) { return x != null; });
+    r.impg = gs.length ? gs.reduce(function (a, b) { return a + b; }, 0) / gs.length : null;
+    r.impgSpread = gs.length > 1 ? Math.max.apply(null, gs) - Math.min.apply(null, gs) : 0;
+    r.bucket = bucketOf(r.impg, C);
+    var hs = [r.revg, r.revg3, r.revg5].filter(function (x) { return x != null; });
+    r.histg = hs.length ? Math.min.apply(null, hs) : null;
+    r.gap = r.histg != null && r.impg != null ? r.histg - r.impg : null;
+    r.ceiling = null; r.vp = null;
+    if (r.fcfy > 0 && r.price > 0 && !r.hold && !r.cyc && r.bucket !== 'perfection') {
+      var gc = Math.max(C.exp_floor, Math.min(C.exp_cap, r.histg == null ? 0 : r.histg));
+      r.ceiling = r.price * r.fcfy * annuity(gc, C.exp_hurdle, C.exp_gT, C.exp_N);
+      r.vp = r.fcfy * annuity(gc, C.exp_r, C.exp_gT, C.exp_N);
+    }
+  });
+  /* leaders inside each industry */
+  var byInd = {};
+  ref.forEach(function (r) { if (r.Q != null && r.industry) (byInd[r.industry] = byInd[r.industry] || []).push(r); });
+  Object.keys(byInd).forEach(function (ind) {
+    var g = byInd[ind]; if (g.length < C.ind_min) return;
+    g.sort(function (a, b) { return b.Q - a.Q; }).forEach(function (r, ix) { r.leadRank = ix + 1; r.indN = g.length; });
+    var gv = g.filter(function (r) { return r.V != null; });
+    gv.forEach(function (r) { var below = 0, same = 0; gv.forEach(function (o) { if (o.V < r.V) below++; else if (o.V === r.V) same++; }); r.indPrice = 100 * (below + 0.5 * same) / gv.length; });
+  });
+  /* the named shortlists */
+  ref.forEach(function (r) {
+    if (r.blocks.length) return;
+    var L = r.lists, S = r.g.S === true, pos = r.fcfy != null && r.fcfy > 0;
+    if (r.Q >= C.qos && r.V >= C.qos && S) L.push('qos');
+    if (r.impg != null && r.impg < 0 && r.revg > 0 && pos && S && !r.peak) L.push('decl');
+    if (r.revg >= C.gwr_growth && r.ret1y != null && r.ret1y <= C.gwr_ret && r.gap != null && r.gap >= C.gwr_gap && pos && S) L.push('gwr');
+    if (r.nc_cap >= C.cash_min && pos && r.sh != null && r.sh <= C.s_dil) L.push('cash');
+    if (r.sh != null && r.sh <= C.cannibal && r.V >= 50 && r.fcfy >= -r.sh && r.fund === true) L.push('cannibal');
+    if (r.ret1y != null && r.ret1y <= C.fallen && r.Q >= C.gate && S && pos) L.push('fallen');
+    if (r.leadRank != null && r.leadRank <= 3 && r.indPrice >= C.ind_cheap && r.Q >= 50 && S) L.push('leader');
+    if (!r.cyc && r.Q != null && r.Q < 50 && r.fcfg >= C.repair_fcfg && r.fcfy >= C.repair_fcfy && r.revg != null && r.revg >= -0.05 && r.sh != null && r.sh <= C.s_dil && strengthOf(r, C, C.repair_lev).fund === true) L.push('repair');
+    if (r.cyc && r.ret1y != null && r.ret1y <= C.fallen && pos && strengthOf(r, C, C.cycle_lev).fund === true) L.push('cycle');
+  });
+  return {rows: rows, C: C, avail: avail, scored: ref.length};
+}
+
+/* Which symbols are on each list today: kept between files so the page can say what is new. */
+function memberships(rows, need) {
+  var out = {all: []}; LISTS.forEach(function (id) { out[id] = []; });
+  rows.forEach(function (r) {
+    if (!r.scored || r.blocks.length || r.hold || r.pool !== 'main') return;
+    if (need.every(function (x) { return r.g[x] === true; })) out.all.push(r.sym);
+    r.lists.forEach(function (id) { out[id].push(r.sym); });
+  });
+  return out;
+}
+</script>
+
+<script>
+'use strict';
+/* ================= Prism page ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+const STORE = 'prism-v1';
+const say = t => { const e = $('msg'); e.textContent = t || ''; e.hidden = !t; };
+const tick = () => new Promise(r => setTimeout(r, 30));
+const pct = x => x == null || !isFinite(x) ? '–' : (x < 0 ? '−' : '') + (Math.abs(x) * 100).toFixed(Math.abs(x) < 1 ? 1 : 0).replace(/\.0$/, '') + '%';
+const money = x => x == null || !isFinite(x) ? '–' : (x < 0 ? '−' : '') + '$' + (a => a >= 1e12 ? (a / 1e12).toFixed(2) + 'T' : a >= 1e9 ? (a / 1e9).toFixed(1) + 'B' : a >= 1e6 ? Math.round(a / 1e6) + 'M' : Math.round(a).toLocaleString('en-US'))(Math.abs(x));
+const price = x => x == null || !isFinite(x) ? '–' : '$' + (x >= 1000 ? Math.round(x).toLocaleString('en-US') : x.toFixed(2));
+const day = d => { if (!d) return ''; const t = new Date(d + (d.length === 10 ? 'T12:00:00' : '')); return isNaN(t) ? d : t.toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'}); };
+const today = () => new Date().toISOString().slice(0, 10);
+
+const GK = ['Q', 'V', 'S', 'P', 'T'];
+const GQ = {
+  Q: ['Good business?', 'Earns high returns on the money invested in it, compared with its sector.'],
+  V: ['Low expectations?', 'The price is low against cash flow and earnings, so little growth is needed to justify it.'],
+  S: ['Strong enough to wait?', 'Little debt, and not issuing many new shares.'],
+  P: ['Growing per share?', 'Sales and cash flow per share are rising, or the share count is shrinking.'],
+  T: ['Out of favor?', 'The share price has lagged its sector over the past year.']
+};
+/* name, what it is, first check, what would prove it wrong, where it sits in the owner's opportunity atlas */
+const LI = {
+  qos: ['Quality on sale', 'A strong business at a low price, both judged against its own sector.', 'Why is it cheap? Find the worry in the latest results and decide whether it is temporary.', 'Returns on capital are falling, or the low price reflects customers actually leaving.', 'D02 · A, H'],
+  decl: ['Priced for decline, still growing', 'Today\'s price only makes sense if cash flow shrinks for ten years, yet sales are growing.', 'Is today\'s cash flow repeatable? Strip out one-off gains and read next year\'s guidance.', 'Cash flow is at a peak, or the growth was bought through acquisitions.', 'D03 · N'],
+  gwr: ['Growth without a rerating', 'Sales grew strongly while the share price went nowhere.', 'Did profit per share grow as well, or only sales?', 'Growth came from issuing shares, buying companies or cutting prices.', 'D03 · A, J'],
+  cash: ['Cash-backed', 'Net cash is a large part of the market value, and the business still earns cash.', 'Whose cash is it? Customer balances and cash held overseas or under restrictions don\'t count.', 'The cash is being burned, is pledged, or cannot reach shareholders.', 'D04 · C, N'],
+  cannibal: ['Shrinking share count', 'The company retired a meaningful share of its stock in a year, paid for out of free cash flow, at a sensible price.', 'Were the buybacks paid from cash flow or from new debt? Do staff share awards cancel them out?', 'Buybacks at high prices, rising debt, or heavy stock pay.', 'D05 · D, O'],
+  fallen: ['Fallen quality', 'Down sharply in a year, but still a good business with a sound balance sheet.', 'What changed: the business, or the mood? Read the last two sets of results.', 'Lasting damage: lost customers, a failing product, or a forced refinancing.', 'D01 · B, E'],
+  leader: ['Industry leader at a discount', 'One of the three best businesses in its industry, priced below most of its peers.', 'Is it cheaper for a reason the peers don\'t share, such as a lawsuit or a lost customer?', 'Leadership is slipping: margins and returns are falling toward the pack.', 'D02 · H'],
+  repair: ['Cash improving, returns still low', 'A weak business whose free cash flow is rising fast. A possible early repair, not proof of one.', 'List the milestones management promised and check which were met.', 'The cash came from cutting investment or squeezing suppliers, not from running better.', 'D06 · E, F, J'],
+  cycle: ['Cycle survivors', 'A cyclical company that has fallen hard but has little debt and still earns cash.', 'Value it on mid-cycle earnings, then test two more bad years.', 'Demand has changed for good, or debt falls due before the cycle turns.', 'D09 · G']
+};
+const LISTSORT = {qos: r => Math.min(r.Q, r.V), decl: r => -r.impg, gwr: r => r.gap, cash: r => r.nc_cap, cannibal: r => -r.sh, fallen: r => r.Q, leader: r => r.indPrice, repair: r => r.fcfg, cycle: r => -r.ret1y};
+const SORTS = {
+  auto: ['Best fit first', null], weak: ['Fewest weak spots', r => r.weak], V: ['Lowest expectations', r => r.V], Q: ['Best business', r => r.Q],
+  P: ['Fastest per-share progress', r => r.P], T: ['Most out of favor', r => r.T], cap: ['Largest company', r => r.cap],
+  room: ['Most room under the entry ceiling', r => r.ceiling ? r.ceiling / r.price : null], sym: ['A to Z', null]
+};
+const ML = {roic: 'Return on capital', roic5: 'Return on capital, 5-year', gm: 'Gross margin', om: 'Operating margin', fcfm: 'Free cash flow margin',
+  fcf_ev: 'Free cash flow ÷ enterprise value', ey: 'Earnings yield', ebitda_ev: 'EBITDA ÷ enterprise value', fey: 'Forward earnings yield', owner: 'Cash flow after stock pay ÷ market value',
+  revg: 'Sales growth', revg3: 'Sales growth, 3-year', fcfps_g: 'Free cash flow per share growth', epsg: 'Earnings per share growth', sh: 'Share count change', buyback: 'Buyback yield',
+  ret1y: 'One-year return', dd: 'Below 52-week high'};
+const FLABEL = {sym: 'Symbol', name: 'Company name', sector: 'Sector', industry: 'Industry', price: 'Stock price', cap: 'Market cap', vol: 'Average volume', rev: 'Revenue', pe: 'P/E ratio', ev_ebitda: 'EV/EBITDA', lev: 'Debt / EBITDA', cash: 'Total cash', debt: 'Total debt', netcash: 'Net cash', fcfy: 'FCF yield', roic: 'ROIC', revg: 'Revenue growth', fcfg: 'FCF growth', sh: 'Shares change (1 year)', ret1y: 'Return 1 year',
+  country: 'Country', exchange: 'Exchange', cik: 'CIK', pdate: 'Price date', split: 'Last split date', ev: 'Enterprise value', fcf: 'Free cash flow', sbc: 'Stock-based compensation', shares: 'Shares outstanding', fpe: 'Forward P/E', ev_fcf: 'EV/FCF', pb: 'P/B ratio', cov: 'Interest coverage', altman: 'Altman Z-score', piotroski: 'Piotroski F-score', analysts: 'Analyst count', eyield: 'Earnings yield', roic5: 'ROIC 5-year', roe: 'ROE', gm: 'Gross margin', om: 'Operating margin', fcfm: 'FCF margin', revg3: 'Revenue growth 3-year', revg5: 'Revenue growth 5-year', epsg: 'EPS growth', buyback: 'Buyback yield', dd: '52-week high change', insider: 'Insider ownership', short: 'Short % of float'};
+/* label, explanation, whether it hides the row by default */
+const FL = {
+  fcf_hi: ['Cash yield looks too high', 'A free-cash-flow yield this high is usually a one-off, customer money, a cycle peak or a data error.'],
+  pe_lo: ['P/E looks too low', 'A P/E this low usually means earnings include a one-time gain.'],
+  nc_hi: ['Cash exceeds market value', 'Reported net cash is more than the company is worth on the market. Check whose cash it is.'],
+  sh_odd: ['Share count jumped', 'The share count changed by more than half in a year: a split, a merger or a data error.'],
+  basis: ['Cash flow far above earnings', 'Free cash flow is more than twice reported earnings. Check working capital and one-offs.'],
+  peak: ['Cyclical, after a strong year', 'Profits in this industry swing with a cycle. After a strong year, today\'s cash flow may be a peak.'],
+  cyc: ['Cyclical industry', 'Profits in this industry swing with a cycle or a commodity price.'],
+  foreign: ['Based outside the US', 'Check currency, withholding tax and whether cash can reach shareholders.'],
+  altman: ['Weak Altman score', 'An Altman Z-score under 1.8 with net debt signals financial strain.']
+};
+const SEVERE = {fcf_hi: 1, pe_lo: 1, nc_hi: 1, sh_odd: 1};
+const FSHORT = {fcf_hi: 'Cash yield?', pe_lo: 'P/E?', nc_hi: 'Cash over value', sh_odd: 'Share count?', basis: 'Cash over earnings', peak: 'Cycle peak?', cyc: 'Cyclical', foreign: 'Non-US', altman: 'Weak Altman'};
+const ASIDE = {financial: 'Banks, insurers and lenders', property: 'Property companies', shell: 'Shell companies', class: 'Second share classes', micro: 'Too small to score', nocap: 'No market value in the file', unknown: 'No sector or industry', excluded: 'Left out by you'};
+const ASIDE_WHY = {financial: 'Banks, insurers and lenders need different measures (capital, deposits, reserves), so these cash-flow tests would mislead.', property: 'Property companies are judged on rents, property values and debt, not on these cash-flow tests.', shell: 'A shell company has no operating business yet.', class: 'Another share class of the same company trades more, and that one is scored.', micro: 'Its market value is under the smallest size scored here.', nocap: 'The file has no market value for it.', unknown: 'The file gives no sector or industry for it.', excluded: 'You chose to leave it out in Settings.'};
+const BUCKET = {decline: 'Decline', stagnation: 'No growth', moderate: 'Moderate growth', high: 'High growth', perfection: 'Perfection'};
+const VERDICTS = ['Watch', 'Act', 'Own', 'No action', 'Reject'];
+const CTL = [['gate', 'Sector rank needed for a yes (0 to 100)', 1], ['q_roic', 'Lowest return on capital for a good business, %', 100], ['v_fcf', 'Lowest free-cash-flow yield for low expectations, %', 100],
+  ['s_lev', 'Most debt allowed, times EBITDA', 1], ['s_dil', 'Most share-count growth allowed, %', 100], ['cyc_haircut', 'Points deducted for a cyclical industry', 1],
+  ['flag_fcf', 'Cash yield that triggers a data warning, %', 100], ['exp_r', 'Return used for what the price implies, %', 100], ['exp_hurdle', 'Return required at the entry ceiling, %', 100],
+  ['size_main', 'A large company starts at, $ billion', 1e-9], ['size_min', 'Smallest company scored, $ million', 1e-6]];
+
+/* ---------- state ---------- */
+const blank = () => ({controls: {}, noMining: false, leaveOut: '', verdicts: {}, hist: null, ui: {pool: 'main', need: GK.slice(), slack: 0, list: '', hideWarn: true, showRej: false, sort: 'auto', page: 0}});
+let S = blank(), DATA = null, RES = null, BY = {}, NEW = new Set(), OPEN = null, FIND = '', C = CONTROLS;
+function load() { try { const o = JSON.parse(localStorage.getItem(STORE)); if (o && o.ui) { S = Object.assign(blank(), o); S.ui = Object.assign(blank().ui, o.ui); } } catch (e) {} }
+function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
+
+/* the last file is kept in this browser so the page reopens where you left off */
+function idb() { return new Promise((res, rej) => { try { const q = indexedDB.open('prism', 1); q.onupgradeneeded = () => q.result.createObjectStore('kv'); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); } catch (e) { rej(e); } }); }
+async function cachePut(v) { try { const d = await idb(); await new Promise((res, rej) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, 'data'); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
+async function cacheGet() { try { const d = await idb(); return await new Promise((res, rej) => { const q = d.transaction('kv').objectStore('kv').get('data'); q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); }); } catch (e) { return null; } }
+async function cacheDel() { try { const d = await idb(); await new Promise((res, rej) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').delete('data'); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
+function pack(rows) { const keys = FIELDS.map(f => f[0]).filter(k => rows.some(r => r[k] != null)); return {keys, rows: rows.map(r => keys.map(k => r[k] == null ? null : r[k]))}; }
+function unpack(p) { return p.rows.map(a => { const r = {}; p.keys.forEach((k, i) => { r[k] = a[i]; }); return r; }); }
+
+/* ---------- reading a file ---------- */
+let sheetLibP = null;
+function sheetLib() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (!sheetLibP) sheetLibP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = () => res(window.XLSX); s.onerror = () => { sheetLibP = null; rej(new Error('lib')); }; document.head.appendChild(s); });
+  return sheetLibP;
+}
+function splitHeader(aoa) { for (let i = 0; i < Math.min(aoa.length, 15); i++) { if ((aoa[i] || []).some(c => { const h = normHeader(c); return h === 'symbol' || h === 'ticker'; })) return {headers: aoa[i], data: aoa.slice(i + 1)}; } return null; }
+async function ingest(file) {
+  say('Reading ' + file.name + '…'); await tick();
+  try {
+    let table = null;
+    if (/\.xlsx?$/i.test(file.name)) {
+      if (file.size > 25e6) { say('Reading a large Excel file. This can take a minute or two. A CSV download is much faster.'); await tick(); }
+      let X; try { X = await sheetLib(); } catch (e) { say('Could not load the Excel reader. Download the screener as CSV and load that.'); return; }
+      const wb = X.read(new Uint8Array(await file.arrayBuffer()), {type: 'array', cellDates: true, cellFormula: false, cellHTML: false, cellText: false});
+      for (const name of wb.SheetNames) { table = splitHeader(X.utils.sheet_to_json(wb.Sheets[name], {header: 1, raw: true, defval: null})); if (table) break; }
+    } else table = splitHeader(parseCSV(await file.text()));
+    if (!table) { say('That file has no "Symbol" column in its first rows, so it doesn\'t look like a screener download.'); return; }
+    const m = mapTable(table.headers, table.data);
+    if (m.error || !m.rows.length) { say(m.error || 'No companies found in that file.'); return; }
+    const fromName = (/(\d{4}-\d{2}-\d{2})/.exec(file.name) || [])[1] || null;
+    DATA = {rows: m.rows, meta: {file: file.name, n: m.rows.length, date: m.report.asOf || fromName || today(), dateFrom: m.report.asOf ? 'price' : fromName ? 'name' : 'load', report: m.report, example: false}};
+    cachePut({meta: DATA.meta, packed: pack(m.rows)});
+    OPEN = null; S.ui.page = 0; say(m.rows.length < 500 ? 'Loaded, but the file has only ' + m.rows.length + ' companies. Sector comparisons work best on a whole-market download.' : '');
+    compute();
+  } catch (e) { say('That file could not be read' + (/\.xlsx?$/i.test(file.name) ? '. If it is very large, download the screener as CSV instead.' : '.')); }
+}
+/* made-up companies so the page shows what it does before a file is loaded */
+function exampleData() {
+  let a = 20261104; const rnd = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const nrm = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd(); return (u - 3) / 0.7071; };
+  const A = ['Alder', 'Birch', 'Cobalt', 'Delta', 'Ember', 'Fathom', 'Granite', 'Harbor', 'Iris', 'Juniper', 'Kestrel', 'Lumen', 'Marlow', 'Northway', 'Orchard', 'Pinnacle', 'Quarry', 'Ridge', 'Summit', 'Tidewater', 'Umber', 'Vale', 'Willow', 'Yarrow', 'Zephyr', 'Anchor', 'Beacon', 'Cedar', 'Drift', 'Elm'];
+  const SEC = [['Technology', [['Software - Application', 'Software'], ['Semiconductors', 'Chips'], ['Computer Hardware', 'Devices']], 0.035, 0.14, 0.14, 80],
+    ['Healthcare', [['Medical Devices', 'Medical'], ['Diagnostics & Research', 'Labs']], 0.03, 0.09, 0.10, 60], ['Industrials', [['Specialty Industrial Machinery', 'Machines'], ['Airlines', 'Air'], ['Waste Management', 'Services']], 0.045, 0.11, 0.07, 70],
+    ['Consumer Discretionary', [['Restaurants', 'Kitchens'], ['Specialty Retail', 'Stores'], ['Auto Parts', 'Parts']], 0.055, 0.12, 0.06, 55], ['Consumer Staples', [['Packaged Foods', 'Foods'], ['Household & Personal Products', 'Home']], 0.055, 0.11, 0.04, 30],
+    ['Energy', [['Oil & Gas Exploration & Production', 'Energy'], ['Oil & Gas Midstream', 'Pipelines']], 0.07, 0.11, 0.09, 30], ['Materials', [['Specialty Chemicals', 'Chemicals'], ['Steel', 'Steel']], 0.045, 0.09, 0.05, 30],
+    ['Communication Services', [['Telecom Services', 'Telecom'], ['Entertainment', 'Media']], 0.07, 0.08, 0.06, 30], ['Utilities', [['Utilities - Regulated Electric', 'Power']], 0.01, 0.055, 0.05, 22],
+    ['Financials', [['Banks - Regional', 'Bank'], ['Insurance Brokers', 'Brokers'], ['Shell Companies', 'Acquisition']], 0.05, 0.10, 0.06, 40], ['Real Estate', [['REIT - Retail', 'Properties']], 0.04, 0.04, 0.04, 15]];
+  const headers = ['Symbol', 'Stock Price', 'Market Cap', 'EV/EBITDA', 'FCF Yield', 'Company Name', 'Industry', 'Sector', 'Avg. Volume', 'Return 1Y', 'Revenue', 'PE Ratio', 'Shares Ch. (YoY)', 'Total Cash', 'Total Debt', 'Net Cash', 'Debt / EBITDA', 'ROIC', 'Rev. Growth', 'FCF Growth'];
+  const data = [], names = {}, syms = {};
+  SEC.forEach(sec => { for (let n = 0; n < sec[5]; n++) {
+    const ind = sec[1][Math.floor(rnd() * sec[1].length)]; let nm, tries = 0; do { nm = A[Math.floor(rnd() * A.length)] + ' ' + ind[1]; } while (names[nm] && ++tries < 50); if (names[nm]) continue; names[nm] = 1;
+    let sym = (nm.slice(0, 2) + ind[1].slice(0, 2)).toUpperCase(), k = 0; while (syms[sym + '.X']) sym = (nm.slice(0, 2) + ind[1][0]).toUpperCase() + 'ABCDEFGHJK'[k++ % 10]; sym += '.X'; syms[sym] = 1;
+    const zq = nrm(), zv = nrm(), zs = nrm(), zp = nrm(), zt = nrm();
+    const cap = Math.max(6e7, Math.exp(21.5 + 1.5 * nrm())), px = 6 + rnd() * 160, fcfy = sec[2] + 0.03 * zv + 0.012 * zq, roic = sec[3] + 0.09 * zq;
+    const revg = sec[4] + 0.09 * zp + 0.02 * zq, sh = rnd() < 0.04 ? 0.12 + rnd() * 0.2 : 0.008 - 0.012 * zp - (rnd() < 0.35 ? rnd() * 0.05 : 0) + 0.008 * nrm();
+    const cash = cap * Math.max(0.01, 0.07 + 0.04 * nrm()), net = zs > 0.9 ? cap * (0.08 + 0.3 * rnd()) : cap * (-0.16 + 0.11 * zs), debt = Math.max(0, cash - net), cash2 = Math.max(cash, net);
+    data.push([sym, +px.toFixed(2), Math.round(cap), fcfy > 0.004 ? +Math.max(2.5, 1 / (fcfy * 1.5 + 0.035) + nrm()).toFixed(2) : null, +fcfy.toFixed(4), nm, ind[0], sec[0], Math.round(cap / px * 0.004), +(0.06 + 0.27 * zt - 0.07 * zv).toFixed(4),
+      Math.round(cap / (1.4 + 2.2 * rnd())), fcfy > 0.006 ? +(1 / (fcfy * (0.75 + 0.35 * rnd()))).toFixed(2) : null, +sh.toFixed(4), Math.round(cash2), Math.round(debt), Math.round(cash2 - debt), +Math.max(0, 2.3 - 1.5 * zs + 0.5 * nrm()).toFixed(2), +roic.toFixed(4), +revg.toFixed(4), rnd() < 0.15 ? null : +(revg + 0.22 * nrm()).toFixed(4)]);
+  } });
+  const m = mapTable(headers, data);
+  return {rows: m.rows, meta: {file: '', n: m.rows.length, date: today(), dateFrom: 'load', report: m.report, example: true}};
+}
+
+/* ---------- scoring and history ---------- */
+function compute() {
+  if (!DATA) return;
+  const excl = {}; if (S.noMining) MINING.forEach(k => { excl[k] = 1; });
+  const over = {}; String(S.leaveOut || '').split(/[\s,;]+/).forEach(s => { s = s.trim().toUpperCase(); if (s) over[s] = 'excluded'; });
+  RES = run(DATA.rows, S.controls, {exclude: excl, overrides: over}); C = RES.C; BY = {}; RES.rows.forEach(r => { BY[r.sym] = r; });
+  NEW = new Set();
+  if (!DATA.meta.example) {
+    const m = memberships(RES.rows, GK), d = DATA.meta.date;
+    if (!S.hist || !S.hist.cur) S.hist = {cur: {date: d, m}, prev: null};
+    else if (S.hist.cur.date < d) S.hist = {cur: {date: d, m}, prev: S.hist.cur};
+    else if (S.hist.cur.date === d) S.hist.cur = {date: d, m};
+    if (S.hist.prev && S.hist.cur.date === d) { const old = new Set(S.hist.prev.m.all); S.hist.cur.m.all.forEach(s => { if (!old.has(s)) NEW.add(s); }); }
+    const watch = Object.keys(S.verdicts).filter(s => /^(Watch|Act|Own)$/.test(S.verdicts[s].v)).length;
+    try { localStorage.setItem('ftol-summary-prism', JSON.stringify({n: m.all.filter(x => (S.verdicts[x] || {}).v !== 'Reject').length, date: d, watch, at: new Date().toISOString()})); } catch (e) {}
+    save();
+  }
+  render();
+}
+const verdictOf = r => (S.verdicts[r.sym] || {}).v || '';
+const inPool = r => S.ui.pool === 'all' || r.pool === 'main' || (S.ui.pool === 'ext' && r.pool === 'ext');
+function baseRows() { return RES.rows.filter(r => r.scored && inPool(r) && !r.blocks.length && (!S.ui.hideWarn || !r.hold) && (S.ui.showRej || verdictOf(r) !== 'Reject')); }
+function passes(r) { const need = S.ui.need; if (!need.length) return true; const yes = need.filter(k => r.g[k] === true).length; return yes >= need.length - (need.length > 1 ? S.ui.slack : 0); }
+function sorted(rows) {
+  let key = S.ui.sort === 'auto' ? (S.ui.list ? LISTSORT[S.ui.list] : SORTS.weak[1]) : SORTS[S.ui.sort][1];
+  if (S.ui.sort === 'sym') return rows.slice().sort((a, b) => a.sym < b.sym ? -1 : 1);
+  const val = r => { const v = key(r); return v == null || !isFinite(v) ? -Infinity : v; };
+  return rows.slice().sort((a, b) => val(b) - val(a) || (b.cap || 0) - (a.cap || 0));
+}
+
+/* ---------- drawing ---------- */
+function render() {
+  const m = DATA.meta, base = baseRows();
+  $('fileStatus').textContent = m.example ? 'Example: ' + m.n.toLocaleString('en-US') + ' made-up companies. Load your own file to replace them.' : m.file + ' · ' + m.n.toLocaleString('en-US') + ' companies · ' + (m.dateFrom === 'price' ? 'prices dated ' : m.dateFrom === 'name' ? 'file dated ' : 'loaded ') + day(m.date);
+  drawFields(m.report);
+  $('gates').innerHTML = GK.map(k => { const yes = base.filter(r => r.g[k] === true).length, unk = base.filter(r => r.g[k] == null).length, on = S.ui.need.includes(k);
+    return '<button type="button" class="gate" data-g="' + k + '" aria-pressed="' + on + '"><span class="q">' + GQ[k][0] + '</span><span class="d">' + GQ[k][1] + '</span><span class="c">' + yes.toLocaleString('en-US') + ' yes' + (unk ? ' · ' + unk + ' unknown' : '') + '</span><span class="st">' + (on ? 'Required' : 'Not required') + '</span></button>'; }).join('');
+  const hits = base.filter(passes), need = S.ui.need;
+  drawTally(base, hits);
+  $('chips').innerHTML = LISTS.map(id => '<button type="button" class="chip" data-l="' + id + '" aria-pressed="' + (S.ui.list === id) + '">' + LI[id][0] + '<span class="n">' + base.filter(r => r.lists.includes(id)).length + '</span></button>').join('');
+  const li = $('listInfo'); li.hidden = !S.ui.list;
+  let rows = hits;
+  if (S.ui.list) { const L = LI[S.ui.list], inList = base.filter(r => r.lists.includes(S.ui.list)); rows = hits.filter(r => r.lists.includes(S.ui.list));
+    li.innerHTML = '<h2>' + L[0] + '</h2><p>' + L[1] + '</p><p class="note"><b>First check.</b> ' + L[2] + '</p><p class="note"><b>It is wrong if.</b> ' + L[3] + '</p><p class="note">' + inList.length + ' companies are in this situation' + (need.length ? '; ' + rows.length + ' of them also pass the questions you require.' : '.') + ' Atlas route ' + L[4].replace(' · ', ', angle families ') + '.</p>' +
+      (need.length && rows.length < inList.length ? '<div><button type="button" class="btn sm" id="dropNeed">Show all ' + inList.length + ' (stop requiring the questions)</button></div>' : ''); }
+  if (FIND) { const f = FIND.toLowerCase(); rows = rows.filter(r => r.sym.toLowerCase().includes(f) || (r.name || '').toLowerCase().includes(f)); }
+  rows = sorted(rows);
+  const what = need.length === 5 ? 'yes to all five' : need.length ? 'yes to ' + need.map(k => GQ[k][0].replace('?', '').toLowerCase()).join(', ') : 'every scored company';
+  $('tblTitle').textContent = rows.length.toLocaleString('en-US') + (rows.length === 1 ? ' company: ' : ' companies: ') + (S.ui.list ? LI[S.ui.list][0] + (need.length ? ', and ' : '') : '') + (need.length || !S.ui.list ? what : '') + (S.ui.slack && need.length > 1 ? ' (one miss allowed)' : '');
+  drawTable(rows);
+  drawWatch(); drawAside(base); drawLook(); drawHow();
+  ['pool', 'slack', 'sort'].forEach(id => { $(id).value = String(S.ui[id]); }); $('hideWarn').checked = S.ui.hideWarn; $('showRej').checked = S.ui.showRej;
+}
+function drawFields(rep) {
+  const found = Object.keys(rep.found), want = FIELDS.length;
+  $('fields').innerHTML = '<div>Prism can use ' + want + ' columns and found <b>' + found.length + '</b> of them in this file. The more it finds, the fewer "unknown" answers.</div>' +
+    '<div><b>Found:</b> ' + found.map(k => esc(FLABEL[k] || k)).join(', ') + '.</div>' +
+    (rep.missing.length ? '<div><b>Not found:</b> ' + rep.missing.map(k => esc(FLABEL[k] || k)).join(', ') + '. Add these to your download if your provider offers them.</div>' : '') +
+    (rep.guessed.length ? '<div><b>Matched by name only:</b> ' + rep.guessed.map(k => esc(FLABEL[k] || k) + ' (from "' + esc(rep.found[k]) + '")').join(', ') + '. These column names have not been checked against a real file yet, so glance at a few values.</div>' : '') +
+    (rep.unknown.length ? '<div>' + rep.unknown.length + ' other columns in the file are not used.</div>' : '') +
+    (rep.percentUnits ? '<div>Percentages in this file are written as whole numbers (12 for 12%). They were converted.</div>' : '');
+}
+function drawTally(base, hits) {
+  const need = S.ui.need, k = need.length, n5 = [0, 0, 0, 0, 0, 0]; base.forEach(r => { n5[r.n5]++; });
+  const four = base.filter(r => r.n5 === 4), miss = {}; four.forEach(r => GK.forEach(g => { if (r.g[g] !== true) miss[g] = (miss[g] || 0) + 1; }));
+  const top = Object.keys(miss).sort((a, b) => miss[b] - miss[a]).slice(0, 3).map(g => GQ[g][0].replace('?', '').toLowerCase() + ' (' + miss[g] + ')');
+  let h = '<p style="font-size:17px"><b>' + hits.length.toLocaleString('en-US') + '</b> of ' + base.length.toLocaleString('en-US') + ' companies ' + (k === 5 ? 'answer yes to all five questions.' : k ? 'answer yes to ' + (k === 1 ? 'the question' : 'all ' + k + ' questions') + ' you require' + (S.ui.slack && k > 1 ? ', or miss just one.' : '.') : 'are shown, because no question is required.') + '</p>';
+  if (S.hist && S.hist.prev && !DATA.meta.example && S.hist.cur.date === DATA.meta.date) { const a = Array.from(NEW);
+    h += '<p class="note">Since your last file (' + day(S.hist.prev.date) + '): ' + (a.length ? '<b>' + a.length + ' new</b> on the all-five list: ' + esc(a.slice(0, 12).join(', ')) + (a.length > 12 ? '…' : '') : 'no new names on the all-five list') + '.</p>'; }
+  h += '<div class="bar" role="img" aria-label="How many of the five questions each company passes">' + [5, 4, 3, 2, 1, 0].map(i => n5[i] ? '<div style="flex:' + n5[i] + ' 1 6px;background:var(--b' + i + ')" title="' + n5[i] + ' companies pass ' + i + ' of five"></div>' : '').join('') + '</div>' +
+    '<div class="legend">' + [5, 4, 3, 2, 1, 0].map(i => '<span><i style="background:var(--b' + i + ')"></i>' + i + ' of five: ' + n5[i].toLocaleString('en-US') + '</span>').join('') + '</div>' +
+    (four.length ? '<p class="note">' + four.length + ' companies miss just one question, most often ' + top.join(', ') + '. Choose "All but one of them" below to see them.</p>' : '');
+  $('tally').innerHTML = h;
+}
+function five(r) {
+  return '<div class="five">' + GK.map(k => { const g = r.g[k], v = k === 'S' ? '' : (r[k] == null ? '' : ' ' + Math.round(r[k]));
+    return '<span class="' + (g === true ? 'y' : g === false ? 'n' : 'u') + '" title="' + esc(GQ[k][0] + ' ' + (g === true ? 'Yes' : g === false ? 'No' : 'Not enough data')) + '">' + k + v + (g === true ? ' ✓' : g === false ? ' ✗' : ' ?') + '</span>'; }).join('') + '</div>';
+}
+function rowHTML(r) {
+  const fl = r.flags.filter(f => f !== 'cyc' || !r.flags.includes('peak'));
+  return '<tr class="main" data-sym="' + esc(r.sym) + '"><td class="c-co"><div class="s"><button type="button" class="symb" aria-expanded="' + (OPEN === r.sym) + '" title="Show how ' + esc(r.sym) + ' answered each question">' + esc(r.sym) + '</button>' + (NEW.has(r.sym) ? ' <span class="pill new">New</span>' : '') + '</div><div class="m">' + esc(r.name || '') + '</div><div class="m i">' + esc(r.industry || '') + '</div></td>' +
+    '<td class="num c-size">' + money(r.cap) + '</td><td class="c-five">' + five(r) + '</td>' +
+    '<td class="c-imp">' + (r.impg == null ? '–' : '<span class="lab">Price implies </span><span class="bk">' + BUCKET[r.bucket].toLowerCase() + '</span><div class="m">' + (r.impg >= 0.4 ? 'over 40%' : r.impg <= -0.15 ? 'under −15%' : pct(r.impg)) + ' a year' + (r.impgSpread > 0.1 ? ' (readings differ)' : '') + '</div>') + '</td>' +
+    '<td class="num c-ceil">' + (r.ceiling ? '<span class="lab">Ceiling </span>' + price(r.ceiling) + '<div class="m">' + (r.ceiling >= r.price ? pct(r.ceiling / r.price - 1) + ' above price' : pct(1 - r.ceiling / r.price) + ' below price') + '</div>' : '–') + '</td>' +
+    '<td class="c-notes"><div class="row" style="gap:4px">' + fl.slice(0, 2).map(f => '<span class="pill ' + (SEVERE[f] ? 'warn' : 'mute') + '" title="' + esc(FL[f][0]) + '">' + FSHORT[f] + '</span>').join('') + (r.lists.length ? '<span class="pill mute">' + r.lists.length + (r.lists.length > 1 ? ' ways in' : ' way in') + '</span>' : '') + '</div></td>' +
+    '<td class="c-ver"><select class="vsel" data-sym="' + esc(r.sym) + '" aria-label="Verdict for ' + esc(r.sym) + '"><option value="">–</option>' + VERDICTS.map(v => '<option' + (verdictOf(r) === v ? ' selected' : '') + '>' + v + '</option>').join('') + '</select></td></tr>';
+}
+function drawTable(rows) {
+  const per = 40, pages = Math.max(1, Math.ceil(rows.length / per)); if (S.ui.page >= pages) S.ui.page = 0;
+  let h = '<tr class="hd"><th>Company</th><th>Size</th><th>The five questions</th><th>Price implies</th><th>Entry ceiling</th><th>Notes</th><th>Verdict</th></tr>';
+  rows.slice(S.ui.page * per, (S.ui.page + 1) * per).forEach(r => { h += rowHTML(r); if (OPEN === r.sym) h += '<tr class="detail"><td colspan="7">' + detailHTML(r) + '</td></tr>'; });
+  if (!rows.length) h += '<tr><td colspan="7"><p class="note" style="padding:8px 0">No company matches. Stop requiring a question, allow one miss, or choose a wider company size.</p></td></tr>';
+  $('tbl').innerHTML = h; fitDetail();
+  $('pager').innerHTML = pages > 1 ? '<button type="button" class="btn sm" id="pgPrev"' + (S.ui.page ? '' : ' disabled') + '>← Previous</button><span class="note">Page ' + (S.ui.page + 1) + ' of ' + pages + '</span><button type="button" class="btn sm" id="pgNext"' + (S.ui.page < pages - 1 ? '' : ' disabled') + '>Next →</button>' : '';
+}
+const gtxt = g => g == null ? 'unknown' : g >= 0.4 ? 'over 40% a year' : g <= -0.15 ? 'under −15% a year' : pct(g) + ' a year';
+function fitDetail() { const sc = $('tbl').parentElement; sc.style.setProperty('--tw', (sc.clientWidth - 22) + 'px'); }
+addEventListener('resize', fitDetail);
+function gateBox(r, k) {
+  const g = r.g[k], gate = C.gate, rank = r[k] == null ? null : Math.round(r[k]); let s = '', kv = '';
+  if (k === 'S') {
+    const why = [];
+    if (r.fund === false) why.push(r.lev != null ? 'Debt is ' + r.lev.toFixed(1) + ' times EBITDA; the limit is ' + C.s_lev : 'It has net debt and negative cash flow');
+    if (r.sh != null && r.sh > C.s_dil) why.push('The share count grew ' + pct(r.sh) + ' in a year; the limit is ' + pct(C.s_dil));
+    if (r.cov != null && r.cov >= 0 && r.cov < C.s_cov && !(r.netcash >= 0)) why.push('Profit covers interest only ' + r.cov.toFixed(1) + ' times');
+    s = g === true ? (r.netcash >= 0 ? 'It has more cash than debt' : 'Debt is ' + (r.lev == null ? 'modest' : r.lev.toFixed(1) + ' times EBITDA')) + ', and the share count ' + (r.sh < 0 ? 'fell ' + pct(-r.sh) : 'grew ' + pct(r.sh)) + ' in a year.' : g === false ? why.join('. ') + '.' : 'The file is missing debt or share-count figures for this company.';
+    kv = '<span>Net cash (cash less debt)</span><b>' + money(r.netcash) + '</b><i></i><span>Debt ÷ EBITDA</span><b>' + (r.lev == null ? '–' : r.lev.toFixed(1) + '×') + '</b><i></i><span>Share count change</span><b>' + pct(r.sh) + '</b><i></i>' + (r.cov != null ? '<span>Interest cover</span><b>' + r.cov.toFixed(1) + '×</b><i></i>' : '');
+  } else {
+    const floor = k === 'Q' ? ['roic', C.q_roic, 'Return on capital'] : k === 'V' ? ['fcfy', C.v_fcf, 'Free-cash-flow yield'] : null, why = [];
+    if (rank != null && rank < gate) why.push('It ranks ' + rank + ' of 100 in its sector; ' + gate + ' is needed');
+    if (floor && r[floor[0]] != null && r[floor[0]] < floor[1]) why.push(floor[2] + ' is ' + pct(r[floor[0]]) + ', under the ' + pct(floor[1]) + ' floor');
+    if (k === 'P' && r.revg != null && r.revg < 0) why.push('Sales fell ' + pct(-r.revg));
+    s = g === true ? (k === 'T' ? 'Its one-year return of ' + pct(r.ret1y) + ' is weaker than ' + rank + '% of its sector.' : 'It ranks ' + rank + ' of 100 in its sector' + (floor ? ', with ' + floor[2].toLowerCase() + ' of ' + pct(r[floor[0]]) : '') + '.')
+      : g === false ? why.join('. ') + '.' : 'The file doesn\'t have enough data to answer this for the company.';
+    if (r.cyc && (k === 'Q' || k === 'V') && rank != null) s += ' Includes a ' + C.cyc_haircut + '-point deduction for a cyclical industry.';
+    kv = LENS[k].keys.filter(m => RES.avail[m]).map(m => '<span>' + ML[m] + '</span><b>' + pct(r[m]) + '</b><i>' + (r.pc[m] == null ? '–' : Math.round(r.pc[m])) + '</i>').join('');
+    if (k === 'V') kv += '<span>Free-cash-flow yield on market value</span><b>' + pct(r.fcfy) + '</b><i></i>';
+  }
+  return '<div class="dbox"><h4><span class="pill ' + (g === true ? 'good' : 'mute') + '">' + (g === true ? '✓ Yes' : g === false ? '✗ No' : '? Unknown') + '</span>' + GQ[k][0] + '</h4><p class="note">' + esc(s) + '</p><div class="kv">' + (k === 'S' ? '' : '<span></span><b></b><i>sector rank</i>') + kv + '</div></div>';
+}
+function detailHTML(r) {
+  const v = S.verdicts[r.sym] || {};
+  let h = '<div style="display:flex;flex-direction:column;gap:10px"><div><b>' + esc(r.sym) + '</b> · ' + esc(r.name || '') + ' · ' + esc(r.sector || '') + (r.industry ? ', ' + esc(r.industry) : '') + ' · ' + money(r.cap) + ' market value · ' + price(r.price) + ' a share</div>';
+  if (!r.scored) h += '<div class="dbox"><h4><span class="pill mute">Set aside</span>' + ASIDE[r.aside] + '</h4><p class="note">' + ASIDE_WHY[r.aside] + '</p></div>';
+  else {
+    if (r.blocks.length) { const B = {lev: 'debt is more than ' + C.blk_lev + ' times EBITDA', dil: 'the share count grew more than ' + pct(C.blk_dil) + ' in a year', shrink: 'sales fell more than ' + pct(C.blk_shrink), burn: 'free cash flow is negative'};
+      h += '<div class="dbox"><h4><span class="pill bad">Not now</span>Kept off every list</h4><p class="note">Reason: ' + r.blocks.map(b => B[b]).join('; ') + '. This is re-tested with every file, so it means "not now", not "never".</p></div>'; }
+    h += '<div class="dgrid">' + GK.map(k => gateBox(r, k)).join('');
+    const gc = Math.max(C.exp_floor, Math.min(C.exp_cap, r.histg == null ? 0 : r.histg));
+    h += '<div class="dbox"><h4>What the price implies</h4>' + (r.impg == null ? '<p class="note">The company has no positive cash flow or earnings to work from.</p>' :
+      '<p class="note">Today\'s price is fair only if cash flow and earnings ' + (r.impg >= 0.4 ? 'grow more than 40%' : r.impg <= -0.15 ? 'shrink more than 15%' : (r.impg < 0 ? 'shrink ' : 'grow ') + 'about <b>' + pct(Math.abs(r.impg)) + '</b>') + ' a year for ' + C.exp_N + ' years, for a ' + pct(C.exp_r) + ' yearly return. ' + (r.histg != null ? 'Sales ' + (r.histg < 0 ? 'fell ' : 'grew ') + pct(Math.abs(r.histg)) + ' over the past year.' : '') + '</p>' +
+      (r.impgSpread > 0.1 ? '<p class="note"><span class="pill warn">Readings differ</span> Judged on cash flow alone the figure is ' + gtxt(r.impg_f) + '; on earnings alone, ' + gtxt(r.impg_e) + '. When they are this far apart, find out why before trusting the average.</p>' : '')) +
+      (r.ceiling ? '<p class="note"><b>Entry ceiling ' + price(r.ceiling) + '</b>, ' + (r.ceiling >= r.price ? pct(r.ceiling / r.price - 1) + ' above' : pct(1 - r.ceiling / r.price) + ' below') + ' today\'s price. At that price a ' + pct(C.exp_hurdle) + ' yearly return still works if cash flow grows only ' + pct(gc) + ' a year. It is a hurdle for buying, not a fair value or a target.</p>' :
+        '<p class="note">No entry ceiling is shown because ' + (!(r.fcfy > 0) ? 'free cash flow is not positive' : r.hold ? 'the figures carry a data warning' : r.cyc ? 'this is a cyclical industry, where one year\'s cash flow is a poor guide' : 'the price already assumes very high growth') + '.</p>') + '</div></div>';
+    const fl = r.flags.filter(f => f !== 'cyc' || !r.flags.includes('peak'));
+    if (fl.length) h += '<div class="dbox"><h4>Check before trusting the numbers</h4>' + fl.map(f => '<p class="note"><span class="pill ' + (SEVERE[f] ? 'warn' : 'mute') + '">' + FL[f][0] + '</span> ' + FL[f][1] + '</p>').join('') + '</div>';
+    if (r.lists.length) h += '<div class="dbox"><h4>Ways in</h4>' + r.lists.map(id => '<p class="note"><b>' + LI[id][0] + '.</b> ' + LI[id][1] + ' <b>First check:</b> ' + LI[id][2] + ' <b>Wrong if:</b> ' + LI[id][3] + '</p>').join('') + '</div>';
+    if (r.classes > 1) h += '<p class="note">This company has ' + r.classes + ' share classes in the file. The most traded one is scored.</p>';
+  }
+  h += '<div class="dbox" data-vform="' + esc(r.sym) + '"><h4>Your verdict</h4><div class="fields">' +
+    '<label class="f">Verdict<select data-vf="v"><option value="">None</option>' + VERDICTS.map(x => '<option' + (v.v === x ? ' selected' : '') + '>' + x + '</option>').join('') + '</select></label>' +
+    '<label class="f">Review by<input type="date" data-vf="review" value="' + esc(v.review || '') + '"></label></div>' +
+    '<label class="f">Thesis, in one line<input type="text" data-vf="thesis" value="' + esc(v.thesis || '') + '"></label>' +
+    '<label class="f">Why it is cheap<input type="text" data-vf="why" value="' + esc(v.why || '') + '"></label>' +
+    '<label class="f">Trigger: what would change this verdict<input type="text" data-vf="trigger" value="' + esc(v.trigger || '') + '"></label>' +
+    '<label class="f">How you would enter<input type="text" data-vf="entry" value="' + esc(v.entry || '') + '"></label>' +
+    '<label class="f">Notes<textarea data-vf="notes">' + esc(v.notes || '') + '</textarea></label>' +
+    '<div class="row"><button type="button" class="btn sm primary" data-vsave="' + esc(r.sym) + '">Save verdict</button>' + (v.v ? '<span class="note">' + esc(v.v) + ' since ' + day(v.date) + (v.price ? ' at ' + price(v.price) : '') + '</span>' : '') + '</div></div>';
+  return h + '</div>';
+}
+function setVerdict(sym, patch) {
+  const r = BY[sym], old = S.verdicts[sym] || {};
+  if ('v' in patch && !patch.v && !Object.keys(patch).some(k => k !== 'v' && patch[k])) { delete S.verdicts[sym]; }
+  else { const v = Object.assign({}, old, patch);
+    if (patch.v !== undefined && patch.v !== old.v) { v.date = today(); v.price = r ? r.price : null; v.by = r && r.scored ? (r.n5 === 5 ? 'All five' : r.n5 + ' of five') + (r.lists.length ? '; ' + r.lists.map(id => LI[id][0]).join(', ') : '') : ''; }
+    S.verdicts[sym] = v; }
+  save(); compute();
+}
+function drawWatch() {
+  const all = Object.keys(S.verdicts), live = all.filter(s => /^(Watch|Act|Own)$/.test(S.verdicts[s].v)).sort(), n = v => all.filter(s => S.verdicts[s].v === v).length;
+  let h = '';
+  if (live.length) { h += '<div class="scroll"><table><tr><th>Company</th><th>Verdict</th><th>Since</th><th>Price then</th><th>Price now</th><th>The five questions today</th><th>Entry ceiling</th><th>Review by</th><th>Trigger</th></tr>';
+    live.forEach(s => { const v = S.verdicts[s], r = BY[s], due = v.review && v.review <= today();
+      h += '<tr class="main" data-sym="' + esc(s) + '" data-look="1"><td><div class="s"><button type="button" class="symb">' + esc(s) + '</button></div><div class="m">' + esc(r ? r.name || '' : 'not in today\'s file') + '</div></td><td>' + esc(v.v) + '</td><td class="num">' + day(v.date) + '</td><td class="num">' + price(v.price) + '</td><td class="num">' + (r ? price(r.price) : '–') + '</td><td>' + (r && r.scored ? five(r) : '–') + '</td><td class="num">' + (r && r.ceiling ? price(r.ceiling) : '–') + '</td><td>' + (v.review ? (due ? '<span class="pill warn">Due ' + day(v.review) + '</span>' : day(v.review)) : '–') + '</td><td><div class="m">' + esc(v.trigger || '') + '</div></td></tr>'; });
+    h += '</table></div>'; }
+  else h += '<p class="note">No verdicts yet. Use the Verdict column in the table above, or open a row to add a thesis and a review date.</p>';
+  if (all.length) h += '<p class="note">' + n('Reject') + ' rejected · ' + n('No action') + ' no action · ' + live.length + ' on watch, act or own.</p>';
+  $('watch').innerHTML = h;
+}
+function drawAside(base) {
+  const cnt = {}; RES.rows.forEach(r => { if (r.aside) cnt[r.aside] = (cnt[r.aside] || 0) + 1; });
+  const pool = RES.rows.filter(r => r.scored && inPool(r)), blocked = pool.filter(r => r.blocks.length), held = pool.filter(r => !r.blocks.length && r.hold), by = {}; blocked.forEach(r => r.blocks.forEach(b => { by[b] = (by[b] || 0) + 1; }));
+  const BT = {burn: 'negative cash flow', lev: 'heavy debt', dil: 'issuing shares', shrink: 'shrinking sales'};
+  $('aside').innerHTML = '<div class="stat"><div class="v">' + RES.scored.toLocaleString('en-US') + '</div><div class="k">companies scored, of ' + RES.rows.length.toLocaleString('en-US') + ' in the file</div></div>' +
+    '<div class="stat"><div class="v">' + blocked.length.toLocaleString('en-US') + '</div><div class="k">blocked for now in this size group: ' + (Object.keys(by).sort((a, b) => by[b] - by[a]).map(b => BT[b] + ' ' + by[b]).join(', ') || 'none') + '</div></div>' +
+    '<div class="stat"><div class="v">' + held.length + '</div><div class="k">with data warnings' + (S.ui.hideWarn ? ', hidden' : ', shown') + '</div></div>' +
+    Object.keys(ASIDE).filter(k => cnt[k]).map(k => '<div class="stat"><div class="v">' + cnt[k].toLocaleString('en-US') + '</div><div class="k">' + ASIDE[k] + (k === 'micro' ? ', under ' + money(C.size_min) : '') + '</div></div>').join('');
+}
+function drawLook() {
+  const s = $('look').value.trim().toUpperCase(), out = $('lookOut');
+  if (!s) { out.innerHTML = ''; return; }
+  const r = BY[s] || RES.rows.find(x => x.sym.replace(/\..*$/, '') === s) || RES.rows.find(x => (x.name || '').toUpperCase().startsWith(s));
+  out.innerHTML = r ? detailHTML(r) : '<p class="note">No company with that symbol is in the file.</p>';
+}
+function drawControls() {
+  $('ctl').innerHTML = CTL.map(c => '<label class="f" for="c_' + c[0] + '">' + c[1] + '<input type="number" id="c_' + c[0] + '" step="any" value="' + +(((S.controls[c[0]] != null ? S.controls[c[0]] : CONTROLS[c[0]]) * c[2]).toFixed(4)) + '"></label>').join('');
+  CTL.forEach(c => { $('c_' + c[0]).onchange = e => { const x = parseFloat(e.target.value); if (isFinite(x)) S.controls[c[0]] = x / c[2]; else delete S.controls[c[0]]; save(); compute(); }; });
+  $('noMining').checked = !!S.noMining; $('leaveOut').value = S.leaveOut || '';
+}
+function drawHow() {
+  const y0 = 1 / annuity(0, C.exp_r, C.exp_gT, C.exp_N), y10 = 1 / annuity(0.10, C.exp_r, C.exp_gT, C.exp_N);
+  $('how').innerHTML =
+    '<div><b>What it does.</b> Prism reads one screener download with a row for every listed company. It sets aside companies it can\'t judge fairly, asks the rest five separate questions, and shows the few that pass them all. It runs in your browser from the file you give it. There is no live data and no AI behind it.</div>' +
+    '<div><b>The five questions.</b> Quality, price, progress and timing are each a rank from 0 to 100 against other companies in the same sector worth ' + money(C.size_min) + ' or more. A yes needs a rank of ' + C.gate + ' or better. Quality also needs a return on capital of at least ' + pct(C.q_roic) + ', and price a free-cash-flow yield of at least ' + pct(C.v_fcf) + '. Strength is a plain test: more cash than debt, or debt of at most ' + C.s_lev + ' times EBITDA, and a share count growing no more than ' + pct(C.s_dil) + ' a year.</div>' +
+    '<div><b>Why five answers and not one score.</b> A single score lets a very cheap price make up for a weak business. Here a company must pass each question on its own, and the default order puts first the companies whose weakest answer is strongest.</div>' +
+    '<div><b>What the price implies.</b> Instead of calling a stock cheap, Prism works out the growth today\'s price needs. It assumes a ' + pct(C.exp_r) + ' yearly return, ' + C.exp_N + ' years of steady growth, then ' + pct(C.exp_gT) + ' a year. On those terms a yield of ' + pct(y0) + ' needs no growth at all, and a yield of ' + pct(y10) + ' needs 10% a year. The result is the average of the cash-flow and earnings readings.</div>' +
+    '<div><b>Entry ceiling.</b> The price at which a ' + pct(C.exp_hurdle) + ' yearly return still works if cash flow grows no faster than ' + pct(C.exp_cap) + ' a year (or slower, if recent sales growth was slower). It is a hurdle for buying, not a fair value, a target or a forecast.</div>' +
+    '<div><b>Set aside and blocked.</b> Banks, insurers, lenders and property companies need different measures and are not scored. Shell companies, second share classes and very small companies are left out. A scored company is blocked from every list while its cash flow is negative, its debt is above ' + C.blk_lev + ' times EBITDA, its share count grew more than ' + pct(C.blk_dil) + ', or its sales fell more than ' + pct(C.blk_shrink) + '.</div>' +
+    '<div><b>Data warnings.</b> Screens like this are easily fooled by figures that are too good: a cash yield above ' + pct(C.flag_fcf) + ', a P/E under ' + C.flag_pe + ', cash larger than the company, or a share count that halved or doubled. Those rows are hidden until you choose to see them. Cyclical industries lose ' + C.cyc_haircut + ' rank points on quality and price, because one good year can flatter both.</div>' +
+    '<div><b>Memory.</b> Your verdicts and settings stay in this browser. When you load a later file, Prism tells you which names are new on the all-five list. The file itself is kept only in this browser, so the page reopens where you left off.</div>' +
+    '<div><b>Limits.</b> Every threshold is a starting point. None has been tested against later returns, so a place on a list is a reason to read, not a prediction. The figures are one day\'s snapshot of trailing results; they can\'t show customers leaving, lawsuits, management quality or what happens next year. Sector and industry labels are the data provider\'s. This is general information for your own research, not investment advice.</div>';
+}
+
+/* ---------- actions ---------- */
+let DL = null;
+const STANDALONE = (() => { try { return window.top === window && !(window.claude && window.claude.use); } catch (e) { return false; } })();
+async function offer(name, data) {
+  if (!DL) { if (STANDALONE) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], {type: 'text/plain;charset=utf-8'})); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); } else say('Saving files isn\'t available in this view.'); return; }
+  try { await DL.save({filename: name, data}); } catch (e) { if (!e || e.code !== 'declined') say('Could not save the file here.'); }
+}
+const csvCell = v => { const s = v == null ? '' : String(v); return /[",\n\t]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const NOTE_HEAD = ['Symbol', 'Date', 'Verdict', 'Surfaced by', 'Thesis (one line)', 'Why cheap', 'Trigger (what changes the verdict)', 'Entry mechanics', 'Review by', 'Notes'];
+const NOTE_KEYS = [null, 'date', 'v', 'by', 'thesis', 'why', 'trigger', 'entry', 'review', 'notes'];
+document.addEventListener('click', e => {
+  const t = e.target, g = t.closest('.gate'), chip = t.closest('.chip'), vs = t.closest('[data-vsave]');
+  if (g) { const k = g.dataset.g, i = S.ui.need.indexOf(k); if (i >= 0) S.ui.need.splice(i, 1); else S.ui.need = GK.filter(x => x === k || S.ui.need.includes(x)); S.ui.page = 0; save(); render(); return; }
+  if (chip) { S.ui.list = S.ui.list === chip.dataset.l ? '' : chip.dataset.l; S.ui.page = 0; save(); render(); return; }
+  if (t.id === 'dropNeed') { S.ui.need = []; save(); render(); return; }
+  if (t.id === 'pgPrev' || t.id === 'pgNext') { S.ui.page += t.id === 'pgNext' ? 1 : -1; OPEN = null; render(); $('tblTitle').scrollIntoView({block: 'start'}); return; }
+  if (vs) { const box = vs.closest('[data-vform]'), p = {}; box.querySelectorAll('[data-vf]').forEach(el => { p[el.dataset.vf] = el.value.trim(); }); setVerdict(vs.dataset.vsave, p); return; }
+  const tr = t.closest('tr.main');
+  if (tr && (t.closest('.symb') || !t.closest('select,button,input,textarea,a'))) { if (tr.dataset.look) { $('look').value = tr.dataset.sym; drawLook(); $('look').scrollIntoView({block: 'center'}); } else { OPEN = OPEN === tr.dataset.sym ? null : tr.dataset.sym; render(); } }
+});
+document.addEventListener('change', e => { const t = e.target; if (t.classList && t.classList.contains('vsel')) setVerdict(t.dataset.sym, {v: t.value}); });
+$('pool').onchange = e => { S.ui.pool = e.target.value; S.ui.page = 0; save(); render(); };
+$('slack').onchange = e => { S.ui.slack = +e.target.value; S.ui.page = 0; save(); render(); };
+$('sort').innerHTML = Object.keys(SORTS).map(k => '<option value="' + k + '">' + SORTS[k][0] + '</option>').join('');
+$('sort').onchange = e => { S.ui.sort = e.target.value; S.ui.page = 0; save(); render(); };
+$('hideWarn').onchange = e => { S.ui.hideWarn = e.target.checked; save(); render(); };
+$('showRej').onchange = e => { S.ui.showRej = e.target.checked; save(); render(); };
+let findT = null; $('q').oninput = e => { clearTimeout(findT); findT = setTimeout(() => { FIND = e.target.value.trim(); S.ui.page = 0; render(); }, 200); };
+let lookT = null; $('look').oninput = () => { clearTimeout(lookT); lookT = setTimeout(drawLook, 200); };
+$('noMining').onchange = e => { S.noMining = e.target.checked; save(); compute(); };
+$('leaveOut').onchange = e => { S.leaveOut = e.target.value; save(); compute(); };
+$('ctlReset').onclick = () => { S.controls = {}; save(); drawControls(); compute(); };
+$('forget').onclick = async () => { await cacheDel(); DATA = exampleData(); OPEN = null; say('The stored file was removed from this browser. Showing made-up companies.'); compute(); };
+$('file').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) ingest(f); };
+$('exBtn').onclick = () => { DATA = exampleData(); OPEN = null; say('Showing made-up companies. Your own file, if you loaded one, comes back when you reload the page.'); compute(); };
+['dragover', 'dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return; e.preventDefault(); $('loadCard').classList.toggle('drop', ev === 'dragover'); if (ev === 'drop' && e.dataTransfer.files[0]) ingest(e.dataTransfer.files[0]); }));
+$('dlList').onclick = () => {
+  let rows = baseRows().filter(passes); if (S.ui.list) rows = rows.filter(r => r.lists.includes(S.ui.list)); rows = sorted(rows);
+  const head = ['Symbol', 'Company', 'Sector', 'Industry', 'Market cap', 'Price', 'Questions passed', 'Quality', 'Price', 'Strength', 'Progress', 'Timing', 'FCF yield', 'Implied growth', 'Price implies', 'Entry ceiling', 'Ways in', 'Warnings', 'Verdict'];
+  const body = rows.map(r => [r.sym, r.name, r.sector, r.industry, r.cap, r.price, r.n5, r.Q == null ? '' : Math.round(r.Q), r.V == null ? '' : Math.round(r.V), r.g.S === true ? 'yes' : r.g.S === false ? 'no' : '', r.P == null ? '' : Math.round(r.P), r.T == null ? '' : Math.round(r.T), r.fcfy == null ? '' : +r.fcfy.toFixed(4), r.impg == null ? '' : +r.impg.toFixed(4), r.bucket ? BUCKET[r.bucket] : '', r.ceiling ? +r.ceiling.toFixed(2) : '', r.lists.map(id => LI[id][0]).join('; '), r.flags.map(f => FL[f][0]).join('; '), verdictOf(r)]);
+  offer('prism-list-' + (DATA.meta.date || today()) + '.csv', [head].concat(body).map(a => a.map(csvCell).join(',')).join('\n') + '\n');
+};
+$('dlNotes').onclick = () => { const syms = Object.keys(S.verdicts).sort();
+  offer('prism-case-notes-' + today() + '.tsv', [NOTE_HEAD.join('\t')].concat(syms.map(s => NOTE_KEYS.map((k, i) => i ? String(S.verdicts[s][k] || '').replace(/[\t\n]/g, ' ') : s).join('\t'))).join('\n') + '\n'); };
+$('upNotes').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const rows = parseCSV(await f.text()), H = rows[0].map(normHeader), col = k => H.findIndex(h => h.indexOf(k) === 0), ix = {sym: col('symbol'), date: col('date'), v: col('verdict'), by: col('surfaced'), thesis: col('thesis'), why: col('why'), trigger: col('trigger'), entry: col('entry'), review: col('review'), notes: col('notes')};
+    if (ix.sym < 0 || ix.v < 0) throw 0; let n = 0;
+    rows.slice(1).forEach(a => { const s = String(a[ix.sym] || '').trim().toUpperCase(), v = VERDICTS.find(x => x.toLowerCase() === String(a[ix.v] || '').trim().toLowerCase()); if (!s || !v) return; const o = {v};
+      ['date', 'by', 'thesis', 'why', 'trigger', 'entry', 'review', 'notes'].forEach(k => { if (ix[k] >= 0 && a[ix[k]]) o[k] = String(a[ix[k]]).trim(); }); if (!o.date) o.date = today(); S.verdicts[s] = Object.assign({}, S.verdicts[s], o); n++; });
+    save(); compute(); say('Loaded ' + n + ' verdicts from the case notes.'); } catch (x) { say('That file isn\'t a case-notes file. It needs "Symbol" and "Verdict" columns.'); } };
+
+/* VAULT:START (shared by every tool; edit tools/vault-snippet.js, then run node tools/sync-vault.js) */
+/* Encrypted copies. The plan is encrypted in the browser with a passphrase (PBKDF2-SHA256, 310,000 rounds, then
+   AES-GCM 256) before it is stored or downloaded. The passphrase is kept in memory only and is never stored or sent.
+   Online copies use the claude.ai `db` capability under data/users/<viewer id>/, which is private to each signed-in
+   person. On a standalone website there is no online store, so only encrypted files are offered. */
+function makeVault(o){
+  const el=o.mount,enc=new TextEncoder(),dec=new TextDecoder(),ITER=310000;
+  let pass=null,db=null,uid=null,items=[],note='',ready=false,armedDel=null;
+  const b64=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+  const unb=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const keyFor=async(p,salt)=>crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},await crypto.subtle.importKey('raw',enc.encode(p),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  async function seal(obj,p){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},await keyFor(p,salt),enc.encode(JSON.stringify(obj)));
+    return {enc:1,kdf:'PBKDF2-SHA256-'+ITER,salt:b64(salt),iv:b64(iv),ct:b64(new Uint8Array(ct))}}
+  async function unseal(rec,p){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb(rec.iv)},await keyFor(p,unb(rec.salt)),unb(rec.ct));return JSON.parse(dec.decode(pt))}
+  const col=()=>db.collection('data/users/'+uid);
+  const online=()=>!!(db&&uid);
+  const when=t=>{try{return new Date(t).toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch(e){return t}};
+  async function refresh(){if(!online())return;try{const q=await col().get();items=q.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d&&d.app===o.app&&d.ct).sort((a,b)=>String(b.at).localeCompare(String(a.at)))}catch(e){note='Could not read your online copies just now.'}}
+  function draw(){
+    const can=!!(window.crypto&&crypto.subtle);
+    let h='<h3 style="margin:0">Encrypted copies</h3>';
+    if(!can){el.innerHTML=h+'<p class="note" style="margin:0">This browser can\'t encrypt here. Use the ordinary save options.</p>';return}
+    h+='<p class="note" style="margin:0">Protect a copy of '+esc(o.what)+' with a passphrase. It is encrypted in your browser first, so nobody can read it without the passphrase: not us, and not whoever stores the file. <b>If you forget the passphrase, those copies cannot be recovered.</b> Keep your printed or ordinary copy as well.</p>';
+    if(!pass){const first=online()&&ready&&!items.length;
+      h+='<div class="row" style="align-items:flex-end"><label class="f" for="'+o.app+'VPass" style="flex:1 1 220px">Passphrase<span class="h">four or more words is best; at least 10 characters</span><input type="password" id="'+o.app+'VPass" autocomplete="off" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label>'+
+        (first?'<label class="f" for="'+o.app+'VPass2" style="flex:1 1 220px">Type it again<input type="password" id="'+o.app+'VPass2" autocomplete="off" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label>':'')+
+        '<button type="button" class="btn" data-v="unlock">Unlock</button></div>'+
+        (online()?'<p class="note" style="margin:0">'+(ready?(items.length?items.length+' online '+(items.length>1?'copies':'copy')+' saved. Unlock to see or load them.':'No online copies yet. Choose a passphrase to start.'):'Checking for online copies…')+'</p>':'<p class="note" style="margin:0">Online copies are available on the private claude.ai link, when you are signed in. Here you can save and open encrypted files.</p>');
+    }else{
+      h+='<div class="row"><span class="note">Unlocked for this visit.</span><button type="button" class="btn sm" data-v="lock">Lock</button></div>';
+      if(online()){
+        h+='<div class="row" style="align-items:flex-end"><label class="f" for="'+o.app+'VName" style="flex:1 1 220px">Name for this version<span class="h">the name and date are stored unencrypted, so keep it plain</span><input type="text" id="'+o.app+'VName" maxlength="60" placeholder="e.g. November baseline" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label><button type="button" class="btn" data-v="save">Save a version online</button></div>';
+        h+=items.length?'<div>'+items.map(d=>'<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding:8px 0"><span><b>'+esc(d.name||'Untitled')+'</b> <span class="note">· '+esc(when(d.at))+'</span></span><span class="row"><button type="button" class="btn sm" data-v="load" data-id="'+esc(d.id)+'">Load</button><button type="button" class="btn sm" data-v="del" data-id="'+esc(d.id)+'">'+(armedDel===d.id?'Click again to delete':'Delete')+'</button></span></div>').join('')+'</div>':'<p class="note" style="margin:0">No online copies yet.</p>';
+      }
+      h+='<div class="row"><button type="button" class="btn" data-v="file">Download an encrypted file</button><label class="btn" for="'+o.app+'VFile" style="display:inline-flex;align-items:center">Open an encrypted file</label><input type="file" id="'+o.app+'VFile" accept=".json,application/json" hidden></div>';
+    }
+    h+='<p class="note" role="status" style="margin:0"'+(note?'':' hidden')+'>'+esc(note)+'</p>';
+    el.innerHTML=h;
+    const f=document.getElementById(o.app+'VFile');if(f)f.onchange=ev=>{const file=ev.target.files[0];if(!file)return;const r=new FileReader();
+      r.onload=async()=>{try{const rec=JSON.parse(r.result);if(!rec||rec.app!==o.app||!rec.ct)throw 0;let st;try{st=await unseal(rec,pass)}catch(e){note='The passphrase doesn\'t open that file.';return draw()}o.setState(st);note='Opened the encrypted file.'}catch(e){note='That isn\'t an encrypted file from this tool.'}draw()};r.readAsText(file)};
+    const p1=document.getElementById(o.app+'VPass');if(p1)p1.onkeydown=ev=>{if(ev.key==='Enter')act('unlock')};
+  }
+  async function act(a,id){
+    try{
+      if(a==='unlock'){const p=document.getElementById(o.app+'VPass').value,p2=document.getElementById(o.app+'VPass2');
+        if(p.length<10){note='Use at least 10 characters. Four unrelated words work well.';return draw()}
+        if(p2&&p2.value!==p){note='The two passphrases don\'t match.';return draw()}
+        if(items.length){try{await unseal(items[0],p)}catch(e){note='That passphrase doesn\'t open your saved copies.';return draw()}}
+        pass=p;note='';return draw()}
+      if(a==='lock'){pass=null;note='';return draw()}
+      if(a==='save'){const nm=(document.getElementById(o.app+'VName').value||'').trim()||'Untitled';note='Saving…';draw();
+        const rec=Object.assign(await seal(o.getState(),pass),{app:o.app,name:nm,at:new Date().toISOString()});
+        await col().doc('v'+Date.now()).set(rec);await refresh();note='Saved "'+nm+'" online, encrypted.';return draw()}
+      if(a==='load'){const d=items.find(x=>x.id===id);if(!d)return;let st;try{st=await unseal(d,pass)}catch(e){note='The passphrase doesn\'t open "'+(d.name||'Untitled')+'". It may have been saved with a different one.';return draw()}
+        o.setState(st);note='Loaded "'+(d.name||'Untitled')+'".';return draw()}
+      if(a==='del'){if(armedDel!==id){armedDel=id;return draw()}armedDel=null;await col().doc(id).delete();await refresh();note='Deleted that online copy.';return draw()}
+      if(a==='file'){const rec=Object.assign(await seal(o.getState(),pass),{app:o.app,at:new Date().toISOString()});
+        await o.download(o.app+'-encrypted-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(rec));note='';return draw()}
+    }catch(e){const c=e&&e.code;note=c==='not_granted'||c==='permission_denied'?'Online copies aren\'t allowed for this view.':'That didn\'t work. Please try again.';draw()}
+  }
+  el.addEventListener('click',ev=>{const b=ev.target.closest('button[data-v]');if(b)act(b.dataset.v,b.dataset.id)});
+  draw();
+  (async()=>{try{if(window.claude&&window.claude.use){const u=await window.claude.use('user'),d=await window.claude.use('db');uid=u?await u.id():null;db=d||null;if(online()){await refresh()}}}catch(e){db=null}ready=true;draw()})();
+}
+/* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
+   window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
+(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
+  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a)}catch(e){}})();
+/* VAULT:END */
+makeVault({mount: $('vault'), app: 'prism', what: 'your verdicts and settings', download: offer,
+  getState: () => ({v: 1, controls: S.controls, noMining: S.noMining, leaveOut: S.leaveOut, verdicts: S.verdicts, hist: S.hist}),
+  setState: o => { if (!o || o.v !== 1 || !o.verdicts) throw 0; S.controls = o.controls || {}; S.noMining = !!o.noMining; S.leaveOut = o.leaveOut || ''; S.verdicts = o.verdicts; S.hist = o.hist || null; save(); drawControls(); compute(); }});
+
+/* ---------- start ---------- */
+load(); drawControls();
+(async () => {
+  let c = null; try { c = await Promise.race([cacheGet(), new Promise(r => setTimeout(() => r(null), 3000))]); } catch (e) {}
+  if (c && c.packed && c.meta) DATA = {rows: unpack(c.packed), meta: c.meta}; else DATA = exampleData();
+  compute();
+})();
+(async () => { try { DL = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { DL = null; } })();
+</script>

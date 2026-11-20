@@ -11,6 +11,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `tests/check-rules.js` | Checks against hand-worked answers (107 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
+| `tests/check-prism.js` | Prism's engine checks (83 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -105,6 +106,34 @@ single file, no backend, answers stay in the browser (localStorage key `open-thi
 - Source: the owner's business requirements document (pilot stage). Accounts, sharing, payments and assisted
   setup are deliberately out of scope until the free local version shows demand.
 
+## Tool 3: Prism (`prism/index.html`)
+
+A stock screener that runs on a file the user brings: one whole-market screener download (CSV or Excel, one row
+per stock). It sets aside what it can't judge, asks every other company five separate questions, builds nine named
+shortlists, and works out what growth today's price implies. Same page format as the other tools; no AI, no live data.
+
+- **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
+  built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
+  `tests/check-prism.js` (83 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+- **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
+- `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
+  header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
+  warnings, shortlists), `impliedGrowth` / `annuity` (reverse valuation and the entry ceiling), `memberships`.
+- **Five separate answers, no combined score.** Q quality, V price, P progress and T timing are sector percentiles;
+  S strength is an absolute test. The default order is by the weakest of Q, V, P, T. Do not add a weighted score.
+- **Unknown is never a pass.** Missing data gives "unknown", which fails a required question.
+- `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
+- `FIELDS`: only the first 20 header spellings (`VERIFIED`) were checked against a real download. The rest are
+  guesses and are reported on the page under "Columns found in the file". When the owner supplies the full header
+  row, correct the spellings, raise `VERIFIED`, and add a check.
+- Sources: the owner's Prism requirements document and "Investment Opportunity Atlas" workbook (neither is in the
+  repo). The page's case-notes file uses the owner's existing column headings exactly (`NOTE_HEAD`); keep them.
+- State: `localStorage` key `prism-v1` (settings, verdicts, last two list memberships); IndexedDB `prism` keeps the
+  last file in that browser only; `ftol-summary-prism` feeds the home page. The vault copy holds verdicts and
+  settings, never the file.
+- Not built yet (ask the owner): scoring banks and property (needs P/B, ROE), ten-year divergence, split handling
+  between files, a paper-test scorecard of how list entrants did later, the owner's industry and override maps.
+
 ## Encrypted and online copies (shared by all tools)
 
 `tools/vault-snippet.js` is the single source for the "Encrypted copies" feature. `node tools/sync-vault.js` copies
@@ -124,17 +153,19 @@ Never edit the copy inside a page.
 The tools are published together behind a home page (`home/index.html`): tool cards with each person's status,
 next steps, and one "Your data" panel that saves every tool's state as a single encrypted copy.
 
-- **One link, linked pages.** On claude.ai the collection is one artifact: the home page plus `runway.html` and
-  `open-this-first.html` beside it. Pages of one artifact share browser storage and the `db` store, and each keeps
+- **One link, linked pages.** On claude.ai the collection is one artifact: the home page plus `runway.html`,
+  `open-this-first.html` and `prism.html` beside it. Pages of one artifact share browser storage and the `db` store, and each keeps
   its capabilities. Collection link (owner's private link): https://claude.ai/artifact/MjYUrdnkLTLMZDNKJbgThE
 - **To publish the collection:** `node tools/build-pages.js`, then publish `home/index.html` to that `url` with
-  `files: {"runway.html": "_artifact/runway.html", "open-this-first.html": "_artifact/open-this-first.html"}` and
+  `files: {"runway.html": "_artifact/runway.html", "open-this-first.html": "_artifact/open-this-first.html",
+  "prism.html": "_artifact/prism.html"}` and
   `capabilities: {downloads: true, db: {}, user: {}}`. The two single-tool links above are the earlier homes;
   keep them working until the owner says the collection link has replaced them.
-- **Standalone site:** the home page is at the top, tools at `/retirement-runway/` and `/open-this-first/`.
+- **Standalone site:** the home page is at the top, tools at `/retirement-runway/`, `/open-this-first/` and `/prism/`.
 - The build tells each page where the others are: `window.FTOL_LINKS` (home) and `window.FTOL_HOME` (tools, which
   then show a link back). A tool opened on its own has neither and works unchanged.
-- Tools tell the home page their status through `localStorage` keys `ftol-summary-runway` and `ftol-summary-otf`.
+- Tools tell the home page their status through `localStorage` keys `ftol-summary-runway`, `ftol-summary-otf` and
+  `ftol-summary-prism`.
   The home page's encrypted copy holds each tool's own storage key verbatim (`app: 'ftol'`).
 - Planned next: a shared profile (names, birth dates, state) and hand-offs between tools, starting with Runway's
   account types shaping Open This First's money questions.
@@ -143,5 +174,5 @@ next steps, and one "Your data" panel that saves every tool's state as a single 
 
 Survivor benefit switching; a "best plan" optimizer button; health costs rising faster than inflation;
 PolicyEngine-based rules sync; verifying low-confidence entries (DC, LA, SC, NM, AZ deductions; 2027
-Part D surcharges; the ACA applicable-percentage table). Later: Tool #3, "Where to live in retirement",
+Part D surcharges; the ACA applicable-percentage table). Later, if the owner wants it: "Where to live in retirement",
 which should hand its results to Runway through the scenario file.

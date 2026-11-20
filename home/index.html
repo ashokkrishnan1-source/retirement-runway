@@ -8,7 +8,7 @@
   --bg:#f3f4f2; --surface:#ffffff; --sunk:#e9ebe7; --line:#d7dbd3;
   --fg:#161d1a; --fg2:#4a554f; --fg3:#717c75;
   --accent:#23404f; --accent-soft:#e1eaee; --on-accent:#ffffff;
-  --runway:#1f4e79; --otf:#1c5a4a;
+  --runway:#1f4e79; --otf:#1c5a4a; --prism:#4b3a8c;
   --good:#0a7d32; --warn:#8f5600; --good-bg:#e1f3e7; --warn-bg:#fbf0dc;
   --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -17,13 +17,13 @@
   --bg:#0f1513; --surface:#17201c; --sunk:#1e2924; --line:#2c3a33;
   --fg:#e8efea; --fg2:#a9b7af; --fg3:#86958c;
   --accent:#9cc7dc; --accent-soft:#1b2c35; --on-accent:#0f1513;
-  --runway:#8db8e3; --otf:#86d3b6;
+  --runway:#8db8e3; --otf:#86d3b6; --prism:#b9a6f0;
   --good:#4cc46f; --warn:#e3a640; --good-bg:#15301f; --warn-bg:#33270f; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0f1513; --surface:#17201c; --sunk:#1e2924; --line:#2c3a33;
   --fg:#e8efea; --fg2:#a9b7af; --fg3:#86958c;
   --accent:#9cc7dc; --accent-soft:#1b2c35; --on-accent:#0f1513;
-  --runway:#8db8e3; --otf:#86d3b6;
+  --runway:#8db8e3; --otf:#86d3b6; --prism:#b9a6f0;
   --good:#4cc46f; --warn:#e3a640; --good-bg:#15301f; --warn-bg:#33270f; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -85,6 +85,13 @@ ul.next li:first-child{border-top:0;padding-top:0}
         <div class="status" id="stOtf"></div>
         <a class="btn primary" id="goOtf" href="open-this-first.html">Go to Open This First</a>
       </div>
+      <div class="tool">
+        <div class="mark" style="background:var(--prism)" aria-hidden="true">PR</div>
+        <h3>Prism</h3>
+        <p class="what">Turns a whole-market stock screener download into a short reading list: the few companies that pass five separate tests.</p>
+        <div class="status" id="stPrism"></div>
+        <a class="btn primary" id="goPrism" href="prism.html">Open Prism</a>
+      </div>
       <div class="tool soon"><p>More tools coming.</p></div>
     </div>
   </section>
@@ -108,24 +115,27 @@ ul.next li:first-child{border-top:0;padding-top:0}
 <script>
 'use strict';
 /* The build sets window.FTOL_LINKS for the standalone website, where each tool has its own folder. */
-const LINKS=window.FTOL_LINKS||{runway:'runway.html',otf:'open-this-first.html'};
-const KEYS={runway:'retirement-runway-v2',otf:'open-this-first-v1',sumRunway:'ftol-summary-runway',sumOtf:'ftol-summary-otf'};
+const LINKS=window.FTOL_LINKS||{runway:'runway.html',otf:'open-this-first.html',prism:'prism.html'};
+const KEYS={runway:'retirement-runway-v2',otf:'open-this-first-v1',prism:'prism-v1',sumRunway:'ftol-summary-runway',sumOtf:'ftol-summary-otf',sumPrism:'ftol-summary-prism'};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const get=k=>{try{const r=localStorage.getItem(k);return r?JSON.parse(r):null}catch(e){return null}};
 const day=t=>{try{return new Date(t).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}catch(e){return ''}};
 const monthsSince=t=>{const d=new Date(t),n=new Date();return (n.getFullYear()-d.getFullYear())*12+n.getMonth()-d.getMonth()};
 function draw(){
-  $('goRunway').href=LINKS.runway;$('goOtf').href=LINKS.otf;
+  $('goRunway').href=LINKS.runway;$('goOtf').href=LINKS.otf;$('goPrism').href=LINKS.prism;
   const r=get(KEYS.sumRunway),o=get(KEYS.sumOtf),hasR=r&&!r.example&&get(KEYS.runway),hasO=o&&get(KEYS.otf),next=[];
   $('stRunway').innerHTML=hasR?'<b>'+esc(r.line)+'</b><br><span class="note">Last opened '+esc(day(r.at))+'</span>':'Not started. It opens with a sample couple so you can see how it works.';
   $('stOtf').innerHTML=hasO?'<b>'+o.essDone+' of '+o.ess+' essentials sorted</b>'+(o.open?' · '+o.open+' marked to sort out':'')+'<br><span class="note">Last changed '+esc(day(o.at))+'</span>':'Not started. It opens with a made-up example packet.';
+  const p=get(KEYS.sumPrism),daysOld=p?Math.round((Date.now()-new Date(p.date+'T12:00:00'))/864e5):0;
+  $('stPrism').innerHTML=p?'<b>'+p.n+(p.n===1?' company passes':' companies pass')+' all five questions</b>'+(p.watch?' · '+p.watch+' on your watch list':'')+'<br><span class="note">Screener file dated '+esc(day(p.date))+'</span>':'Not started. It opens with made-up companies so you can see how it works.';
   const add=(t,pill,cls,href,label)=>next.push('<li><span>'+t+'</span><span class="row">'+(pill?'<span class="pill '+cls+'">'+pill+'</span>':'')+'<a class="btn sm" href="'+href+'">'+label+'</a></span></li>');
   if(!hasR)add('Enter your own numbers in Retirement Runway.','','',LINKS.runway,'Start');
   else if(monthsSince(r.at)>=6)add('Your retirement plan was last opened '+esc(day(r.at))+'. Tax rules change each November; check it still holds.','Review','warn',LINKS.runway,'Open');
   if(!hasO)add('Answer the essentials in Open This First. It takes about ten minutes.','','',LINKS.otf,'Start');
   else{if(o.essDone<o.ess)add((o.ess-o.essDone)+' essentials are not sorted yet in Open This First.','To do','warn',LINKS.otf,'Continue');
     if(monthsSince(o.at)>=12)add('Your family guide is over a year old. Check it is still true, then reprint it.','Review','warn',LINKS.otf,'Open')}
+  if(p&&daysOld>7)add('Your screener file in Prism is from '+esc(day(p.date))+'. Load a newer one to refresh the lists.','Stale','warn',LINKS.prism,'Open');
   $('next').innerHTML=next.join('')||'<li><span>Nothing needs your attention. Look again after a move, a new account, or a change in the family.</span><span class="pill good">All set</span></li>';
 }
 draw();addEventListener('pageshow',draw);addEventListener('storage',draw);
