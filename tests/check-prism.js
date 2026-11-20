@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'prism', 'index.html'), 'utf8');
 const eng = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
-const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships};')();
+const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships};')();
 let pass = 0, fail = 0;
 const check = (name, actual, expected, tol) => {
   const ok = typeof expected === 'number' ? Math.abs(actual - expected) <= (tol == null ? 1e-6 : tol) : JSON.stringify(actual) === JSON.stringify(expected);
@@ -50,6 +50,51 @@ check('date: text date', E.toDate('2026-11-04'), '2026-11-04');
   check('map: 4.0 becomes 0.04', p.rows[0].fcfy, 0.04); check('map: -30 becomes -0.30', p.rows[0].ret1y, -0.30);
   const f = E.mapTable(H, rows.map(r => r.slice(0, 6).concat([r[6] / 100, r[7] / 100, ''])));
   check('map: fractions left alone', f.report.percentUnits, false); check('map: 0.04 stays 0.04', f.rows[0].fcfy, 0.04);
+}
+
+console.log('--- The provider\'s full download ---');
+// The headings of the 49 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
+// them. Headings only: the values below are invented.
+{ const FULL = ['Symbol', 'Company Name', 'Sector', 'Industry', 'Stock Price', 'Market Cap', 'Avg. Volume', 'Revenue', 'PE Ratio', 'EV/EBITDA',
+    'Debt / EBITDA', 'Total Cash', 'Total Debt', 'Net Cash', 'FCF Yield', 'ROIC', 'Rev. Growth', 'FCF Growth', 'Shares Ch. (YoY)', 'Return 1Y',
+    'Country', 'Exchange', 'CIK Code', 'Price Date', 'Last Split Date', 'Ent. Value', 'FCF', 'SBC', 'Shares', 'Forward PE', 'EV/FCF', 'PB Ratio',
+    'Int. Cov.', 'Z-Score', 'F-Score', 'Analysts', 'Earnings Yield', 'ROIC (5Y)', 'ROE', 'Gross Margin', 'Oper. Margin', 'FCF Margin',
+    'Rev. Growth 3Y', 'Rev. Growth 5Y', 'EPS Growth', 'Buyback Yield', '52W High Chg', 'Shares Insiders', 'Short % Float'];
+  // look-alike headings that are also in the download and must not be mistaken for the ones above
+  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (Q)', 'Return 1W', 'PE (5Y)', 'Short % Shares', 'FCF / EV', 'ND / EBITDA', 'ROE (5Y)'];
+  const row = FULL.map(() => ''), set = (h, v) => { row[FULL.indexOf(h)] = v; };
+  set('Symbol', 'zzz.x'); set('Stock Price', '40'); set('Market Cap', '2000000000'); set('FCF Yield', '9.00%'); set('FCF', '100000000'); set('ROIC', '12.50%');
+  set('Shares Ch. (YoY)', '-0.21%'); set('CIK Code', '0000123456'); set('Price Date', '2026-11-19'); set('Ent. Value', '2500000000'); set('Int. Cov.', '-4.5');
+  set('Z-Score', '2.75'); set('F-Score', '7'); set('52W High Chg', '-10.88%'); set('Short % Float', '0.82%');
+  const m = E.mapTable(FULL.concat(DECOYS), [row.concat(DECOYS.map(() => '99'))]), r = m.rows[0];
+  check('full download: every column Prism reads is found', Object.keys(m.report.found).length, E.FIELDS.length);
+  check('full download: none missing', m.report.missing, []);
+  check('full download: none matched on a guessed spelling', m.report.guessed, []);
+  check('full download: look-alike columns are left alone', m.report.unknown, DECOYS);
+  check('full download: "12.50%" is 0.125', r.roic, 0.125); check('full download: "-0.21%" is -0.0021', r.sh, -0.0021, 1e-12);
+  check('full download: "-10.88%" below the 52-week high', r.dd, -0.1088, 1e-12); check('full download: "0.82%" short interest', r.short, 0.0082, 1e-12);
+  check('full download: CIK keeps its leading zeros', r.cik, '0000123456'); check('full download: price date', r.pdate, '2026-11-19');
+  check('full download: enterprise value', r.ev, 2.5e9); check('full download: interest cover can be negative', r.cov, -4.5);
+  check('full download: Altman score', r.altman, 2.75); check('full download: Piotroski score', r.piotroski, 7);
+  check('full download: percentages carry a % sign, so no whole-number conversion', m.report.percentUnits, false);
+  // a spelling that is only a guess is reported as one: "Ticker" and "Enterprise Value" are not the provider's headings
+  check('a guessed spelling is reported', E.mapTable(['Ticker', 'Enterprise Value'], [['x', '5']]).report.guessed, ['sym', 'ev']);
+  // The yield is free cash flow over the whole company's market value: 100m / 2,000m = 5%, though the file's column says 9%
+  E.derive(r); check('yield: company cash flow over company value', r.fcfy, 0.05); check('yield: the file\'s own figure is kept', r.fcfy_file, 0.09);
+  E.derive(r); check('yield: unchanged when worked out again', [r.fcfy, r.fcfy_file], [0.05, 0.09]);
+  // with no free-cash-flow column the file's yield is used: 8% of 1,000 is 80
+  const y = {fcfy: 0.08, cap: 1000}; E.derive(y); check('yield only: kept', y.fcfy, 0.08); check('yield only: cash flow is yield x value', y.fcf, 80, 1e-9);
+  // with no yield column: 30 / 600 = 5%
+  const c = {fcf: 30, cap: 600}; E.derive(c); check('cash flow only: yield is 30 / 600', c.fcfy, 0.05); check('cash flow only: no file figure', c.fcfy_file, null);
+}
+console.log('--- Strong enough to wait: interest cover ---');
+// Limits: debt up to 3 x EBITDA, share count up to +3%, and with net debt, profit must cover interest 3 times.
+{ const C = E.CONTROLS, S = o => E.strengthOf(Object.assign({netcash: -100, lev: 2, sh: 0}, o), C, C.s_lev).ok;
+  check('cover 5 times with net debt: yes', S({cov: 5}), true);
+  check('cover 2 times with net debt: no', S({cov: 2}), false);
+  check('negative cover (an operating loss) with net debt: no', S({cov: -2}), false);
+  check('cover unknown: judged on debt and share count alone', S({}), true);
+  check('negative cover but more cash than debt: yes', S({cov: -2, netcash: 50}), true);
 }
 
 console.log('--- What the price implies ---');

@@ -11,7 +11,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `tests/check-rules.js` | Checks against hand-worked answers (107 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
-| `tests/check-prism.js` | Prism's engine checks (84 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
+| `tests/check-prism.js` | Prism's engine checks (112 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -123,7 +123,7 @@ shortlists, and works out what growth today's price implies. Same page format as
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (84 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (112 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -139,9 +139,22 @@ shortlists, and works out what growth today's price implies. Same page format as
   on the first screen at phone width.
 - **Unknown is never a pass.** Missing data gives "unknown", which fails a required question.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
-- `FIELDS`: only the first 20 header spellings (`VERIFIED`) were checked against a real download. The rest are
-  guesses and are reported on the page under "Columns found in the file". When the owner supplies the full header
-  row, correct the spellings, raise `VERIFIED`, and add a check.
+- `FIELDS`: the first spelling of each of the 49 columns was checked against the owner's real downloads (a
+  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 49 headings.
+  Later spellings are guesses for other files, and a match on one is reported on the page as "matched by name
+  only". What the full file taught us, so nobody has to find it twice:
+  - Statement figures are already in US dollars, whatever currency the company reports in.
+  - Percentages carry a `%` sign; in the 20-column file they were plain fractions. Both are read.
+  - Its `FCF Yield` column is worked out on one share class, so it overstates the yield for about 340 companies
+    with several classes or partnership units. `derive` therefore uses free cash flow ÷ market value when the file
+    has both, keeps the file's figure in `fcfy_file`, and the row's detail says when they differ.
+  - Its `Primary` column means "listed first in the US", not "main share class": it is false for foreign
+    companies such as large ADRs. Do not use it to drop rows. Share classes are still matched by CIK, then name.
+  - `Is SPAC` agrees with the shell lane. A negative `Int. Cov.` is an operating loss, and fails the strength
+    question when there is net debt.
+  - Strength still uses `Debt / EBITDA` before subtracting cash, which is stricter than the owner's Claude-chat
+    version (net debt ÷ EBITDA; the file has `ND / EBITDA`). Switching changes the answer for about 126 large
+    companies, so ask him first.
 - Sources: the owner's Prism requirements document, his "Investment Opportunity Atlas" workbook, and the
   "Atlas & Prism latest" workbook that his Claude-chat Prism produces (none is in the repo). That last one has 20
   tabs and 106 coded column names, and its watchlist is empty: he finds it too complex. Do not rebuild its boards

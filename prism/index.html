@@ -254,8 +254,9 @@ var CONTROLS = {
 };
 
 /* Columns the engine understands: [name used here, kind, header spellings with letters and digits only].
-   kind: s text, n number, p percentage, d date. Only the first twenty were checked against a real download
-   (see VERIFIED); the rest are best guesses at the provider's headers and show up under "Fields" if not found. */
+   kind: s text, n number, p percentage, d date. The FIRST spelling of each column was checked against real
+   downloads: a 20-column one dated 2026-11-04 and the full 336-column one dated 2026-11-20. Later spellings are
+   guesses for other files; a column matched on one of them is reported as "matched by name only". */
 var FIELDS = [
   ['sym', 's', 'symbol', 'ticker'], ['name', 's', 'companyname', 'company', 'name'],
   ['sector', 's', 'sector'], ['industry', 's', 'industry'],
@@ -265,15 +266,14 @@ var FIELDS = [
   ['cash', 'n', 'totalcash'], ['debt', 'n', 'totaldebt'], ['netcash', 'n', 'netcash', 'netcashdebt'],
   ['fcfy', 'p', 'fcfyield'], ['roic', 'p', 'roic'], ['revg', 'p', 'revgrowth', 'revenuegrowth'],
   ['fcfg', 'p', 'fcfgrowth'], ['sh', 'p', 'shareschyoy', 'shareschangeyoy'], ['ret1y', 'p', 'return1y', 'totalreturn1y'],
-  /* not yet checked against a real download */
-  ['country', 's', 'country'], ['exchange', 's', 'exchange'], ['cik', 's', 'cik'],
+  ['country', 's', 'country'], ['exchange', 's', 'exchange'], ['cik', 's', 'cikcode', 'cik'],
   ['pdate', 'd', 'pricedate'], ['split', 'd', 'lastsplitdate'],
-  ['ev', 'n', 'enterprisevalue', 'ev'], ['fcf', 'n', 'fcf', 'freecashflow'],
-  ['sbc', 'n', 'stockbasedcomp', 'sharebasedcomp', 'stockbasedcompensation', 'sbc'],
-  ['shares', 'n', 'sharesout', 'sharesoutstanding'],
+  ['ev', 'n', 'entvalue', 'enterprisevalue', 'ev'], ['fcf', 'n', 'fcf', 'freecashflow'],
+  ['sbc', 'n', 'sbc', 'stockbasedcomp', 'sharebasedcomp', 'stockbasedcompensation'],
+  ['shares', 'n', 'shares', 'sharesout', 'sharesoutstanding'],
   ['fpe', 'n', 'forwardpe', 'fwdpe'], ['ev_fcf', 'n', 'evfcf'], ['pb', 'n', 'pbratio', 'pb'],
-  ['cov', 'n', 'interestcoverage', 'intcoverage', 'intcov', 'interestcov'],
-  ['altman', 'n', 'altmanzscore', 'altmanz'], ['piotroski', 'n', 'piotroskifscore', 'piotroskif'],
+  ['cov', 'n', 'intcov', 'interestcoverage', 'intcoverage', 'interestcov'],
+  ['altman', 'n', 'zscore', 'altmanzscore', 'altmanz'], ['piotroski', 'n', 'fscore', 'piotroskifscore', 'piotroskif'],
   ['analysts', 'n', 'analysts', 'analystcount'],
   ['eyield', 'p', 'earningsyield'], ['roic5', 'p', 'roic5y'], ['roe', 'p', 'roe'],
   ['gm', 'p', 'grossmargin'], ['om', 'p', 'opermargin', 'operatingmargin', 'opmargin'], ['fcfm', 'p', 'fcfmargin'],
@@ -281,7 +281,7 @@ var FIELDS = [
   ['buyback', 'p', 'buybackyield'], ['dd', 'p', '52whighchg', '52whighchange'],
   ['insider', 'p', 'sharesinsiders', 'insiderownership'], ['short', 'p', 'shortfloat', 'shortpercentfloat']
 ];
-var VERIFIED = 20;
+var VERIFIED = FIELDS.length;   /* how many columns have a checked first spelling: all of them */
 
 /* Financial-sector industries that are ordinary fee businesses and can be scored like any other company. */
 var FIN_STD = {'Insurance Brokers': 1, 'Financial Data & Stock Exchanges': 1};
@@ -373,7 +373,7 @@ function mapTable(headers, data) {
   FIELDS.forEach(function (f, fi) {
     for (var a = 2; a < f.length; a++) {
       var ix = H.indexOf(f[a]);
-      if (ix >= 0) { col[f[0]] = {ix: ix, kind: f[1]}; used[ix] = 1; report.found[f[0]] = String(headers[ix]); if (fi >= VERIFIED) report.guessed.push(f[0]); return; }
+      if (ix >= 0) { col[f[0]] = {ix: ix, kind: f[1]}; used[ix] = 1; report.found[f[0]] = String(headers[ix]); if (fi >= VERIFIED || a > 2) report.guessed.push(f[0]); return; }
     }
     report.missing.push(f[0]);
   });
@@ -437,8 +437,13 @@ function bucketOf(g, C) { return g == null ? null : g < 0 ? 'decline' : g < 0.04
 function derive(r) {
   var has = function (x) { return x != null; };
   if (!has(r.netcash) && has(r.cash) && has(r.debt)) r.netcash = r.cash - r.debt;
-  if (!has(r.fcf) && has(r.fcfy) && has(r.cap)) r.fcf = r.fcfy * r.cap;
-  if (!has(r.fcfy) && has(r.fcf) && r.cap > 0) r.fcfy = r.fcf / r.cap;
+  /* The yield is the whole company's free cash flow over its whole market value. A download's own yield column can be
+     worked out per share of one class, which overstates it for a company with several share classes or partnership
+     units. So when the file has both free cash flow and market value they are used, and the file's own figure is
+     kept in fcfy_file. Without a free-cash-flow column, the file's yield is all there is. */
+  if (r.fcfy_file === undefined) r.fcfy_file = has(r.fcfy) ? r.fcfy : null;
+  if (has(r.fcf) && r.cap > 0) r.fcfy = r.fcf / r.cap;
+  else if (has(r.fcfy) && has(r.cap)) r.fcf = r.fcfy * r.cap;
   if (!has(r.ev) && has(r.cap) && has(r.netcash)) r.ev = r.cap - r.netcash;
   r.fcf_ev = has(r.fcf) && r.ev > 0 ? r.fcf / r.ev : (r.ev_fcf > 0 ? 1 / r.ev_fcf : null);
   r.ey = has(r.eyield) ? r.eyield : (r.pe > 0 ? 1 / r.pe : null);
@@ -477,7 +482,8 @@ function rankGroup(list, key, lowerIsBetter) {
 function strengthOf(r, C, lev) {
   var fund = r.netcash != null && r.netcash >= 0 ? true : r.lev != null ? (r.lev >= 0 && r.lev <= lev) : (r.netcash != null && r.fcfy != null && r.fcfy < 0 ? false : null);
   var dil = r.sh == null ? null : r.sh <= C.s_dil;
-  var cov = r.cov == null || r.cov < 0 || (r.netcash != null && r.netcash >= 0) ? true : r.cov >= C.s_cov;
+  /* Interest cover matters only when there is net debt. A negative figure is an operating loss, which fails. */
+  var cov = r.cov == null || (r.netcash != null && r.netcash >= 0) ? true : r.cov >= C.s_cov;
   return {fund: fund, dil: dil, cov: cov, ok: (fund === false || dil === false || cov === false) ? false : (fund === null || dil === null) ? null : true};
 }
 
@@ -903,7 +909,7 @@ function gateBox(r, k) {
     const why = [];
     if (r.fund === false) why.push(r.lev != null ? 'Debt is ' + r.lev.toFixed(1) + ' times EBITDA; the limit is ' + C.s_lev : 'It has net debt and negative cash flow');
     if (r.sh != null && r.sh > C.s_dil) why.push('The share count grew ' + pct(r.sh) + ' in a year; the limit is ' + pct(C.s_dil));
-    if (r.cov != null && r.cov >= 0 && r.cov < C.s_cov && !(r.netcash >= 0)) why.push('Profit covers interest only ' + r.cov.toFixed(1) + ' times');
+    if (r.cov != null && r.cov < C.s_cov && !(r.netcash >= 0)) why.push(r.cov < 0 ? 'It runs at an operating loss while carrying net debt' : 'Profit covers interest only ' + r.cov.toFixed(1) + ' times; ' + C.s_cov + ' is needed');
     s = g === true ? (r.netcash >= 0 ? 'It has more cash than debt' : 'Debt is ' + (r.lev == null ? 'modest' : r.lev.toFixed(1) + ' times EBITDA')) + ', and the share count ' + (r.sh < 0 ? 'fell ' + pct(-r.sh) : 'grew ' + pct(r.sh)) + ' in a year.' : g === false ? why.join('. ') + '.' : 'The file is missing debt or share-count figures for this company.';
     kv = '<span>Net cash (cash less debt)</span><b>' + money(r.netcash) + '</b><i></i><span>Debt ÷ EBITDA</span><b>' + (r.lev == null ? '–' : r.lev.toFixed(1) + '×') + '</b><i></i><span>Share count change</span><b>' + pct(r.sh) + '</b><i></i>' + (r.cov != null ? '<span>Interest cover</span><b>' + r.cov.toFixed(1) + '×</b><i></i>' : '');
   } else {
@@ -916,6 +922,7 @@ function gateBox(r, k) {
     if (r.cyc && (k === 'Q' || k === 'V') && rank != null) s += ' Includes a ' + C.cyc_haircut + '-point deduction for a cyclical industry.';
     kv = LENS[k].keys.filter(m => RES.avail[m]).map(m => '<span>' + ML[m] + '</span><b>' + pct(r[m]) + '</b><i>' + (r.pc[m] == null ? '–' : Math.round(r.pc[m])) + '</i>').join('');
     if (k === 'V') kv += '<span>Free-cash-flow yield on market value</span><b>' + pct(r.fcfy) + '</b><i></i>';
+    if (k === 'V' && r.fcfy != null && r.fcfy_file != null && Math.abs(r.fcfy_file) > 0.002 && Math.abs(r.fcfy - r.fcfy_file) > 0.2 * Math.abs(r.fcfy_file)) s += ' The file\'s own yield column says ' + pct(r.fcfy_file) + '. Prism uses free cash flow over the whole company\'s market value, which differs when a company has more than one class of share.';
   }
   return '<div class="dbox"><h4><span class="pill ' + (g === true ? 'good' : 'mute') + '">' + (g === true ? '✓ Yes' : g === false ? '✗ No' : '? Unknown') + '</span>' + GQ[k][0] + '</h4><p class="note">' + esc(s) + '</p><div class="kv">' + (k === 'S' ? '' : '<span></span><b></b><i>sector rank</i>') + kv + '</div></div>';
 }
@@ -996,6 +1003,7 @@ function drawHow() {
     '<div><b>Near misses and named lists.</b> Under "Show" you can swap the short list for the companies that miss just one question, or for one of nine named situations that are often worth a look, such as a good business at a low price. A named list shows every company in that situation, and each row says how it answered the five questions.</div>' +
     '<div><b>Why five answers and not one score.</b> A single score lets a very cheap price make up for a weak business. Here a company must pass each question on its own, and the default order puts first the companies whose weakest answer is strongest.</div>' +
     '<div><b>What the price implies.</b> Instead of calling a stock cheap, Prism works out the growth today\'s price needs. It assumes a ' + pct(C.exp_r) + ' yearly return, ' + C.exp_N + ' years of steady growth, then ' + pct(C.exp_gT) + ' a year. On those terms a yield of ' + pct(y0) + ' needs no growth at all, and a yield of ' + pct(y10) + ' needs 10% a year. The result is the average of the cash-flow and earnings readings.</div>' +
+    '<div><b>Free-cash-flow yield.</b> Prism divides a company\'s free cash flow by its whole market value. A download\'s own yield column can be worked out on one class of share, which overstates it for companies with several, so Prism uses its own figure whenever the file has both numbers and says so in the row\'s detail.</div>' +
     '<div><b>Entry ceiling.</b> The price at which a ' + pct(C.exp_hurdle) + ' yearly return still works if cash flow grows no faster than ' + pct(C.exp_cap) + ' a year (or slower, if recent sales growth was slower). It is a hurdle for buying, not a fair value, a target or a forecast.</div>' +
     '<div><b>Set aside and blocked.</b> Banks, insurers, lenders and property companies need different measures and are not scored. Shell companies, second share classes and very small companies are left out. A scored company is blocked from every list while its cash flow is negative, its debt is above ' + C.blk_lev + ' times EBITDA, its share count grew more than ' + pct(C.blk_dil) + ', or its sales fell more than ' + pct(C.blk_shrink) + '.</div>' +
     '<div><b>Data warnings.</b> Screens like this are easily fooled by figures that are too good: a cash yield above ' + pct(C.flag_fcf) + ', a P/E under ' + C.flag_pe + ', cash larger than the company, or a share count that halved or doubled. Those rows are hidden until you choose to see them. Cyclical industries lose ' + C.cyc_haircut + ' rank points on quality and price, because one good year can flatter both.</div>' +
