@@ -95,6 +95,10 @@ td .ans{font-size:13px}
 td .also{font-size:12.5px;color:var(--fg2)}
 #askHint,#digHint{text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg3)}
 /* help notes: a small "?" button, and tags that can be tapped; both open the same note */
+/* the two choices made most often, side by side even on a phone: which list, and in what order */
+.pick{display:flex;gap:10px;align-items:flex-end;max-width:640px}
+.pick>label{min-width:0}.pick>label:first-child{flex:3 1 0}.pick>label:last-child{flex:2 1 0}
+.pick select{text-overflow:ellipsis}
 .hlp{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg2);font:600 11px/1 var(--body);cursor:pointer;vertical-align:1px;letter-spacing:0;text-transform:none;flex:none}
 .hlp:hover{border-color:var(--fg3);color:var(--fg)}
 button.pill{border:0;cursor:pointer;line-height:inherit}
@@ -168,14 +172,16 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
     <div class="row" style="gap:2px;align-items:baseline;flex-wrap:nowrap"><h2 id="tblTitle">Companies</h2><button type="button" class="hlp" data-h="row" aria-label="How to read this list">?</button></div>
     <p id="lede" style="max-width:80ch"></p>
     <p class="note" id="crowd" hidden></p>
-    <label class="f" for="show" style="max-width:460px"><span>Show<button type="button" class="hlp" data-h="show" aria-label="What each list is">?</button></span><select id="show"></select></label>
+    <div class="pick">
+      <label class="f" for="show"><span>Show<button type="button" class="hlp" data-h="show" aria-label="What each list is">?</button></span><select id="show"></select></label>
+      <label class="f" for="sort"><span>Order<button type="button" class="hlp" data-h="sort" aria-label="About the order">?</button></span><select id="sort"></select></label>
+    </div>
     <div class="card" id="listInfo" hidden></div>
     <details id="askBox">
       <summary>More options<span id="askHint"></span></summary>
       <div class="card" style="gap:12px;margin-top:10px">
         <div class="toolbar">
           <label class="f" for="pool"><span>Company size<button type="button" class="hlp" data-h="pool" aria-label="About company size">?</button></span><select id="pool"><option value="main">Large: $2B and up</option><option value="ext">Large and mid: $1B and up</option><option value="all">Everything scored</option></select></label>
-          <label class="f" for="sort"><span>Order<button type="button" class="hlp" data-h="sort" aria-label="About the order">?</button></span><select id="sort"></select></label>
           <label class="f" for="q">Find in this list<input type="search" id="q" placeholder="Symbol or name" autocomplete="off"></label>
         </div>
         <div class="row">
@@ -871,7 +877,7 @@ Object.assign(LISTSORT, {sale: r => (r.slipping === 'steady' ? 20 : r.slipping =
 const SORTS = {
   auto: ['Best fit first', null], weak: ['Fewest weak spots', r => r.weak], V: ['Lowest expectations', r => r.V], Q: ['Best business', r => r.Q],
   P: ['Fastest per-share progress', r => r.P], T: ['Most out of favor', r => r.T], cap: ['Largest company', r => r.cap],
-  room: ['Most room under the entry ceiling', r => r.ceiling ? r.ceiling / r.price : null], sym: ['A to Z', null]
+  room: ['Most under the entry ceiling', r => r.ceiling ? r.ceiling / r.price : null], sym: ['A to Z', null]
 };
 const ML = {roic: 'Return on capital', roic5: 'Return on capital, 5-year', gm: 'Gross margin', om: 'Operating margin', fcfm: 'Free cash flow margin',
   fcf_ev: 'Free cash flow ÷ enterprise value', ey: 'Earnings yield', ebitda_ev: 'EBITDA ÷ enterprise value', fey: 'Forward earnings yield', owner: 'Cash flow after stock pay ÷ market value',
@@ -1079,7 +1085,7 @@ const HELP = {
   verdict: () => '<p><b>Verdict.</b> Your own decision, remembered from file to file. Prism never sets one.</p><p><b>Watch</b>: interesting, waiting for something. <b>Act</b>: an order or a put is open. <b>Own</b>: you hold the shares. <b>No action</b>: fine company, wrong price. <b>Reject</b>: hide it from every list.</p>' +
     '<p>Open a row to add your thesis, a review date and what you did.</p>',
   pool: () => '<p><b>Company size.</b> Which companies the lists include, by market value. "Large" is ' + money(C.size_main) + ' and up; mid-size adds those from ' + money(C.size_ext) + '.</p><p>Moonshots keep their own range, up to ' + money(C.moon_max) + '.</p>',
-  sort: () => '<p><b>Order.</b> "Best fit first" uses each list\'s own order. On the on-sale list that is businesses that are holding up first, then the most signs of a low price. On the put desk it is the biggest fall this week.</p><p>The other choices order every list by one measure.</p>',
+  sort: () => '<p><b>Order.</b> "Best fit first" uses each list\'s own order. On the on-sale list that is businesses that are holding up first, then the most signs of a low price. On the put desk it is the biggest fall this week.</p><p>The other choices order every list by one measure. "Most under the entry ceiling" puts first the companies whose price is furthest below the most to pay; those with no ceiling go last.</p>',
   hideWarn: () => '<p><b>Data warnings.</b> A figure that looks too good is usually a one-off or an error: a cash yield above ' + pct(C.flag_fcf) + ', a P/E under ' + C.flag_pe + ', cash larger than the company, or a share count that halved or doubled.</p><p>Those companies stay hidden unless you untick this.</p>',
   showRej: () => '<p><b>Rejected companies.</b> A company you gave the verdict Reject is hidden from every list. Tick this to see them again, and change the verdict to bring one back.</p>',
   tierB: () => '<p><b>The six tests of an A-class business</b>, with the price left out: a return on capital of ' + pct(C.a_roic5) + ' over five years and ' + pct(C.a_roic) + ' now; a profit in each of the last ' + C.a_years + ' years; sales growing ' + pct(C.a_grow) + ' a year; cash from operations of at least ' + pct(C.a_cash) + ' of profit; a share count growing no more than ' + pct(C.a_dil) + ' a year; and little debt.</p>' +
@@ -1175,7 +1181,6 @@ function render() {
   if (k < 5) hint.push(k + ' of 5 questions required');
   if (S.tierB) hint.push('A-list includes companies that miss one test');
   if (S.ui.pool !== 'main') hint.push(S.ui.pool === 'ext' ? 'mid-size companies included' : 'every size included');
-  if (S.ui.sort !== 'auto') hint.push('order: ' + SORTS[S.ui.sort][0].toLowerCase());
   if (FIND) hint.push('finding "' + FIND + '"');
   if (!S.ui.hideWarn) hint.push('data warnings shown');
   if (S.ui.showRej) hint.push('rejected companies shown');

@@ -137,8 +137,10 @@ format as the other tools; no AI, no live data.
   without the A-list columns falls back to the five-question list. The menu groups are: businesses worth owning
   (A-list on sale, put desk, the whole A-list), cheap and out of favor (yes to all five, near misses), long shots
   (moonshots), and the nine named lists. Rows say what was found in words, differently for each view (`found`);
-  the Q/V/S/P/T letters and ranks appear only in a row's detail. Company size, order, find, the question toggles
-  and the tally sit in the collapsed "More options", whose summary line says when a setting is not the default.
+  the Q/V/S/P/T letters and ranks appear only in a row's detail. "Order" sits beside "Show" (the owner asked how
+  to sort by the entry ceiling on 2026-11-20; it had been hidden), and the two share one row even on a phone.
+  Company size, find, the question toggles and the tally sit in the collapsed "More options", whose summary line
+  says when a setting is not the default.
   Keep the first company on the first screen at phone width.
 - **Help notes (`HELP`, `hb`, `tag`).** The owner expects contextual help everywhere (asked 2026-11-20). A "?"
   button sits beside the list title ("how to read a row", written for the list on show), the Show menu, each column
