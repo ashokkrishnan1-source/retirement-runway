@@ -36,6 +36,11 @@ a total. The run ends with an error code if anything fails.
   must carry no tax figures of its own. If you rename something on the page, this
   check tells you which line of the guide to change.
 
+Prism has its own file, run the same way: `node tests/check-prism.js`. It checks
+Prism's engine on invented companies, and holds Prism's guide
+(`prism/guide/index.html`) to the same rule: every menu choice, tag, heading and
+named list it mentions must be on Prism's page, word for word.
+
 ## After the yearly update
 
 The federal reference figures are for the **2027** rules. When you update the

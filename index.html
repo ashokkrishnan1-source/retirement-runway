@@ -112,9 +112,6 @@ svg text.lbl2{fill:var(--fg2);font-size:11px}
 #jumpRes{display:none}
 @media (max-width:700px){#jumpRes{display:block;position:fixed;right:16px;bottom:16px;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.25)}#jumpRes[hidden]{display:none}
   div#lensBar.lensbar{display:grid;grid-template-columns:1fr 1fr}div#wiTabs{display:grid;grid-template-columns:1fr 1fr}}
-/* Arriving from the guide: the part it asked for is outlined for a few seconds, and a link leads back to the lesson. */
-.spot{outline:3px solid var(--accent);outline-offset:4px;border-radius:10px;scroll-margin-top:14px}
-#guideBack{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;font:500 13px var(--body);background:var(--accent);color:var(--surface);padding:9px 13px;border-radius:8px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 #maintTable td{white-space:normal}
 table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
 th,td{padding:6px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
@@ -2529,28 +2526,12 @@ document.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.file
 function init(){buildPeople();bindGlobals();bindWI();renderRules();addHelpButtons();syncToggles();save();run()}
 let rw;window.addEventListener('resize',()=>{clearTimeout(rw);rw=setTimeout(render,120)});
 load();
-/* The guide (another page of the collection) can ask this page to open at a particular place. It leaves a short-lived note
-   in localStorage, which the collection's pages share: which view, which what-if calculator, which part of the page.
-   The note is read once. The part it names is scrolled into view and outlined for a few seconds. */
-let SHOW=null;
-try{const g=JSON.parse(localStorage.getItem('ftol-show')||'null');if(g){localStorage.removeItem('ftol-show');if(g.p==='runway'&&Date.now()-g.t<60000)SHOW=g}}catch(e){}
+/* A lesson in the guide can ask this page to open at a particular view, what-if calculator and part of the page
+   (ftolShow and ftolSpot, in the shared snippet below). */
+const SHOW=ftolShow('runway');
 if(SHOW){if(LENSES.includes(SHOW.lens))S.lens=SHOW.lens;if(WIK.includes(SHOW.wi))S.wiTab=SHOW.wi}
 init();
-if(SHOW)showSpot(SHOW);
-function showSpot(go){
-  if(go.from==='guide'&&window.FTOL_GUIDE){const a=document.createElement('a');a.id='guideBack';a.className='noprint';a.href=window.FTOL_GUIDE;a.textContent='\u2190 Back to the guide';document.body.appendChild(a)}
-  const el=typeof go.el==='string'?document.getElementById(go.el):null;if(!el)return;
-  for(let d=el.closest('details');d;d=d.parentElement&&d.parentElement.closest('details'))d.open=true;
-  const box=el.closest('.panel,.section,.stratbar,.detailhead,details,header')||el;
-  box.classList.add('spot');
-  /* Results arrive over the next seconds and change the height of what is above, so keep the part in place until the
-     reader touches the page. */
-  let live=true;const ro=window.ResizeObserver?new ResizeObserver(()=>place()):null;
-  const place=()=>{if(live)box.scrollIntoView({block:'start'})},stop=()=>{live=false;if(ro)ro.disconnect()};
-  setTimeout(()=>{place();if(ro)ro.observe(document.body)},60);
-  ['wheel','touchstart','keydown','mousedown'].forEach(t=>addEventListener(t,stop,{once:true,passive:true}));
-  setTimeout(stop,15000);setTimeout(()=>box.classList.remove('spot'),6000);
-}
+if(SHOW)ftolSpot(typeof SHOW.el==='string'?document.getElementById(SHOW.el):null,SHOW,'.panel,.section,.stratbar,.detailhead,details,header');
 /* VAULT:START (shared by every tool; edit tools/vault-snippet.js, then run node tools/sync-vault.js) */
 /* Encrypted copies. The plan is encrypted in the browser with a passphrase (PBKDF2-SHA256, 310,000 rounds, then
    AES-GCM 256) before it is stored or downloaded. The passphrase is kept in memory only and is never stored or sent.
@@ -2617,10 +2598,13 @@ function makeVault(o){
   draw();
   (async()=>{try{if(window.claude&&window.claude.use){const u=await window.claude.use('user'),d=await window.claude.use('db');uid=u?await u.id():null;db=d||null;if(online()){await refresh()}}}catch(e){db=null}ready=true;draw()})();
 }
-/* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
-   window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
-(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
-  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a);
+/* Inside the Financial Tools of Life collection, each page shows a link back to the home page, and a tool that has a
+   guide shows the way to it beside that link. The build sets window.FTOL_HOME and window.FTOL_GUIDE on the collection's
+   copies; a page opened on its own has neither link. */
+(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;
+  const link=(href,text)=>{const x=document.createElement('a');x.href=href;x.textContent=text;x.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none';return x};
+  const nav=document.createElement('div'),a=link(window.FTOL_HOME,'\u2190 Financial Tools of Life');nav.className='noprint';nav.style.cssText='display:flex;flex-wrap:wrap;gap:6px 20px;align-items:baseline';
+  nav.appendChild(a);if(window.FTOL_GUIDE)nav.appendChild(link(window.FTOL_GUIDE,'Guide: how to use this page'));w.prepend(nav);
   /* Inside the claude.ai collection the address belongs to the collection, not to this tool, so refreshing the browser
      reloads the home page. This tool therefore leaves a note that it is the page on show and keeps the note fresh while it
      is open; the home page reads it and comes straight back. Going home on purpose, by the link above, clears the note. */
@@ -2628,17 +2612,37 @@ function makeVault(o){
     mark();setInterval(mark,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)mark()});window.addEventListener('pagehide',mark);
     a.addEventListener('click',()=>{leaving=true;try{localStorage.removeItem('ftol-at')}catch(e){}})}
   }catch(e){}})();
+/* A guide can ask a tool to open at a particular place. It leaves a short-lived note in localStorage (key ftol-show),
+   which the pages of the collection share: the tool it is for, and what to show. ftolShow hands a tool its own note,
+   once, and only while it is under a minute old. The tool sets its view from the note, then calls ftolSpot with the
+   part of the page to show. ftolSpot opens any closed section around the part, brings it into view, keeps it there
+   while the page is still settling (until the reader touches the page), outlines it for a few seconds and, for a
+   reader who came from a guide, offers the way back. */
+function ftolShow(app){try{const g=JSON.parse(localStorage.getItem('ftol-show')||'null');if(!g)return null;const fresh=Date.now()-g.t<60000;
+  if(g.p===app||!fresh)localStorage.removeItem('ftol-show');return g.p===app&&fresh?g:null}catch(e){return null}}
+function ftolSpot(el,go,around,top){
+  if(go&&go.from==='guide'&&window.FTOL_GUIDE&&!document.getElementById('guideBack')){const a=document.createElement('a');a.id='guideBack';a.className='noprint';a.href=window.FTOL_GUIDE;a.textContent='\u2190 Back to the guide';
+    a.style.cssText='position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;font:500 13px var(--body);background:var(--accent);color:var(--surface);padding:9px 13px;border-radius:8px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.25)';document.body.appendChild(a)}
+  if(!el)return;
+  for(let d=el.closest('details');d;d=d.parentElement&&d.parentElement.closest('details'))d.open=true;
+  /* outline the panel the part belongs to (`around` lists what counts as one in this tool), or the part itself */
+  const box=go&&go.box==='self'?el:el.closest(around)||el,st=box.style,was=[st.outline,st.outlineOffset];
+  /* inside a table the outline is drawn just within the part, because a table's scrolling frame would cut off one drawn outside it */
+  box.classList.add('ftol-spot');st.outline='3px solid var(--accent)';st.outlineOffset=box.closest('table')?'-3px':'4px';
+  const at=top||box;at.style.scrollMarginTop='14px';     /* `top`, when given, is what to bring to the top of the screen instead of the outlined part */
+  let live=true;const ro=window.ResizeObserver?new ResizeObserver(()=>place()):null;
+  const place=()=>{if(live)at.scrollIntoView({block:'start'})},stop=()=>{live=false;if(ro)ro.disconnect()};
+  setTimeout(()=>{place();if(ro)ro.observe(document.body)},60);
+  ['wheel','touchstart','keydown','mousedown'].forEach(t=>addEventListener(t,stop,{once:true,passive:true}));
+  setTimeout(stop,15000);setTimeout(()=>{box.classList.remove('ftol-spot');st.outline=was[0];st.outlineOffset=was[1]},6000);
+}
 /* VAULT:END */
 makeVault({mount:document.getElementById('vault'),app:'runway',what:'your plan',getState:()=>({s:S,strat,real}),download:(n,d)=>offer(n,d),
   setState:o=>{if(!o||!o.s||!Array.isArray(o.s.p))throw 0;S=merge(o.s);strat=o.strat||'smart';real=o.real!==false;isExample=false;bIdx=null;save();init()}});
-/* The collection has a guide to this page. The build says where it is (window.FTOL_GUIDE); a page opened on its own has
-   none. The link sits beside the link back to the home page, and the sample banner mentions it to a first-time reader. */
-(function(){try{const g=window.FTOL_GUIDE;if(!g)return;const w=document.querySelector('.wrap'),back=w.querySelector(':scope > a.noprint');
-  const mk=t=>{const a=document.createElement('a');a.href=g;a.textContent=t;return a};
-  const nav=document.createElement('div');nav.className='noprint';nav.style.cssText='display:flex;flex-wrap:wrap;gap:6px 20px;align-items:baseline';
-  const a=mk('Guide: how to use this page');a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none';
-  w.prepend(nav);if(back)nav.appendChild(back);nav.appendChild(a);
-  const b=document.getElementById('exampleBanner');if(b){const l=mk('The guide');l.style.color='var(--accent)';b.append(' New here? ',l,' walks you through this page in about ten minutes.')}
+/* The collection has a guide to this page (window.FTOL_GUIDE, set by the build; the shared snippet draws the link to it).
+   The sample banner mentions it to a first-time reader. */
+(function(){try{const g=window.FTOL_GUIDE,b=document.getElementById('exampleBanner');if(!g||!b)return;
+  const l=document.createElement('a');l.href=g;l.textContent='The guide';l.style.color='var(--accent)';b.append(' New here? ',l,' walks you through this page in about ten minutes.')
 }catch(e){}})();
 })();
 </script>

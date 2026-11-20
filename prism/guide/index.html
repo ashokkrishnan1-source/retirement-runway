@@ -1,0 +1,603 @@
+<title>Prism Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a field guide. One narrow reading column: a short list of questions, each opening to a few numbered steps.
+   The names of Prism's menus, tags and headings are set as small labels, so the reader can match them on the page.
+   The colors are Prism's own; the rest of the layout is shared with the other guides (see the block below). */
+:root{
+  --bg:#f4f3f6; --surface:#ffffff; --sunk:#eae8ef; --line:#d9d5e2;
+  --fg:#1a1624; --fg2:#514a60; --fg3:#6b6380;
+  --accent:#4b3a8c; --accent-soft:#e6e1f5; --on-accent:#ffffff;
+  --warn:#8f5600; --warn-bg:#fbf0dc;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121019; --surface:#1a1724; --sunk:#221e2e; --line:#342d45;
+  --fg:#ece9f3; --fg2:#b1aac2; --fg3:#8f88a3;
+  --accent:#b9a6f0; --accent-soft:#2a2342; --on-accent:#121019;
+  --warn:#e3a640; --warn-bg:#33270f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121019; --surface:#1a1724; --sunk:#221e2e; --line:#342d45;
+  --fg:#ece9f3; --fg2:#b1aac2; --fg3:#8f88a3;
+  --accent:#b9a6f0; --accent-soft:#2a2342; --on-accent:#121019;
+  --warn:#e3a640; --warn-bg:#33270f; color-scheme:dark}
+/* GUIDECSS:START (shared by the guides; edit tools/guide-snippet.css, then run node tools/sync-vault.js) */
+/* Everything about a guide's layout except its colors, which each guide sets above to match its tool. */
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+header{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font:500 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg3)}
+h1{font:700 clamp(28px,5vw,38px)/1.08 var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font:600 13px/1.2 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--fg2);margin:0}
+h2 small{font:400 13px/1.2 var(--body);letter-spacing:0;text-transform:none;color:var(--fg3);margin-left:6px}
+p{margin:0}
+.sub{color:var(--fg2);font-size:17px;max-width:62ch}
+.note{font-size:14px;color:var(--fg2);max-width:66ch}
+section{display:flex;flex-direction:column;gap:10px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 15px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:9px 14px;border-radius:8px;cursor:pointer;min-height:44px;text-decoration:none;display:inline-flex;align-items:center}
+.btn:hover{border-color:var(--fg3)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+
+/* the list of lessons */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+details.lesson{border-top:1px solid var(--line);scroll-margin-top:12px}
+details.lesson:first-child{border-top:0}
+details.lesson>summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:13px 16px;min-height:60px;border-radius:12px}
+details.lesson>summary::-webkit-details-marker{display:none}
+details.lesson>summary::after{content:"+";margin-left:auto;flex:none;font:400 22px/1 var(--body);color:var(--fg3)}
+details.lesson[open]>summary::after{content:"\2013"}
+.num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:600 14px/28px var(--body);text-align:center}
+.t{min-width:0}
+.q{display:block;font:600 18px/1.25 var(--display);text-wrap:balance}
+.where{display:block;font-size:13.5px;line-height:1.35;color:var(--fg3);margin-top:2px}
+.body{padding:2px 16px 18px;display:flex;flex-direction:column;gap:12px}
+.body>p,.body>ol,.body>ul,.body>dl{max-width:66ch}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:9px}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
+ol.steps>li::before{content:counter(s) ".";font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+ul.points{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+ul.points>li{padding-left:14px;border-left:2px solid var(--line)}
+ul.points>li>span{display:block}
+ul.points>li>span+span{margin-top:3px}
+/* a name exactly as it appears in Runway */
+/* A short name (class "k s") never breaks across lines. A long one may, or it would not fit on a phone. */
+.k{font-weight:600;color:var(--fg);background:var(--sunk);border-radius:5px;padding:1px 5px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.k.s{white-space:nowrap}
+a.k{color:var(--accent);text-decoration:none}
+a.k:hover{text-decoration:underline}
+.tip{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:15px;max-width:66ch}
+.tip.warn{background:var(--warn-bg)}
+.tip b:first-child{font-weight:600}
+.go{display:flex;flex-wrap:wrap;gap:8px}
+
+/* the page at a glance: two panes, side by side as in Runway, stacked on a phone as Runway is */
+.map{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.map.one{grid-template-columns:1fr}
+@media (max-width:560px){.map{grid-template-columns:1fr}}
+.pane{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.pane h3{font:600 15px/1.2 var(--display);margin:0}
+.pane h3 small{display:block;font:400 13px/1.35 var(--body);color:var(--fg3);margin-top:2px}
+.pane ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+
+/* the what-if calculators: name, then the question it answers */
+ul.calc{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:minmax(0,15em) minmax(0,1fr);gap:9px 14px;align-items:baseline}
+ul.calc>li{display:contents}
+ul.calc>li>a{justify-self:start}
+@media (max-width:560px){ul.calc{grid-template-columns:1fr;gap:0}ul.calc>li{display:block;padding:8px 0;border-top:1px solid var(--line)}ul.calc>li:first-child{border-top:0;padding-top:0}ul.calc>li>span{display:block;margin-top:3px}}
+
+dl.words{margin:0;display:flex;flex-direction:column;gap:12px}
+dl.words dt{font-weight:600}
+dl.words dd{margin:2px 0 0;color:var(--fg2)}
+/* GUIDECSS:END */
+</style>
+
+<div class="wrap" data-tool="prism">
+  <header>
+    <div class="eyebrow">Financial Tools of Life · Guide</div>
+    <h1>How to use Prism</h1>
+    <p class="sub">Prism reads one screener download and gives you a short reading list: the best businesses in the file, and which of them are on sale. This guide shows how to read it, one short lesson at a time.</p>
+    <div class="row"><a class="btn primary run" href="#">Open Prism</a></div>
+    <p class="note needs-tool">A <b>Show me in Prism</b> button opens Prism at the right place. <b>←&nbsp;Back to the guide</b> brings you back to the lesson.</p>
+    <p class="note">Prism lists companies to research. It does not tell you what to buy.</p>
+  </header>
+
+  <section aria-labelledby="gStart">
+    <h2 id="gStart">Start here <small>about ten minutes</small></h2>
+    <div class="list">
+
+      <details class="lesson" id="look">
+        <summary><span class="num">1</span><span class="t"><span class="q">Look around with the made-up companies</span><span class="where">No file needed</span></span></summary>
+        <div class="body">
+          <p>Prism opens with made-up companies, so you can see how it reads before you load anything. Their symbols end in .X. If you have already loaded a file, you will see your own companies, and this lesson works the same way.</p>
+          <ol class="steps">
+            <li><span>The card at the top, <b class="k s">Today's file</b>, says what is loaded.</span></li>
+            <li><span>Under it is the list. Its title is the answer: how many A-class businesses are on sale. The sentence below the title says what put them there.</span></li>
+            <li><span>Each row is one company. It says in a few words what Prism found, then what the price is counting on and the most to pay.</span></li>
+            <li><span>Tap any <b class="k s">?</b>, or any small tag in a row, for a note about it.</span></li>
+            <li><span>Tap a row to open the figures behind it. Tap it again to close it.</span></li>
+          </ol>
+          <p><b>The page at a glance.</b> Prism has more on it than you need on day one. This is the order things come in.</p>
+          <div class="map one">
+            <div class="pane">
+              <h3>From the top of the page down</h3>
+              <ul>
+                <li><span class="k s">Today's file</span> and <span class="k">Columns found in the file</span></li>
+                <li>The list: its title, <span class="k s">Show</span>, <span class="k s">Order</span>, <span class="k s">More options</span> and the rows</li>
+                <li><span class="k s">Look up any stock</span></li>
+                <li><span class="k s">Your verdicts</span></li>
+                <li><span class="k">Scorecard: how the lists have done</span></li>
+                <li><span class="k s">Set aside</span></li>
+                <li><span class="k s">Settings</span></li>
+                <li><span class="k">How this works, and its limits</span></li>
+                <li><span class="k">Encrypted and online copies</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="go"><a class="btn" data-go='{"list":"sale","el":"loadCard"}' href="#">Show me in Prism →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="load">
+        <summary><span class="num">2</span><span class="t"><span class="q">Load your own file</span><span class="where">One download, every column</span></span></summary>
+        <div class="body">
+          <p>Prism works on one file: the whole-market screener download from your data provider, with one row for every stock.</p>
+          <ol class="steps">
+            <li><span>At your data provider, download the screener with every column it offers. A CSV file loads fastest. Excel also works.</span></li>
+            <li><span>Press <b class="k s">Load a screener file</b>, or drop the file anywhere on the page.</span></li>
+            <li><span>Read the line under <b class="k s">Today's file</b>. It gives the file's name, the number of companies and the date of the prices.</span></li>
+            <li><span>Open <b class="k">Columns found in the file</b> once. It lists the columns Prism found, and the ones it looked for and did not find. The more it finds, the fewer answers come out as "unknown".</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> The file is read in this browser and is never uploaded. Prism keeps it in this browser, so the page reopens where you left off. <b class="k s">Forget the stored file</b>, under <b class="k s">Settings</b>, removes it.</p>
+          <p class="tip"><b>Good to know.</b> <b class="k s">Show example</b> brings the made-up companies back. Your own file returns when you reload the page. If a file lacks the columns the A-list needs, Prism opens on the five-question list instead.</p>
+          <div class="go"><a class="btn" data-go='{"el":"loadCard"}' href="#">Show me in Prism →</a><a class="btn" data-go='{"el":"fieldsBox"}' href="#">Show me the columns →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="row">
+        <summary><span class="num">3</span><span class="t"><span class="q">Read a row</span><span class="where">What each part of a row tells you</span></span></summary>
+        <div class="body">
+          <p>A row says in words what Prism found, so you can decide in a few seconds whether the company is worth opening.</p>
+          <ul class="points">
+            <li><span><b class="k s">What Prism found</b></span><span>A few words on why the company is on this list. On the on-sale list it gives the P/E against the company's usual P/E, the growth the price is counting on against the growth the company has delivered, and how far the price is off its high.</span></li>
+            <li><span>The small tags</span><span><b class="k s">Holding up</b>, <b class="k s">One weak spot</b> or <b class="k s">Slipping</b> says whether the business itself shows signs of weakening. <b class="k s">Rising</b> or <b class="k s">Falling</b> says which way the price is moving. <b class="k s">Cyclical</b> marks an industry whose profits swing. Tap a tag for what it means for that company.</span></li>
+            <li><span><b class="k s">Price implies</b></span><span>The yearly growth today's price needs to be fair, summed up in a word: <b class="k s">Decline</b>, <b class="k s">No growth</b>, <b class="k s">Moderate growth</b>, <b class="k s">High growth</b> or <b class="k s">Perfection</b>. The lower it is, the less the price is counting on.</span></li>
+            <li><span><b class="k s">Entry ceiling</b></span><span>The most to pay. The line under it gives today's price and how far that is under or over the ceiling. A later lesson explains it.</span></li>
+            <li><span><b class="k s">Verdict</b></span><span>Your own decision about the company. Prism never sets one.</span></li>
+          </ul>
+          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the five questions and a place for your verdict.</p>
+          <div class="go"><a class="btn" data-go='{"list":"sale","el":"tblBox","box":"self"}' href="#">Show me the rows →</a><a class="btn" data-go='{"list":"sale","open":"first","el":"detail"}' href="#">Show me a row opened →</a></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="gAsk">
+    <h2 id="gAsk">Then, the question you have</h2>
+    <div class="list">
+
+      <details class="lesson" id="alist">
+        <summary><span class="t"><span class="q">Which businesses are worth owning?</span><span class="where">The whole A-list</span></span></summary>
+        <div class="body">
+          <p>The A-list grades the business alone and ignores the price. A company gets on it by passing six tests.</p>
+          <ul class="points">
+            <li>It earns a high return on the money invested in it, over five years and now.</li>
+            <li>It has made a profit every year for a long run of years.</li>
+            <li>Its sales keep growing.</li>
+            <li>Its profits arrive as cash.</li>
+            <li>Its share count is steady.</li>
+            <li>It carries little debt.</li>
+          </ul>
+          <ol class="steps">
+            <li><span>Under <b class="k s">Show</b>, choose <b class="k s">The whole A-list</b>.</span></li>
+            <li><span>Open a row. <b class="k">Is it an A-class business?</b> lists the six tests with the company's own figures, and a tick or a cross for each.</span></li>
+            <li><span>Disagree with a grade? Under <b class="k s">My A-list</b>, choose <b class="k s">Always on my A-list</b> or <b class="k s">Never on my A-list</b>. Your choice wins.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> A test the file can't answer does not count as a pass. To include companies that miss exactly one test, open <b class="k s">More options</b> and tick <b class="k">Put companies that miss just one of the six tests on the A-list too</b>.</p>
+          <p class="tip"><b>Good to know.</b> Each test's pass mark is shown beside it in the row. The pass marks are starting points. None has been tested against later returns.</p>
+          <div class="go"><a class="btn" data-go='{"list":"A","el":"tblTitle"}' href="#">Show me the A-list →</a><a class="btn" data-go='{"list":"A","open":"first","el":"detail"}' href="#">Show me the six tests →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="sale">
+        <summary><span class="t"><span class="q">Which of them are on sale?</span><span class="where">A-list on sale, the list Prism opens on</span></span></summary>
+        <div class="body">
+          <p>A good business is worth reading about when its price is low. Prism calls an A-list company "on sale" when at least two of three signs are present.</p>
+          <ul class="points">
+            <li>Its P/E is well below its own average of past years.</li>
+            <li>The price is counting on much less growth than its sales have delivered.</li>
+            <li>The price is well below its high of the past year.</li>
+          </ul>
+          <ol class="steps">
+            <li><span>Under <b class="k s">Show</b>, choose <b class="k s">A-list on sale</b>. Prism opens here.</span></li>
+            <li><span>Read the first line of each row. It names the signs that are present.</span></li>
+            <li><span>Look at the tag. <b class="k s">Holding up</b> means the business shows none of four signs of weakening: slowing sales, falling returns, a weak forecast, falling profit. <b class="k s">Slipping</b> means it shows two or more. Businesses that are holding up come first.</span></li>
+            <li><span>Open a row. <b class="k s">Is the price low?</b> and <b class="k">Is the business slipping?</b> show each sign with the company's own figures.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> A low price with a slipping business is often a trap. Read why it is slipping before anything else.</p>
+          <p class="tip"><b>One worry, many names.</b> When one sector fills a large part of the list, a line under the opening sentence says so. Several companies marked down by the same worry are one bet, not several.</p>
+          <div class="go"><a class="btn" data-go='{"list":"sale","el":"tblTitle"}' href="#">Show me in Prism →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="ceiling">
+        <summary><span class="t"><span class="q">What is the most I should pay?</span><span class="where">Entry ceiling · Price implies</span></span></summary>
+        <div class="body">
+          <p>The entry ceiling is the most to pay for a share. Prism works it out from the company's spare cash: what is left each year after running the business and investing in it.</p>
+          <ul class="points">
+            <li>Pay the ceiling and you would still earn a good return each year, even if that cash grows only slowly. Pay less and you earn more.</li>
+            <li>"Under" means today's price is below the ceiling. "Over" means the price is counting on faster growth. A price far above the ceiling is shown as a multiple of it.</li>
+            <li>Some rows say "None" and give the reason: a cyclical industry, no spare cash, a data warning, or a price that already assumes very fast growth.</li>
+            <li><b class="k s">Price implies</b> looks at the same thing from the other side: the growth today's price needs.</li>
+          </ul>
+          <ol class="steps">
+            <li><span>Tap the ceiling in any row. A note explains it in plain words, with that company's own figures.</span></li>
+            <li><span>To put first the companies whose price is furthest below their ceiling, set <b class="k s">Order</b> to <b class="k">Most under the entry ceiling</b>. Companies with no ceiling go last.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> It is a "don't pay more than this" line. It is not what the share is worth, and it is not a forecast. The ceiling is cautious on purpose, so a price above it is not a reason to sell.</p>
+          <div class="go"><a class="btn" data-go='{"list":"sale","el":"sort"}' href="#">Show me the Order menu →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="puts">
+        <summary><span class="t"><span class="q">Which could I sell puts on?</span><span class="where">Put desk</span></span></summary>
+        <div class="body">
+          <p>The put desk is for readers who get into a company by selling cash-secured puts. It lists A-list companies that are on sale, or fell hard in the past week, and that have listed options.</p>
+          <ol class="steps">
+            <li><span>Under <b class="k s">Show</b>, choose <b class="k s">Put desk</b>.</span></li>
+            <li><span>Read the row: how far the price fell this week, how far it moves in a typical day, and where the price stands against the entry ceiling.</span></li>
+            <li><span>Check the earnings tag. It gives the days to the next report and turns amber when the report is close. An option that expires after that date carries whatever the report brings.</span></li>
+            <li><span>Read the option prices at your broker. They are not in the file.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> Prism never suggests a strike. It has no option prices, and a guess would mislead.</p>
+          <p class="tip"><b>Good to know.</b> The lesson "Record what you decided" shows how to note a put you have sold.</p>
+          <div class="go"><a class="btn" data-go='{"list":"put","el":"tblTitle"}' href="#">Show me in Prism →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="five">
+        <summary><span class="t"><span class="q">What is cheap and out of favor?</span><span class="where">The five questions · Near misses</span></span></summary>
+        <div class="body">
+          <p>This is a second way of looking, separate from the A-list. Prism asks every company five questions and keeps those that answer yes to all five. Most of the answers compare a company with others in its own sector.</p>
+          <ul class="points">
+            <li><span><b class="k s">Good business?</b></span><span>It earns high returns on the money invested in it, compared with its sector.</span></li>
+            <li><span><b class="k s">Low expectations?</b></span><span>The price is low against cash flow and earnings, so little growth is needed to justify it.</span></li>
+            <li><span><b class="k s">Strong enough to wait?</b></span><span>It has little debt and is not issuing many new shares.</span></li>
+            <li><span><b class="k s">Growing per share?</b></span><span>Sales and cash flow per share are rising, or the share count is shrinking.</span></li>
+            <li><span><b class="k s">Out of favor?</b></span><span>The share price has lagged its sector over the past year.</span></li>
+          </ul>
+          <ol class="steps">
+            <li><span>Under <b class="k s">Show</b>, choose <b class="k">Yes to all five questions</b>.</span></li>
+            <li><span>For more names, choose <b class="k">Near misses: one question short</b>. Each row names the question it misses.</span></li>
+            <li><span>To stop requiring a question, open <b class="k s">More options</b> and press it under <b class="k s">The five questions</b>.</span></li>
+            <li><span>Open a row to see each answer with the figures behind it.</span></li>
+          </ol>
+          <p class="tip"><b>Five answers, never one score.</b> A single score would let a very cheap price make up for a weak business. Here a company must pass each question on its own.</p>
+          <p class="tip"><b>Good to know.</b> An answer the file can't give is "unknown", and unknown is never a pass.</p>
+          <div class="go"><a class="btn" data-go='{"list":"","el":"tblTitle"}' href="#">Show me the list →</a><a class="btn" data-go='{"list":"","el":"gates"}' href="#">Show me the five questions →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="named">
+        <summary><span class="t"><span class="q">What are the nine named lists?</span><span class="where">Particular situations worth a look</span></span></summary>
+        <div class="body">
+          <p>Each named list is a situation that is often worth reading about. It shows every company in that situation, and each row says how the company answered the five questions. Above the rows are two prompts: <b class="k s">First check</b> and <b class="k s">It is wrong if</b>.</p>
+          <ul class="calc" id="namedList">
+            <li><a class="k s" data-go='{"list":"qos","el":"tblTitle"}' href="#">Quality on sale</a><span>A strong business at a low price, both judged against its own sector.</span></li>
+            <li><a class="k" data-go='{"list":"decl","el":"tblTitle"}' href="#">Priced for decline, still growing</a><span>The price only makes sense if cash flow shrinks for years, yet sales are growing.</span></li>
+            <li><a class="k" data-go='{"list":"gwr","el":"tblTitle"}' href="#">Growth without a rerating</a><span>Sales grew strongly while the share price went nowhere.</span></li>
+            <li><a class="k s" data-go='{"list":"cash","el":"tblTitle"}' href="#">Cash-backed</a><span>Net cash is a large part of the market value, and the business still earns cash.</span></li>
+            <li><a class="k s" data-go='{"list":"cannibal","el":"tblTitle"}' href="#">Shrinking share count</a><span>The company retired a meaningful part of its stock, paid for out of its own cash.</span></li>
+            <li><a class="k s" data-go='{"list":"fallen","el":"tblTitle"}' href="#">Fallen quality</a><span>Down sharply in a year, but still a good business with a sound balance sheet.</span></li>
+            <li><a class="k" data-go='{"list":"leader","el":"tblTitle"}' href="#">Industry leader at a discount</a><span>One of the best businesses in its industry, priced below most of its peers.</span></li>
+            <li><a class="k" data-go='{"list":"repair","el":"tblTitle"}' href="#">Cash improving, returns still low</a><span>A weak business whose cash flow is rising fast. A possible early repair, not proof of one.</span></li>
+            <li><a class="k s" data-go='{"list":"cycle","el":"tblTitle"}' href="#">Cycle survivors</a><span>A cyclical company that has fallen hard but has little debt and still earns cash.</span></li>
+          </ul>
+          <p class="note needs-tool">Tap a name to open that list in Prism.</p>
+        </div>
+      </details>
+
+      <details class="lesson" id="moon">
+        <summary><span class="t"><span class="q">What about long shots?</span><span class="where">Moonshots</span></span></summary>
+        <div class="body">
+          <p>Moonshots are small companies growing fast that can pay their own way for now. Most companies like these disappoint. Prism can check that a company is able to survive. It cannot check that its story is true.</p>
+          <ol class="steps">
+            <li><span>Under <b class="k s">Show</b>, choose <b class="k s">Moonshots</b>.</span></li>
+            <li><span>Read the row: sales growth, gross margin, how many years the cash lasts at today's spending, and the change in the share count.</span></li>
+            <li><span>Treat the list as a place to start reading, never as a list to buy.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> Cyclical industries are left out. When several moonshots come from one sector, Prism says so, because they are one bet.</p>
+          <div class="go"><a class="btn" data-go='{"list":"moon","el":"tblTitle"}' href="#">Show me in Prism →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="missing">
+        <summary><span class="t"><span class="q">Why isn't a company on the list?</span><span class="where">Look up any stock · Set aside</span></span></summary>
+        <div class="body">
+          <ol class="steps">
+            <li><span>Under <b class="k s">Look up any stock</b>, type the symbol. Prism shows how the company answered each question, or why it was set aside.</span></li>
+            <li><span><b class="k s">Set aside</b> counts the companies that are in the file but are not scored: banks, insurers and lenders, property companies, shell companies, and companies too small to score.</span></li>
+            <li><span>A scored company can also be kept off the five-question lists for now, for example while its cash flow is negative. Prism tests it again with every file.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> Banks, insurers and property companies need different measures, so Prism leaves them out and does not guess.</p>
+          <div class="go"><a class="btn" data-go='{"el":"look"}' href="#">Show me the look-up →</a><a class="btn" data-go='{"el":"aside"}' href="#">Show me what is set aside →</a></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="gTrack">
+    <h2 id="gTrack">Keeping track</h2>
+    <div class="list">
+
+      <details class="lesson" id="verdicts">
+        <summary><span class="t"><span class="q">Record what you decided</span><span class="where">Verdicts, and how to note a put</span></span></summary>
+        <div class="body">
+          <p>A verdict is your own decision about a company. Prism remembers it from file to file, so you don't read the same company again tomorrow.</p>
+          <ul class="points">
+            <li><span><b class="k s">Watch</b></span><span>Interesting, and you are waiting for something.</span></li>
+            <li><span><b class="k s">Act</b></span><span>An order or a put is open.</span></li>
+            <li><span><b class="k s">Own</b></span><span>You hold the shares.</span></li>
+            <li><span><b class="k s">No action</b></span><span>A fine company at the wrong price.</span></li>
+            <li><span><b class="k s">Reject</b></span><span>Hide it from every list.</span></li>
+          </ul>
+          <ol class="steps">
+            <li><span>For a quick verdict, use the menu in the <b class="k s">Verdict</b> column of any row.</span></li>
+            <li><span>For the full record, open the row. Under <b class="k s">Your verdict</b>, fill in <b class="k s">Thesis, in one line</b>, <b class="k s">Why it is cheap</b>, <b class="k">Trigger: what would change this verdict</b> and a <b class="k s">Review by</b> date. Press <b class="k s">Save verdict</b>.</span></li>
+            <li><span>If you sell a put to get in, choose <b class="k s">Act</b>, write the strike and expiry under <b class="k">Entry: what you did, or plan to do</b>, and set <b class="k s">Review by</b> to the expiry date. If the shares are assigned to you, change the verdict to <b class="k s">Own</b>, and note any call you sell in the same way.</span></li>
+            <li><span><b class="k s">Your verdicts</b>, below the list, shows the companies you follow, with the review date first. A date that has passed is marked <b class="k s">Due</b>.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> To see rejected companies again, open <b class="k s">More options</b> and tick <b class="k">Show companies I rejected</b>. Change the verdict to bring one back.</p>
+          <p class="tip"><b>Good to know.</b> <b class="k s">Download case notes</b> saves your verdicts as a file. <b class="k s">Load case notes</b> reads one back.</p>
+          <div class="go"><a class="btn" data-go='{"list":"sale","open":"first","el":"vform"}' href="#">Show me the verdict form →</a><a class="btn" data-go='{"el":"watch"}' href="#">Show me my verdicts →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="changed">
+        <summary><span class="t"><span class="q">What changed since my last file?</span><span class="where">The line above the list</span></span></summary>
+        <div class="body">
+          <p>Once you have loaded a second, newer file, Prism compares the two.</p>
+          <ul class="points">
+            <li>A line appears between the file card and the list. It begins <b class="k s">Since your last file</b>. Open it to see who joined and who left each main list, with the reason.</li>
+            <li>For the companies you follow, with a verdict of Watch, Act or Own, it flags what needs attention: a review that is due, earnings coming up, a sharp fall this week, a company that left the A-list or began to slip, and a price that crossed its entry ceiling.</li>
+            <li>In the list itself, a company that was not there in your previous file carries the tag <b class="k s">New</b>.</li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> The line is hidden when there is nothing to say, and it never appears with the made-up companies.</p>
+        </div>
+      </details>
+
+      <details class="lesson" id="scorecard">
+        <summary><span class="t"><span class="q">Have the lists been any good?</span><span class="where">Scorecard</span></span></summary>
+        <div class="body">
+          <p>Nothing in Prism has been tested against the past. The scorecard is how the lists earn or lose your trust.</p>
+          <ol class="steps">
+            <li><span>Keep loading newer files. Each time, Prism notes which companies have joined each list, and at what price.</span></li>
+            <li><span>Open <b class="k">Scorecard: how the lists have done</b>. For each list it shows how the middle company has done since joining, next to the typical large company over the same days.</span></li>
+            <li><span>Give it time. Prism says so plainly when the history is under three months.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> The figures are on price alone, so dividends are left out. A company that left the file or split its shares is dropped. A list that looks good over a few months has proved nothing.</p>
+          <p class="tip"><b>Good to know.</b> The scorecard starts when you load your own file.</p>
+          <div class="go"><a class="btn" data-go='{"el":"cardBox"}' href="#">Show me in Prism →</a></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="gKeep">
+    <h2 id="gKeep">Keeping it</h2>
+    <div class="list">
+
+      <details class="lesson" id="options">
+        <summary><span class="t"><span class="q">Change what Prism looks for</span><span class="where">More options · Settings · How this works</span></span></summary>
+        <div class="body">
+          <ul class="points">
+            <li><b class="k s">More options</b>, above the rows, holds <b class="k s">Company size</b>, <b class="k s">Find in this list</b>, the boxes for data warnings and rejected companies, and <b class="k s">The five questions</b>. Its heading tells you when a setting is not the usual one.</li>
+            <li><b class="k s">Settings</b>, near the bottom, holds the pass marks. They are starting points, not tested rules. Change one and every list updates. <b class="k">Back to the starting values</b> undoes your changes.</li>
+            <li><b class="k">Leave out mining and coal companies</b> and <b class="k s">Symbols to leave out</b> remove companies you never want to see.</li>
+            <li><b class="k">How this works, and its limits</b> explains every test in full, and what the figures can't show. Read it once.</li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> <b class="k">Hide companies with data warnings</b> is ticked to start with. A figure that looks too good is usually a one-off or an error, so those rows stay hidden until you untick it.</p>
+          <div class="go"><a class="btn" data-go='{"el":"askBox"}' href="#">Show me More options →</a><a class="btn" data-go='{"el":"ctlBox"}' href="#">Show me Settings →</a><a class="btn" data-go='{"el":"how"}' href="#">Show me How this works →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="save">
+        <summary><span class="t"><span class="q">Save it and move it</span><span class="where">Lists · case notes · encrypted copies</span></span></summary>
+        <div class="body">
+          <p>Your verdicts, A-list choices, settings and scorecard stay in this browser on this device. To keep a copy or move to another device, save a file.</p>
+          <ul class="points">
+            <li><b class="k s">Download this list (CSV)</b> saves the list on show, for a spreadsheet.</li>
+            <li><b class="k s">Download case notes</b> saves your verdicts.</li>
+            <li><b class="k">Encrypted and online copies</b>, at the bottom of the page, protects a copy of your verdicts, A-list choices, settings and scorecard with a passphrase. Choose a passphrase, then <b class="k">Download an encrypted file</b>. On the private claude.ai link you can also <b class="k s">Save a version online</b>.</li>
+            <li>The screener file is never part of a copy. Load it again on the other device.</li>
+          </ul>
+          <p class="tip warn"><b>A forgotten passphrase cannot be recovered.</b> Nobody can open an encrypted copy without it. Keep your case notes as an ordinary copy as well.</p>
+          <div class="go"><a class="btn" data-go='{"el":"dlList","box":"self"}' href="#">Show me the list download →</a><a class="btn" data-go='{"el":"vaultWrap"}' href="#">Show me the encrypted copies →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="routine">
+        <summary><span class="t"><span class="q">Each time you load a file</span><span class="where">A short routine</span></span></summary>
+        <div class="body">
+          <ol class="steps">
+            <li><span>Download the screener and load it.</span></li>
+            <li><span>Read the line that begins <b class="k s">Since your last file</b>: what joined, what left, and what needs attention among the companies you follow.</span></li>
+            <li><span>Read <b class="k s">A-list on sale</b>, starting with the businesses that are holding up.</span></li>
+            <li><span>If you sell puts, look at the <b class="k s">Put desk</b>.</span></li>
+            <li><span>Record a verdict on what you read, with a review date.</span></li>
+            <li><span>Now and then, open the scorecard.</span></li>
+          </ol>
+          <div class="go"><a class="btn" data-go='{"list":"sale","el":"loadCard"}' href="#">Show me in Prism →</a></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="gWords">
+    <h2 id="gWords">Words explained</h2>
+    <div class="list">
+      <details class="lesson" id="words">
+        <summary><span class="t"><span class="q">The terms Prism uses</span><span class="where">A-list, on sale, entry ceiling and the rest</span></span></summary>
+        <div class="body">
+          <dl class="words">
+            <div><dt>A-class business, A-list</dt><dd>A business that passes Prism's six tests of the business itself, with the price left out. The A-list is the set of them, adjusted by your own choices.</dd></div>
+            <div><dt>On sale</dt><dd>An A-list company whose price is low on at least two of three counts: against its own past, against its growth record and against its high.</dd></div>
+            <div><dt>Holding up, slipping</dt><dd>Whether the business shows signs of weakening: slowing sales, falling returns, a weak forecast, falling profit.</dd></div>
+            <div><dt>Spare cash</dt><dd>What a company has left each year after running the business and investing in it. Analysts call it free cash flow.</dd></div>
+            <div><dt>Entry ceiling</dt><dd>The most to pay: the price at which you would still earn a good return each year if the spare cash grows only slowly.</dd></div>
+            <div><dt>Price implies</dt><dd>The yearly growth today's price needs to be fair.</dd></div>
+            <div><dt>Return on capital</dt><dd>What a business earns each year on the money invested in it.</dd></div>
+            <div><dt>P/E</dt><dd>The share price divided by a year's profit per share. A low P/E means the price expects little.</dd></div>
+            <div><dt>Sector rank</dt><dd>Where a company stands among the companies of its own sector, from 0 to 100.</dd></div>
+            <div><dt>Cyclical</dt><dd>An industry whose profits swing with the economy or a commodity price, so one good year can flatter it.</dd></div>
+            <div><dt>Data warning</dt><dd>A figure that looks too good to be true. It is usually a one-off or an error.</dd></div>
+            <div><dt>Cash-secured put</dt><dd>A promise to buy shares at a set price, the strike, up to a set date, the expiry, in return for a payment now. You keep the cash to pay for them set aside. If the price ends below the strike, the shares are assigned to you.</dd></div>
+            <div><dt>Verdict</dt><dd>Your own decision about a company, kept from file to file.</dd></div>
+          </dl>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <p class="note">This guide explains how to use the tool. Prism lists companies to research. It does not tell you what to buy, and none of its tests has been checked against later returns. It is general information for your own research, not investment advice.</p>
+</div>
+
+<script>
+'use strict';
+/* GUIDEJS:START (shared by the guides; edit tools/guide-snippet.js, then run node tools/sync-vault.js) */
+/* A guide is a page of lessons about one tool. The page names its tool on its outer element (data-tool), and the build
+   tells it where that tool is (window.FTOL_TOOL). A "Show me" link leaves the tool a short-lived note saying what to
+   open and which part of the page to show; the tool reads it once and clears it. The note is in localStorage, which the
+   pages of the collection share, so nothing depends on the address. */
+(function(){
+  const app=document.querySelector('.wrap').dataset.tool,RUN=window.FTOL_TOOL,KEY='ftol-guide-'+app;
+  const links=document.querySelectorAll('a[data-go],a.run');
+  if(RUN)links.forEach(a=>{a.href=RUN});
+  /* opened on its own, a guide doesn't know where its tool is: the names stay, the links go */
+  else{links.forEach(a=>{if(a.classList.contains('k')){const s=document.createElement('span');s.className=a.className;s.textContent=a.textContent;a.replaceWith(s)}else a.hidden=true});
+    document.querySelectorAll('.needs-tool').forEach(e=>{e.hidden=true})}
+  const put=id=>{try{localStorage.setItem(KEY,JSON.stringify({at:id,t:Date.now()}))}catch(e){}};
+  document.addEventListener('click',ev=>{const a=ev.target.closest('a[data-go]');if(!a||!RUN)return;
+    try{const go=JSON.parse(a.dataset.go);go.p=app;go.from='guide';go.t=Date.now();localStorage.setItem('ftol-show',JSON.stringify(go))}catch(e){}
+    const les=a.closest('details.lesson');if(les)put(les.id)});
+  /* Remember the lesson that was opened last, and reopen it for a reader who comes back within half an hour. */
+  document.querySelectorAll('details.lesson').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)put(d.id)}));
+  let was=null;try{was=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+  if(was&&Date.now()-was.t<18e5){const d=document.getElementById(String(was.at));
+    if(d&&d.matches('details.lesson')){d.open=true;requestAnimationFrame(()=>d.scrollIntoView({block:'start'}))}}
+})();
+/* GUIDEJS:END */
+/* VAULT:START (shared by every tool; edit tools/vault-snippet.js, then run node tools/sync-vault.js) */
+/* Encrypted copies. The plan is encrypted in the browser with a passphrase (PBKDF2-SHA256, 310,000 rounds, then
+   AES-GCM 256) before it is stored or downloaded. The passphrase is kept in memory only and is never stored or sent.
+   Online copies use the claude.ai `db` capability under data/users/<viewer id>/, which is private to each signed-in
+   person. On a standalone website there is no online store, so only encrypted files are offered. */
+function makeVault(o){
+  const el=o.mount,enc=new TextEncoder(),dec=new TextDecoder(),ITER=310000;
+  let pass=null,db=null,uid=null,items=[],note='',ready=false,armedDel=null;
+  const b64=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+  const unb=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const keyFor=async(p,salt)=>crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},await crypto.subtle.importKey('raw',enc.encode(p),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  async function seal(obj,p){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},await keyFor(p,salt),enc.encode(JSON.stringify(obj)));
+    return {enc:1,kdf:'PBKDF2-SHA256-'+ITER,salt:b64(salt),iv:b64(iv),ct:b64(new Uint8Array(ct))}}
+  async function unseal(rec,p){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb(rec.iv)},await keyFor(p,unb(rec.salt)),unb(rec.ct));return JSON.parse(dec.decode(pt))}
+  const col=()=>db.collection('data/users/'+uid);
+  const online=()=>!!(db&&uid);
+  const when=t=>{try{return new Date(t).toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch(e){return t}};
+  async function refresh(){if(!online())return;try{const q=await col().get();items=q.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d&&d.app===o.app&&d.ct).sort((a,b)=>String(b.at).localeCompare(String(a.at)))}catch(e){note='Could not read your online copies just now.'}}
+  function draw(){
+    const can=!!(window.crypto&&crypto.subtle);
+    let h='<h3 style="margin:0">Encrypted copies</h3>';
+    if(!can){el.innerHTML=h+'<p class="note" style="margin:0">This browser can\'t encrypt here. Use the ordinary save options.</p>';return}
+    h+='<p class="note" style="margin:0">Protect a copy of '+esc(o.what)+' with a passphrase. It is encrypted in your browser first, so nobody can read it without the passphrase: not us, and not whoever stores the file. <b>If you forget the passphrase, those copies cannot be recovered.</b> Keep your printed or ordinary copy as well.</p>';
+    if(!pass){const first=online()&&ready&&!items.length;
+      h+='<div class="row" style="align-items:flex-end"><label class="f" for="'+o.app+'VPass" style="flex:1 1 220px">Passphrase<span class="h">four or more words is best; at least 10 characters</span><input type="password" id="'+o.app+'VPass" autocomplete="off" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label>'+
+        (first?'<label class="f" for="'+o.app+'VPass2" style="flex:1 1 220px">Type it again<input type="password" id="'+o.app+'VPass2" autocomplete="off" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label>':'')+
+        '<button type="button" class="btn" data-v="unlock">Unlock</button></div>'+
+        (online()?'<p class="note" style="margin:0">'+(ready?(items.length?items.length+' online '+(items.length>1?'copies':'copy')+' saved. Unlock to see or load them.':'No online copies yet. Choose a passphrase to start.'):'Checking for online copies…')+'</p>':'<p class="note" style="margin:0">Online copies are available on the private claude.ai link, when you are signed in. Here you can save and open encrypted files.</p>');
+    }else{
+      h+='<div class="row"><span class="note">Unlocked for this visit.</span><button type="button" class="btn sm" data-v="lock">Lock</button></div>';
+      if(online()){
+        h+='<div class="row" style="align-items:flex-end"><label class="f" for="'+o.app+'VName" style="flex:1 1 220px">Name for this version<span class="h">the name and date are stored unencrypted, so keep it plain</span><input type="text" id="'+o.app+'VName" maxlength="60" placeholder="e.g. November baseline" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label><button type="button" class="btn" data-v="save">Save a version online</button></div>';
+        h+=items.length?'<div>'+items.map(d=>'<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding:8px 0"><span><b>'+esc(d.name||'Untitled')+'</b> <span class="note">· '+esc(when(d.at))+'</span></span><span class="row"><button type="button" class="btn sm" data-v="load" data-id="'+esc(d.id)+'">Load</button><button type="button" class="btn sm" data-v="del" data-id="'+esc(d.id)+'">'+(armedDel===d.id?'Click again to delete':'Delete')+'</button></span></div>').join('')+'</div>':'<p class="note" style="margin:0">No online copies yet.</p>';
+      }
+      h+='<div class="row"><button type="button" class="btn" data-v="file">Download an encrypted file</button><label class="btn" for="'+o.app+'VFile" style="display:inline-flex;align-items:center">Open an encrypted file</label><input type="file" id="'+o.app+'VFile" accept=".json,application/json" hidden></div>';
+    }
+    h+='<p class="note" role="status" style="margin:0"'+(note?'':' hidden')+'>'+esc(note)+'</p>';
+    el.innerHTML=h;
+    const f=document.getElementById(o.app+'VFile');if(f)f.onchange=ev=>{const file=ev.target.files[0];if(!file)return;const r=new FileReader();
+      r.onload=async()=>{try{const rec=JSON.parse(r.result);if(!rec||rec.app!==o.app||!rec.ct)throw 0;let st;try{st=await unseal(rec,pass)}catch(e){note='The passphrase doesn\'t open that file.';return draw()}o.setState(st);note='Opened the encrypted file.'}catch(e){note='That isn\'t an encrypted file from this tool.'}draw()};r.readAsText(file)};
+    const p1=document.getElementById(o.app+'VPass');if(p1)p1.onkeydown=ev=>{if(ev.key==='Enter')act('unlock')};
+  }
+  async function act(a,id){
+    try{
+      if(a==='unlock'){const p=document.getElementById(o.app+'VPass').value,p2=document.getElementById(o.app+'VPass2');
+        if(p.length<10){note='Use at least 10 characters. Four unrelated words work well.';return draw()}
+        if(p2&&p2.value!==p){note='The two passphrases don\'t match.';return draw()}
+        if(items.length){try{await unseal(items[0],p)}catch(e){note='That passphrase doesn\'t open your saved copies.';return draw()}}
+        pass=p;note='';return draw()}
+      if(a==='lock'){pass=null;note='';return draw()}
+      if(a==='save'){const nm=(document.getElementById(o.app+'VName').value||'').trim()||'Untitled';note='Saving…';draw();
+        const rec=Object.assign(await seal(o.getState(),pass),{app:o.app,name:nm,at:new Date().toISOString()});
+        await col().doc('v'+Date.now()).set(rec);await refresh();note='Saved "'+nm+'" online, encrypted.';return draw()}
+      if(a==='load'){const d=items.find(x=>x.id===id);if(!d)return;let st;try{st=await unseal(d,pass)}catch(e){note='The passphrase doesn\'t open "'+(d.name||'Untitled')+'". It may have been saved with a different one.';return draw()}
+        o.setState(st);note='Loaded "'+(d.name||'Untitled')+'".';return draw()}
+      if(a==='del'){if(armedDel!==id){armedDel=id;return draw()}armedDel=null;await col().doc(id).delete();await refresh();note='Deleted that online copy.';return draw()}
+      if(a==='file'){const rec=Object.assign(await seal(o.getState(),pass),{app:o.app,at:new Date().toISOString()});
+        await o.download(o.app+'-encrypted-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(rec));note='';return draw()}
+    }catch(e){const c=e&&e.code;note=c==='not_granted'||c==='permission_denied'?'Online copies aren\'t allowed for this view.':'That didn\'t work. Please try again.';draw()}
+  }
+  el.addEventListener('click',ev=>{const b=ev.target.closest('button[data-v]');if(b)act(b.dataset.v,b.dataset.id)});
+  draw();
+  (async()=>{try{if(window.claude&&window.claude.use){const u=await window.claude.use('user'),d=await window.claude.use('db');uid=u?await u.id():null;db=d||null;if(online()){await refresh()}}}catch(e){db=null}ready=true;draw()})();
+}
+/* Inside the Financial Tools of Life collection, each page shows a link back to the home page, and a tool that has a
+   guide shows the way to it beside that link. The build sets window.FTOL_HOME and window.FTOL_GUIDE on the collection's
+   copies; a page opened on its own has neither link. */
+(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;
+  const link=(href,text)=>{const x=document.createElement('a');x.href=href;x.textContent=text;x.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none';return x};
+  const nav=document.createElement('div'),a=link(window.FTOL_HOME,'\u2190 Financial Tools of Life');nav.className='noprint';nav.style.cssText='display:flex;flex-wrap:wrap;gap:6px 20px;align-items:baseline';
+  nav.appendChild(a);if(window.FTOL_GUIDE)nav.appendChild(link(window.FTOL_GUIDE,'Guide: how to use this page'));w.prepend(nav);
+  /* Inside the claude.ai collection the address belongs to the collection, not to this tool, so refreshing the browser
+     reloads the home page. This tool therefore leaves a note that it is the page on show and keeps the note fresh while it
+     is open; the home page reads it and comes straight back. Going home on purpose, by the link above, clears the note. */
+  if(window.FTOL_SELF){let leaving=false;const mark=()=>{if(leaving)return;try{localStorage.setItem('ftol-at',JSON.stringify({p:window.FTOL_SELF,t:Date.now()}))}catch(e){}};
+    mark();setInterval(mark,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)mark()});window.addEventListener('pagehide',mark);
+    a.addEventListener('click',()=>{leaving=true;try{localStorage.removeItem('ftol-at')}catch(e){}})}
+  }catch(e){}})();
+/* A guide can ask a tool to open at a particular place. It leaves a short-lived note in localStorage (key ftol-show),
+   which the pages of the collection share: the tool it is for, and what to show. ftolShow hands a tool its own note,
+   once, and only while it is under a minute old. The tool sets its view from the note, then calls ftolSpot with the
+   part of the page to show. ftolSpot opens any closed section around the part, brings it into view, keeps it there
+   while the page is still settling (until the reader touches the page), outlines it for a few seconds and, for a
+   reader who came from a guide, offers the way back. */
+function ftolShow(app){try{const g=JSON.parse(localStorage.getItem('ftol-show')||'null');if(!g)return null;const fresh=Date.now()-g.t<60000;
+  if(g.p===app||!fresh)localStorage.removeItem('ftol-show');return g.p===app&&fresh?g:null}catch(e){return null}}
+function ftolSpot(el,go,around,top){
+  if(go&&go.from==='guide'&&window.FTOL_GUIDE&&!document.getElementById('guideBack')){const a=document.createElement('a');a.id='guideBack';a.className='noprint';a.href=window.FTOL_GUIDE;a.textContent='\u2190 Back to the guide';
+    a.style.cssText='position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;font:500 13px var(--body);background:var(--accent);color:var(--surface);padding:9px 13px;border-radius:8px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.25)';document.body.appendChild(a)}
+  if(!el)return;
+  for(let d=el.closest('details');d;d=d.parentElement&&d.parentElement.closest('details'))d.open=true;
+  /* outline the panel the part belongs to (`around` lists what counts as one in this tool), or the part itself */
+  const box=go&&go.box==='self'?el:el.closest(around)||el,st=box.style,was=[st.outline,st.outlineOffset];
+  /* inside a table the outline is drawn just within the part, because a table's scrolling frame would cut off one drawn outside it */
+  box.classList.add('ftol-spot');st.outline='3px solid var(--accent)';st.outlineOffset=box.closest('table')?'-3px':'4px';
+  const at=top||box;at.style.scrollMarginTop='14px';     /* `top`, when given, is what to bring to the top of the screen instead of the outlined part */
+  let live=true;const ro=window.ResizeObserver?new ResizeObserver(()=>place()):null;
+  const place=()=>{if(live)at.scrollIntoView({block:'start'})},stop=()=>{live=false;if(ro)ro.disconnect()};
+  setTimeout(()=>{place();if(ro)ro.observe(document.body)},60);
+  ['wheel','touchstart','keydown','mousedown'].forEach(t=>addEventListener(t,stop,{once:true,passive:true}));
+  setTimeout(stop,15000);setTimeout(()=>{box.classList.remove('ftol-spot');st.outline=was[0];st.outlineOffset=was[1]},6000);
+}
+/* VAULT:END */
+</script>

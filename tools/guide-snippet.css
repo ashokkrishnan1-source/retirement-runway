@@ -1,0 +1,74 @@
+/* GUIDECSS:START (shared by the guides; edit tools/guide-snippet.css, then run node tools/sync-vault.js) */
+/* Everything about a guide's layout except its colors, which each guide sets above to match its tool. */
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+header{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font:500 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg3)}
+h1{font:700 clamp(28px,5vw,38px)/1.08 var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font:600 13px/1.2 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--fg2);margin:0}
+h2 small{font:400 13px/1.2 var(--body);letter-spacing:0;text-transform:none;color:var(--fg3);margin-left:6px}
+p{margin:0}
+.sub{color:var(--fg2);font-size:17px;max-width:62ch}
+.note{font-size:14px;color:var(--fg2);max-width:66ch}
+section{display:flex;flex-direction:column;gap:10px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 15px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:9px 14px;border-radius:8px;cursor:pointer;min-height:44px;text-decoration:none;display:inline-flex;align-items:center}
+.btn:hover{border-color:var(--fg3)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+
+/* the list of lessons */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+details.lesson{border-top:1px solid var(--line);scroll-margin-top:12px}
+details.lesson:first-child{border-top:0}
+details.lesson>summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:13px 16px;min-height:60px;border-radius:12px}
+details.lesson>summary::-webkit-details-marker{display:none}
+details.lesson>summary::after{content:"+";margin-left:auto;flex:none;font:400 22px/1 var(--body);color:var(--fg3)}
+details.lesson[open]>summary::after{content:"\2013"}
+.num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:600 14px/28px var(--body);text-align:center}
+.t{min-width:0}
+.q{display:block;font:600 18px/1.25 var(--display);text-wrap:balance}
+.where{display:block;font-size:13.5px;line-height:1.35;color:var(--fg3);margin-top:2px}
+.body{padding:2px 16px 18px;display:flex;flex-direction:column;gap:12px}
+.body>p,.body>ol,.body>ul,.body>dl{max-width:66ch}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:9px}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
+ol.steps>li::before{content:counter(s) ".";font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+ul.points{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+ul.points>li{padding-left:14px;border-left:2px solid var(--line)}
+ul.points>li>span{display:block}
+ul.points>li>span+span{margin-top:3px}
+/* a name exactly as it appears in Runway */
+/* A short name (class "k s") never breaks across lines. A long one may, or it would not fit on a phone. */
+.k{font-weight:600;color:var(--fg);background:var(--sunk);border-radius:5px;padding:1px 5px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.k.s{white-space:nowrap}
+a.k{color:var(--accent);text-decoration:none}
+a.k:hover{text-decoration:underline}
+.tip{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:15px;max-width:66ch}
+.tip.warn{background:var(--warn-bg)}
+.tip b:first-child{font-weight:600}
+.go{display:flex;flex-wrap:wrap;gap:8px}
+
+/* the page at a glance: two panes, side by side as in Runway, stacked on a phone as Runway is */
+.map{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.map.one{grid-template-columns:1fr}
+@media (max-width:560px){.map{grid-template-columns:1fr}}
+.pane{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.pane h3{font:600 15px/1.2 var(--display);margin:0}
+.pane h3 small{display:block;font:400 13px/1.35 var(--body);color:var(--fg3);margin-top:2px}
+.pane ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+
+/* the what-if calculators: name, then the question it answers */
+ul.calc{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:minmax(0,15em) minmax(0,1fr);gap:9px 14px;align-items:baseline}
+ul.calc>li{display:contents}
+ul.calc>li>a{justify-self:start}
+@media (max-width:560px){ul.calc{grid-template-columns:1fr;gap:0}ul.calc>li{display:block;padding:8px 0;border-top:1px solid var(--line)}ul.calc>li:first-child{border-top:0;padding-top:0}ul.calc>li>span{display:block;margin-top:3px}}
+
+dl.words{margin:0;display:flex;flex-direction:column;gap:12px}
+dl.words dt{font-weight:600}
+dl.words dd{margin:2px 0 0;color:var(--fg2)}
+/* GUIDECSS:END */

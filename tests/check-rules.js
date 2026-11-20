@@ -313,6 +313,6 @@ console.log('--- The guide keeps step with the page ---');
   check('every calculator is in the guide under its own name', unlisted.length, 0, 0);
   check('every view is named in the guide', views.filter(v => !names.includes(v[1])).length, 0, 0);
   // Opening at a place: the page must read the note the guide leaves.
-  check('the page reads the note the guide leaves', /localStorage\.getItem\('ftol-show'\)/.test(html) && /localStorage\.setItem\('ftol-show'/.test(guide) ? 1 : 0, 1, 0); }
+  check('the page reads the note the guide leaves', /ftolShow\('runway'\)/.test(html) && /data-tool="runway"/.test(guide) && /localStorage\.setItem\('ftol-show'/.test(guide) ? 1 : 0, 1, 0); }
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exitCode = fail ? 1 : 0;

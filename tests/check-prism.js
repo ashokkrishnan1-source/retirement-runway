@@ -2,6 +2,7 @@
 // Run after any change to the engine in prism/index.html:   node tests/check-prism.js
 // Every check has a hand-worked expected value. Exit code is 1 if anything fails.
 // The companies below are invented; no screener data is stored in this repository.
+// It also checks that the guide (prism/guide/index.html) names only what is really on the page.
 const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'prism', 'index.html'), 'utf8');
@@ -356,6 +357,51 @@ check('F0: weakest ordinary company fails quality', by.F0.g.Q, false);
   const rr = E.run(u, {}, {}).rows; check('repair list: weak returns, cash flow up 40%', rr.find(r => r.sym === 'FIXA').lists.includes('repair'), true);
   check('repair list: unknown sales growth is not a pass', rr.find(r => r.sym === 'FIXB').lists.includes('repair'), false); }
 check('engine has no reference to the page', /\b(document|window|localStorage)\b/.test(eng), false);
+
+console.log('--- The guide keeps step with the page ---');
+{ // prism/guide/index.html is a page of lessons about Prism. It must not drift from it. Every name it sets as a label
+  // (class "k") must be on the page, word for word. Every "Show me" link must name a real list, a real order and a real
+  // part of the page. Every named list must be in the guide under its own name. And it must keep the lines Prism always
+  // carries: it lists companies to research and does not say what to buy, most moonshots disappoint, and nothing here
+  // has been tested against later returns.
+  const guide = fs.readFileSync(path.join(__dirname, '..', 'prism', 'guide', 'index.html'), 'utf8');
+  const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));   // the page script, after the engine
+  const plain = t => t.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  const onPage = n => [n, n.replace(/&/g, '&amp;'), n.replace(/'/g, "\\'")].some(v => html.includes(v));
+  const all = (re, src) => { const o = []; let x; while ((x = re.exec(src))) o.push(x); return o; };
+  const names = all(/<(b|span|a)\b[^>]*\bclass="k(?: s)?"[^>]*>([\s\S]*?)<\/\1>/g, guide).map(x => plain(x[2]));
+  const missing = [...new Set(names)].filter(n => !onPage(n));
+  missing.forEach(n => console.log('     the guide names "' + n + '", which is not on the page'));
+  check('guide: it names menus, tags and headings (at least 80 of them)', names.length >= 80, true);
+  check('guide: every name is on the page, word for word', missing, []);
+  // what the page offers: the lists of the Show menu, the orders, and the parts a lesson may point at
+  const LI = new Function(ui.match(/const LI = \{[\s\S]*?\n\};/)[0] + '\nreturn LI;')();
+  const sorts = Object.keys(new Function(ui.match(/const SORTS = \{[\s\S]*?\n\};/)[0] + '\nreturn SORTS;')());
+  check('guide: the page has nine named lists', Object.keys(LI).length, 9);
+  check('guide: the engine and the page agree on the named lists', Object.keys(LI).slice().sort(), E.LISTS.slice().sort());
+  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform'];
+  const gos = all(/<a\b[^>]*\bdata-go='([^']+)'[^>]*>([\s\S]*?)<\/a>/g, guide).map(x => [JSON.parse(x[1]), plain(x[2])]);
+  const bad = gos.filter(([g]) => (g.list !== undefined && !lists.includes(g.list)) || (g.sort !== undefined && !sorts.includes(g.sort)) || (g.open !== undefined && g.open !== 'first') ||
+    (g.box !== undefined && g.box !== 'self') || !g.el || !(parts.includes(g.el) || html.includes('id="' + g.el + '"')) || (parts.includes(g.el) && g.open !== 'first'));
+  bad.forEach(([g, t]) => console.log('     "' + t + '" points at something the page does not have: ' + JSON.stringify(g)));
+  check('guide: it has "Show me" links (at least 30)', gos.length >= 30, true);
+  check('guide: every "Show me" link names a real list, order and part of the page', bad, []);
+  const unlisted = Object.keys(LI).filter(k => !gos.some(([g, t]) => g.list === k && t === LI[k][0]));
+  check('guide: every named list is in the guide under its own name', unlisted, []);
+  const menu = ['A-list on sale', 'Put desk', 'The whole A-list', 'Yes to all five questions', 'Near misses: one question short', 'Moonshots'];
+  check('guide: the other lists of the Show menu are named', menu.filter(n => !names.includes(n) || !onPage(n)), []);
+  const verdicts = new Function(ui.match(/const VERDICTS = \[[^\]]*\];/)[0] + '\nreturn VERDICTS;')();
+  check('guide: all five verdicts are named', verdicts.filter(v => !names.includes(v)), []);
+  const GQ = new Function(ui.match(/const GQ = \{[\s\S]*?\n\};/)[0] + '\nreturn GQ;')();
+  check('guide: the five questions are named as the page asks them', Object.keys(GQ).length === 5 ? Object.keys(GQ).map(k => GQ[k][0]).filter(q => !names.includes(q)) : ['not five'], []);
+  // The pass marks are settings: they live on the page, where a change to one updates every note. None is typed here.
+  const words = plain(guide.slice(guide.indexOf('<div class="wrap"'), guide.indexOf('<script>')));
+  check('guide: no pass marks or prices typed in', (words.match(/[0-9][0-9.,]*\s?%|\$\s?[0-9]/g) || []), []);
+  check('guide: it says Prism does not tell you what to buy', /Prism lists companies to research\. It does not tell you what to buy/.test(words), true);
+  check('guide: it says most moonshots disappoint', /Most companies like these disappoint/.test(words), true);
+  check('guide: it says nothing has been tested against later returns, and that it is not advice', /tested against later returns/.test(words) && /not investment advice/.test(words), true);
+  check('guide: it never calls a list proven', /\bproven\b/i.test(words), false);
+  check('guide: the page reads the note the guide leaves', /ftolShow\('prism'\)/.test(html) && /data-tool="prism"/.test(guide) && /localStorage\.setItem\('ftol-show'/.test(guide), true); }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exitCode = fail ? 1 : 0;

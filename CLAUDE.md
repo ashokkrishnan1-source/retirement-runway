@@ -10,9 +10,9 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `index.html` | The whole app, written in the **claude.ai page format**: no `<!doctype>`, `<html>`, `<head>` or `<body>` tags (claude.ai adds them). Do not add them here. |
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
-| `guide/index.html` | Runway's companion guide: a page of short lessons on how to use the tool (see "The guide to Runway" below). No engine and no data of its own. |
+| `guide/index.html`, `prism/guide/index.html` | The companion guides to Runway and to Prism: pages of short lessons on how to use each tool (see "The guides" below). No engine and no data of their own. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks (220 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page (236 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -21,7 +21,7 @@ Inside `index.html`:
   so it must stay self-contained, ES5-style plain functions, with no references to the page.
 - The second `<script>` is the UI: inputs, rendering, charts (hand-drawn SVG), exports (report .md,
   CSV, PDF via jsPDF from cdnjs, pinned versions), file import, help popovers, maintainer checklist, and the
-  small part that opens the page where the guide asks (`showSpot`, see "The guide to Runway").
+  small part that opens the page where the guide asks (`ftolShow('runway')`, see "The guides").
 
 ## Where it's published
 
@@ -99,40 +99,61 @@ marketplace subsidy and Medicare IRMAA from `RULES.aca` / `RULES.irmaa`), **Lega
 Anything that changes the plan's numbers goes in the engine (health costs, QCDs); views only read rows.
 New inputs should default to off and sit in collapsed or optional sections, to keep the page simple.
 
-## The guide to Runway (`guide/index.html`)
+## The guides (`guide/index.html` for Runway, `prism/guide/index.html` for Prism)
 
-The owner asked for it on 2026-11-20: Runway "has become quite sophisticated", so could it have a companion
-tutorial. It is a separate page, so that Runway itself gains nothing new to look at.
+The owner asked for Runway's on 2026-11-20: Runway "has become quite sophisticated", so could it have a companion
+tutorial. He then asked for a similar one for Prism, and said Open This First's should wait until that tool is mature
+("still in a very formative stage"). A guide is a separate page, so that its tool gains nothing new to look at.
 
-- **What it is.** A list of lessons, each closed until tapped. "Start here" has three numbered lessons (look around
-  with the sample couple, put in your own numbers, read your answer). Then one lesson per question the tool answers
-  (which account pays the bills, Roth conversions, this year, Social Security, health, legacy, the what-if
-  calculators, where the numbers come from), then saving and the yearly check-up, then the terms explained. The
-  first screen is the list and nothing else. Keep it that way.
-- **It shows where things are and leaves the figures to the page.** No tax or benefit figure goes in the guide
-  (the rules check scans it), so nothing in it needs the yearly update. For a figure, it sends the reader to the
-  page's own "?" notes.
-- **Names must match the page word for word.** Every button, heading, box or field the guide names is set as
-  `<b class="k">` (`class="k s"` for a short name, which then never breaks across lines; long ones wrap). The rules
-  check reads those names and fails if one is not in `index.html`. It also fails if a view or a what-if calculator
-  is added, removed or renamed without the guide's list following. So **when you rename, add or remove a button,
-  heading, view or calculator in Runway, change the guide in the same commit.**
-- **"Show me in Runway" links.** Each carries `data-go='{"lens":…,"wi":…,"el":…}'`: a view, a what-if calculator
-  and the id of a part of the page (any may be left out). On a tap the guide writes that as a note in `localStorage`
-  key `ftol-show`, and Runway reads it once as it loads (under a minute old, then deleted): it switches view and
-  calculator, opens any closed section around the part, scrolls it into view, keeps it there while results are
-  still arriving (until the reader touches the page), and outlines it for a few seconds (`showSpot`, `.spot`).
-  For that visit Runway shows "← Back to the guide" (`#guideBack`). The note is used instead of the address
-  because on claude.ai the address belongs to the collection and only a plain `#name` passes through it.
-- **Coming back.** The guide remembers the lesson opened last (`ftol-guide-runway`, `{at, t}`) and reopens it for
-  a reader who returns within half an hour.
-- **Links.** The build sets `window.FTOL_GUIDE` on Runway (a "Guide" link beside the link home, and a sentence in
-  the sample banner) and `window.FTOL_RUNWAY` on the guide. A page opened on its own has neither: Runway then shows
-  no guide link, so the single-tool Runway link has no guide, and the guide hides its "Show me" links.
-- It carries the shared snippet (`VAULT` markers) only for its last part: the link back to the home page and the
-  note that lets a refresh return to the page that was open. It has nothing to save.
-- Write it the way the rest is written: as you would say it to a friend, one step per line, naming exactly what
-  to tap. Not built, and offered to the owner: a copy of the guide to print.
+- **What a guide is.** A list of lessons, each closed until tapped. "Start here" has three numbered lessons. Then one
+  lesson per question the tool answers, then keeping and saving, then the terms explained. The first screen is the
+  list and nothing else. Keep it that way.
+  - Runway: look around with the sample couple, put in your own numbers, read your answer; which account pays the
+    bills, Roth conversions, this year, Social Security, health, legacy, the what-if calculators, where the numbers
+    come from; saving and the yearly check-up.
+  - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
+    holding up or slipping), the entry ceiling, the put desk, the five questions, the nine named lists, moonshots,
+    why a company isn't listed; verdicts (and how to note a put), what changed, the scorecard; options and settings,
+    saving, a routine for each new file.
+- **It shows where things are and leaves the figures to the page.** No tax or benefit figure goes in Runway's guide,
+  and no pass mark or price in Prism's (each check scans its guide), so nothing in a guide needs the yearly update
+  or changes with a setting. For a figure, the guide sends the reader to the page's own "?" notes.
+- **Names must match the page word for word.** Every button, heading, tag, menu choice or field a guide names is set
+  as `<b class="k">` (`class="k s"` for a short name, which then never breaks across lines; long ones wrap). The
+  checks read those names and fail if one is not on the tool's page. They also fail if a view or what-if calculator
+  (Runway), or a named list, verdict or one of the five questions (Prism), changes without the guide following. So
+  **when you rename, add or remove a button, heading, view, calculator, list or tag in a tool, change its guide in
+  the same commit.**
+- **Prism's guide keeps Prism's lines.** It says that Prism lists companies to research and does not tell you what
+  to buy, that most moonshots disappoint, that nothing has been tested against later returns and that it is not
+  investment advice; it never calls a list proven. The check holds it to each of these. It explains the entry
+  ceiling the way the page does: "the most to pay", "spare cash", no multiples.
+- **"Show me" links.** Each carries `data-go` with what to show. Runway: `{"lens", "wi", "el"}`, a view, a what-if
+  calculator and the id of a part of the page. Prism: `{"list", "sort", "open", "el", "box"}`: a list of the Show
+  menu (`""` is the five-question list, `"near"` the near misses), an order, `"open":"first"` to open the first
+  company, and a part of the page (`"detail"` and `"vform"` are the opened company's detail and its verdict form;
+  `"box":"self"` outlines the part itself and not the panel around it). Any may be left out. On a tap the guide
+  writes this as a note in `localStorage` key `ftol-show`, with the tool's name. The tool reads its own note once
+  as it loads (`ftolShow`, while it is under a minute old), sets its view, and calls `ftolSpot`, which opens any
+  closed section around the part, brings it into view, keeps it there while the page is still settling (until the
+  reader touches the page), outlines it for a few seconds and shows "← Back to the guide" (`#guideBack`) for that
+  visit. Both functions are in the shared snippet. The note is used instead of the address because on claude.ai the
+  address belongs to the collection and only a plain `#name` passes through it. A lesson's link sets the list or
+  view (as tapping it would) but never an order or a setting: the reader chooses those.
+- **Coming back.** A guide remembers the lesson opened last (`ftol-guide-runway`, `ftol-guide-prism`: `{at, t}`)
+  and reopens it for a reader who returns within half an hour.
+- **Links.** The build sets `window.FTOL_GUIDE` on a tool that has a guide, and the shared snippet then shows
+  "Guide: how to use this page" beside the link home. Runway's sample banner also mentions the guide. Prism's file
+  card does not: an extra line there pushed the first company off the first phone screen. The build sets
+  `window.FTOL_TOOL` on a guide. A page opened on its own has neither: a tool shows no guide link (so the
+  single-tool links have no guide), and a guide hides its "Show me" links.
+- **Shared between the guides.** Their layout and script are single-sourced: `tools/guide-snippet.css` and
+  `tools/guide-snippet.js`, copied between the `GUIDECSS` and `GUIDEJS` markers by `node tools/sync-vault.js`. A
+  guide's own file holds its colors (its tool's), its `data-tool` name and its lessons. A guide also carries the
+  `VAULT` snippet, only for the link back to the home page and the note that lets a refresh return to the page
+  that was open. It has nothing to save.
+- Write a guide the way the rest is written: as you would say it to a friend, one step per line, naming exactly
+  what to tap. Not built, and offered to the owner: a copy of a guide to print.
 
 ## Tool 2: Open This First (`open-this-first/index.html`)
 
@@ -162,7 +183,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (220 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (236 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -267,6 +288,9 @@ format as the other tools; no AI, no live data.
   except the file: the scorecard carries entry prices and the last prices of the large companies, nothing more.
 - The built-in example carries made-up values for the newer columns too (a second random stream, so the first
   twenty columns stay as they were), including a few young fast growers so the moonshot list has something to show.
+- **The guide** (`prism/guide/index.html`, asked for on 2026-11-20) has a lesson for each list and each thing the
+  owner asked about along the way: the entry ceiling, the order, how to note a put, what the columns list is for.
+  When a name on this page changes, the guide changes in the same commit (see "The guides").
 - Not built yet (ask the owner): scoring banks and property (needs P/B, ROE), ten-year divergence, adjusting for
   share splits (the scorecard drops a split company instead), the owner's industry and override maps, a "copy a
   research brief" button. Offered on 2026-11-20 and not chosen then: put arithmetic (he types strike, expiry and
@@ -278,8 +302,11 @@ format as the other tools; no AI, no live data.
 ## Encrypted and online copies (shared by all tools)
 
 `tools/vault-snippet.js` is the single source for the "Encrypted copies" feature. `node tools/sync-vault.js` copies
-it into each tool between the `VAULT:START` / `VAULT:END` markers; the workflow fails if a page is out of date.
-Never edit the copy inside a page.
+it into each tool, the home page and the guides, between the `VAULT:START` / `VAULT:END` markers; the workflow fails
+if a page is out of date. Never edit the copy inside a page. The same snippet carries what every page of the
+collection shares: the link back to the home page (and to a tool's guide), the note that lets a refresh return to
+the page that was open, and `ftolShow` / `ftolSpot`, which open a tool at the place a guide asks for. The same
+command also copies the two guide snippets (see "The guides").
 
 - The state is encrypted in the browser (PBKDF2-SHA256, 310,000 rounds, AES-GCM 256) with a passphrase that is
   held in memory only. There is no recovery: say so plainly wherever it is offered.
@@ -295,25 +322,26 @@ The tools are published together behind a home page (`home/index.html`): tool ca
 next steps, and one "Your data" panel that saves every tool's state as a single encrypted copy.
 
 - **One link, linked pages.** On claude.ai the collection is one artifact: the home page plus `runway.html`,
-  `runway-guide.html`, `open-this-first.html` and `prism.html` beside it. Pages of one artifact share browser storage and the `db` store, and each keeps
+  `runway-guide.html`, `open-this-first.html`, `prism.html` and `prism-guide.html` beside it. Pages of one artifact share browser storage and the `db` store, and each keeps
   its capabilities. Collection link (owner's private link): https://claude.ai/artifact/MjYUrdnkLTLMZDNKJbgThE
 - **To publish the collection:** `node tools/build-pages.js`, then publish `home/index.html` to that `url` with
   `files: {"runway.html": "_artifact/runway.html", "runway-guide.html": "_artifact/runway-guide.html",
-  "open-this-first.html": "_artifact/open-this-first.html", "prism.html": "_artifact/prism.html"}` and
+  "open-this-first.html": "_artifact/open-this-first.html", "prism.html": "_artifact/prism.html",
+  "prism-guide.html": "_artifact/prism-guide.html"}` and
   `capabilities: {downloads: true, db: {}, user: {}}`. The two single-tool links above are the earlier homes;
   keep them working until the owner says the collection link has replaced them.
 - **Standalone site:** the home page is at the top, tools at `/retirement-runway/`, `/open-this-first/` and `/prism/`,
-  and Runway's guide at `/retirement-runway/guide/`.
-- The build tells each page where the others are: `window.FTOL_LINKS` (home), `window.FTOL_HOME` (tools and the
-  guide, which then show a link back), `window.FTOL_GUIDE` (Runway) and `window.FTOL_RUNWAY` (the guide). A tool
-  opened on its own has none of them and works unchanged.
+  and the guides at `/retirement-runway/guide/` and `/prism/guide/`.
+- The build tells each page where the others are: `window.FTOL_LINKS` (home), `window.FTOL_HOME` (tools and
+  guides, which then show a link back), `window.FTOL_GUIDE` (a tool that has a guide) and `window.FTOL_TOOL` (a
+  guide). A tool opened on its own has none of them and works unchanged.
 - **A refresh must not throw the reader back to the home page.** On claude.ai the address belongs to the whole
   collection, so refreshing the browser reloads `index.html` whatever tool was on show (the owner hit this on
   2026-11-20). The build gives each collection page its own file name (`window.FTOL_SELF`); the shared snippet
   makes a tool write `localStorage` key `ftol-at` (`{p: file, t: time}`) on load, every 20 seconds, when it becomes
   visible and as it is left; the home page, when the note is under three minutes old, goes straight back with
   `location.replace`. It does not when the reader came home on purpose: the link back clears the note, and the
-  browser's Back button is recognised by its navigation type. Only the three tool file names and the guide's are accepted. The
+  browser's Back button is recognised by its navigation type. Only the three tool file names and the two guides' are accepted. The
   standalone site and a tool opened on its own have their own addresses and do none of this.
 - Tools tell the home page their status through `localStorage` keys `ftol-summary-runway`, `ftol-summary-otf` and
   `ftol-summary-prism`.

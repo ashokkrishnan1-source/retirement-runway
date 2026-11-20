@@ -23,6 +23,8 @@
   --fg:#e8eef3; --fg2:#a9b6c2; --fg3:#8996a3;
   --accent:#8db8e3; --accent-soft:#1d2f42; --on-accent:#0f151b;
   --warn:#e3a640; --warn-bg:#33270f; color-scheme:dark}
+/* GUIDECSS:START (shared by the guides; edit tools/guide-snippet.css, then run node tools/sync-vault.js) */
+/* Everything about a guide's layout except its colors, which each guide sets above to match its tool. */
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);
@@ -78,6 +80,7 @@ a.k:hover{text-decoration:underline}
 
 /* the page at a glance: two panes, side by side as in Runway, stacked on a phone as Runway is */
 .map{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.map.one{grid-template-columns:1fr}
 @media (max-width:560px){.map{grid-template-columns:1fr}}
 .pane{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
 .pane h3{font:600 15px/1.2 var(--display);margin:0}
@@ -93,15 +96,16 @@ ul.calc>li>a{justify-self:start}
 dl.words{margin:0;display:flex;flex-direction:column;gap:12px}
 dl.words dt{font-weight:600}
 dl.words dd{margin:2px 0 0;color:var(--fg2)}
+/* GUIDECSS:END */
 </style>
 
-<div class="wrap">
+<div class="wrap" data-tool="runway">
   <header>
     <div class="eyebrow">Financial Tools of Life · Guide</div>
     <h1>How to use Retirement Runway</h1>
     <p class="sub">Runway answers three questions. Will the money last? Which account should pay the bills? How much should move into a Roth each year? This guide shows where each answer is on the page, one short lesson at a time.</p>
     <div class="row"><a class="btn primary run" href="#">Open Retirement Runway</a></div>
-    <p class="note" id="howNote">A <b>Show me in Runway</b> button opens Runway at the right place. <b>←&nbsp;Back to the guide</b> brings you back to the lesson.</p>
+    <p class="note needs-tool">A <b>Show me in Runway</b> button opens Runway at the right place. <b>←&nbsp;Back to the guide</b> brings you back to the lesson.</p>
   </header>
 
   <section aria-labelledby="gStart">
@@ -302,7 +306,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><a class="k s" data-go='{"lens":"plan","wi":"k401","el":"whatif"}' href="#">401(k): pre-tax or Roth</a><span>Which way to save while you still work.</span></li>
             <li><a class="k s" data-go='{"lens":"plan","wi":"after63","el":"whatif"}' href="#">Roth conversions from 63</a><span>Whether to ease off conversions so Medicare costs stay down.</span></li>
           </ul>
-          <p class="note" id="calcNote">Tap a name to open that calculator in Runway. A few take ten to twenty seconds, because they rerun hundreds of plans.</p>
+          <p class="note needs-tool">Tap a name to open that calculator in Runway. A few take ten to twenty seconds, because they rerun hundreds of plans.</p>
         </div>
       </details>
 
@@ -392,18 +396,21 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
 
 <script>
 'use strict';
-/* The build tells this page where Runway is (window.FTOL_RUNWAY). A "Show me" link leaves Runway a short-lived note saying
-   which view, which calculator and which part of the page to open at; Runway reads it once and clears it. The note is in
-   localStorage, which the pages of the collection share, so nothing depends on the address. */
+/* GUIDEJS:START (shared by the guides; edit tools/guide-snippet.js, then run node tools/sync-vault.js) */
+/* A guide is a page of lessons about one tool. The page names its tool on its outer element (data-tool), and the build
+   tells it where that tool is (window.FTOL_TOOL). A "Show me" link leaves the tool a short-lived note saying what to
+   open and which part of the page to show; the tool reads it once and clears it. The note is in localStorage, which the
+   pages of the collection share, so nothing depends on the address. */
 (function(){
-  const RUN=window.FTOL_RUNWAY,KEY='ftol-guide-runway';
+  const app=document.querySelector('.wrap').dataset.tool,RUN=window.FTOL_TOOL,KEY='ftol-guide-'+app;
   const links=document.querySelectorAll('a[data-go],a.run');
   if(RUN)links.forEach(a=>{a.href=RUN});
+  /* opened on its own, a guide doesn't know where its tool is: the names stay, the links go */
   else{links.forEach(a=>{if(a.classList.contains('k')){const s=document.createElement('span');s.className=a.className;s.textContent=a.textContent;a.replaceWith(s)}else a.hidden=true});
-    ['howNote','calcNote'].forEach(id=>{document.getElementById(id).hidden=true})}
+    document.querySelectorAll('.needs-tool').forEach(e=>{e.hidden=true})}
   const put=id=>{try{localStorage.setItem(KEY,JSON.stringify({at:id,t:Date.now()}))}catch(e){}};
   document.addEventListener('click',ev=>{const a=ev.target.closest('a[data-go]');if(!a||!RUN)return;
-    try{const go=JSON.parse(a.dataset.go);go.p='runway';go.from='guide';go.t=Date.now();localStorage.setItem('ftol-show',JSON.stringify(go))}catch(e){}
+    try{const go=JSON.parse(a.dataset.go);go.p=app;go.from='guide';go.t=Date.now();localStorage.setItem('ftol-show',JSON.stringify(go))}catch(e){}
     const les=a.closest('details.lesson');if(les)put(les.id)});
   /* Remember the lesson that was opened last, and reopen it for a reader who comes back within half an hour. */
   document.querySelectorAll('details.lesson').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)put(d.id)}));
@@ -411,6 +418,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
   if(was&&Date.now()-was.t<18e5){const d=document.getElementById(String(was.at));
     if(d&&d.matches('details.lesson')){d.open=true;requestAnimationFrame(()=>d.scrollIntoView({block:'start'}))}}
 })();
+/* GUIDEJS:END */
 /* VAULT:START (shared by every tool; edit tools/vault-snippet.js, then run node tools/sync-vault.js) */
 /* Encrypted copies. The plan is encrypted in the browser with a passphrase (PBKDF2-SHA256, 310,000 rounds, then
    AES-GCM 256) before it is stored or downloaded. The passphrase is kept in memory only and is never stored or sent.
@@ -477,10 +485,13 @@ function makeVault(o){
   draw();
   (async()=>{try{if(window.claude&&window.claude.use){const u=await window.claude.use('user'),d=await window.claude.use('db');uid=u?await u.id():null;db=d||null;if(online()){await refresh()}}}catch(e){db=null}ready=true;draw()})();
 }
-/* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
-   window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
-(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
-  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a);
+/* Inside the Financial Tools of Life collection, each page shows a link back to the home page, and a tool that has a
+   guide shows the way to it beside that link. The build sets window.FTOL_HOME and window.FTOL_GUIDE on the collection's
+   copies; a page opened on its own has neither link. */
+(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;
+  const link=(href,text)=>{const x=document.createElement('a');x.href=href;x.textContent=text;x.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none';return x};
+  const nav=document.createElement('div'),a=link(window.FTOL_HOME,'\u2190 Financial Tools of Life');nav.className='noprint';nav.style.cssText='display:flex;flex-wrap:wrap;gap:6px 20px;align-items:baseline';
+  nav.appendChild(a);if(window.FTOL_GUIDE)nav.appendChild(link(window.FTOL_GUIDE,'Guide: how to use this page'));w.prepend(nav);
   /* Inside the claude.ai collection the address belongs to the collection, not to this tool, so refreshing the browser
      reloads the home page. This tool therefore leaves a note that it is the page on show and keeps the note fresh while it
      is open; the home page reads it and comes straight back. Going home on purpose, by the link above, clears the note. */
@@ -488,5 +499,29 @@ function makeVault(o){
     mark();setInterval(mark,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)mark()});window.addEventListener('pagehide',mark);
     a.addEventListener('click',()=>{leaving=true;try{localStorage.removeItem('ftol-at')}catch(e){}})}
   }catch(e){}})();
+/* A guide can ask a tool to open at a particular place. It leaves a short-lived note in localStorage (key ftol-show),
+   which the pages of the collection share: the tool it is for, and what to show. ftolShow hands a tool its own note,
+   once, and only while it is under a minute old. The tool sets its view from the note, then calls ftolSpot with the
+   part of the page to show. ftolSpot opens any closed section around the part, brings it into view, keeps it there
+   while the page is still settling (until the reader touches the page), outlines it for a few seconds and, for a
+   reader who came from a guide, offers the way back. */
+function ftolShow(app){try{const g=JSON.parse(localStorage.getItem('ftol-show')||'null');if(!g)return null;const fresh=Date.now()-g.t<60000;
+  if(g.p===app||!fresh)localStorage.removeItem('ftol-show');return g.p===app&&fresh?g:null}catch(e){return null}}
+function ftolSpot(el,go,around,top){
+  if(go&&go.from==='guide'&&window.FTOL_GUIDE&&!document.getElementById('guideBack')){const a=document.createElement('a');a.id='guideBack';a.className='noprint';a.href=window.FTOL_GUIDE;a.textContent='\u2190 Back to the guide';
+    a.style.cssText='position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:20;font:500 13px var(--body);background:var(--accent);color:var(--surface);padding:9px 13px;border-radius:8px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.25)';document.body.appendChild(a)}
+  if(!el)return;
+  for(let d=el.closest('details');d;d=d.parentElement&&d.parentElement.closest('details'))d.open=true;
+  /* outline the panel the part belongs to (`around` lists what counts as one in this tool), or the part itself */
+  const box=go&&go.box==='self'?el:el.closest(around)||el,st=box.style,was=[st.outline,st.outlineOffset];
+  /* inside a table the outline is drawn just within the part, because a table's scrolling frame would cut off one drawn outside it */
+  box.classList.add('ftol-spot');st.outline='3px solid var(--accent)';st.outlineOffset=box.closest('table')?'-3px':'4px';
+  const at=top||box;at.style.scrollMarginTop='14px';     /* `top`, when given, is what to bring to the top of the screen instead of the outlined part */
+  let live=true;const ro=window.ResizeObserver?new ResizeObserver(()=>place()):null;
+  const place=()=>{if(live)at.scrollIntoView({block:'start'})},stop=()=>{live=false;if(ro)ro.disconnect()};
+  setTimeout(()=>{place();if(ro)ro.observe(document.body)},60);
+  ['wheel','touchstart','keydown','mousedown'].forEach(t=>addEventListener(t,stop,{once:true,passive:true}));
+  setTimeout(stop,15000);setTimeout(()=>{box.classList.remove('ftol-spot');st.outline=was[0];st.outlineOffset=was[1]},6000);
+}
 /* VAULT:END */
 </script>
