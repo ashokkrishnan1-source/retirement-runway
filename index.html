@@ -1424,6 +1424,7 @@ function render(){
   if(base.shortReal<1){const last=names.map((n,i)=>end.alive[i]?n+' would be '+end.age[i]:null).filter(Boolean);headline=(P.length>1?'The money lasts for both of you: '+P.map((p,i)=>names[i]+' to age '+p.lifeExp).join(', '):'The money lasts to age '+P[0].lifeExp)+', through '+end.Y+'. It leaves '+money(end.total/end.fe)+' in today\'s dollars (about '+money(end.total)+' in '+end.Y+' dollars).'}
   else{const r=rows.find(x=>x.Y===base.firstShort);const who=names.map((n,i)=>r.alive[i]?n+' is '+r.age[i]:null).filter(Boolean);headline='The money runs short in '+base.firstShort+(who.length?', when '+who.join(' and '):'')+'.'}
   document.getElementById('verdict').innerHTML='<div class="row">'+pill+hb('verdict')+'</div><div class="big">'+esc(headline)+'</div><div class="note">'+esc(STRATS[strat])+' · '+full(cfg.spend)+' a year of spending in today\'s dollars, starting when '+(cfg.couple?'the first of you retires':'you retire')+'.'+(cfg.ssCutOn?' Includes a '+cfg.ssCutPct+'% Social Security cut from '+cfg.ssCutYear+'.':'')+' This is your plan as entered; the What if… tests below don\'t change it unless you click Apply.</div>';
+  try{localStorage.setItem('ftol-summary-runway',JSON.stringify({line:headline,example:isExample,at:new Date().toISOString()}))}catch(e){}
   // stats
   const now=cfg.cash+cfg.brokerage+(cfg.combined?cfg.cTrad+cfg.cRoth:P.reduce((a,p)=>a+p.k401+p.ira+p.roth,0));
   const saved=sims.typical.taxReal-base.taxReal;
@@ -2591,6 +2592,10 @@ function makeVault(o){
   draw();
   (async()=>{try{if(window.claude&&window.claude.use){const u=await window.claude.use('user'),d=await window.claude.use('db');uid=u?await u.id():null;db=d||null;if(online()){await refresh()}}}catch(e){db=null}ready=true;draw()})();
 }
+/* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
+   window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
+(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
+  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a)}catch(e){}})();
 /* VAULT:END */
 makeVault({mount:document.getElementById('vault'),app:'runway',what:'your plan',getState:()=>({s:S,strat,real}),download:(n,d)=>offer(n,d),
   setState:o=>{if(!o||!o.s||!Array.isArray(o.s.p))throw 0;S=merge(o.s);strat=o.strat||'smart';real=o.real!==false;isExample=false;bIdx=null;save();init()}});

@@ -8,7 +8,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | Path | What it is |
 |---|---|
 | `index.html` | The whole app, written in the **claude.ai page format**: no `<!doctype>`, `<html>`, `<head>` or `<body>` tags (claude.ai adds them). Do not add them here. |
-| `tools/build-pages.js` | Wraps `index.html` in a full HTML document for GitHub Pages, writing `_site/index.html` (git-ignored). |
+| `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `tests/check-rules.js` | Checks against hand-worked answers (107 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
 
@@ -118,6 +118,26 @@ Never edit the copy inside a page.
 - Both artifacts declare `capabilities: {downloads: true, db: {}, user: {}}`; keep all three on redeploys.
   Each artifact has its own store, so Runway versions and Open This First versions are kept separately.
 - On the standalone site there is no online store: only encrypted files are offered.
+
+## The collection: Financial Tools of Life (FTOL)
+
+The tools are published together behind a home page (`home/index.html`): tool cards with each person's status,
+next steps, and one "Your data" panel that saves every tool's state as a single encrypted copy.
+
+- **One link, linked pages.** On claude.ai the collection is one artifact: the home page plus `runway.html` and
+  `open-this-first.html` beside it. Pages of one artifact share browser storage and the `db` store, and each keeps
+  its capabilities. Collection link (owner's private link): https://claude.ai/artifact/MjYUrdnkLTLMZDNKJbgThE
+- **To publish the collection:** `node tools/build-pages.js`, then publish `home/index.html` to that `url` with
+  `files: {"runway.html": "_artifact/runway.html", "open-this-first.html": "_artifact/open-this-first.html"}` and
+  `capabilities: {downloads: true, db: {}, user: {}}`. The two single-tool links above are the earlier homes;
+  keep them working until the owner says the collection link has replaced them.
+- **Standalone site:** the home page is at the top, tools at `/retirement-runway/` and `/open-this-first/`.
+- The build tells each page where the others are: `window.FTOL_LINKS` (home) and `window.FTOL_HOME` (tools, which
+  then show a link back). A tool opened on its own has neither and works unchanged.
+- Tools tell the home page their status through `localStorage` keys `ftol-summary-runway` and `ftol-summary-otf`.
+  The home page's encrypted copy holds each tool's own storage key verbatim (`app: 'ftol'`).
+- Planned next: a shared profile (names, birth dates, state) and hand-offs between tools, starting with Runway's
+  account types shaping Open This First's money questions.
 
 ## Roadmap ideas (ask the owner before starting)
 

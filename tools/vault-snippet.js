@@ -64,4 +64,8 @@ function makeVault(o){
   draw();
   (async()=>{try{if(window.claude&&window.claude.use){const u=await window.claude.use('user'),d=await window.claude.use('db');uid=u?await u.id():null;db=d||null;if(online()){await refresh()}}}catch(e){db=null}ready=true;draw()})();
 }
+/* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
+   window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
+(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
+  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a)}catch(e){}})();
 /* VAULT:END */

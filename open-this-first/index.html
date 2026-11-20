@@ -271,7 +271,7 @@ const EXAMPLE={name:'Dan Rivera (example)',abroad:'no',abroadName:'',mode:'ess',
  f_fun:{s:'yes',a:'Cremation. A simple service at home. Nothing is prepaid.',b:'',chk:'2026-10'}}};
 let isExample=false;
 function load(){try{const r=localStorage.getItem(STORE);if(r){const o=JSON.parse(r);if(o&&o.items){S=Object.assign(blank(),o);return}}}catch(e){}S=blank()}
-function save(){if(isExample)return;S.updated=new Date().toISOString();try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}}
+function save(){if(isExample)return;S.updated=new Date().toISOString();try{localStorage.setItem(STORE,JSON.stringify(S));const c=counts();localStorage.setItem('ftol-summary-otf',JSON.stringify({essDone:c.essDone,ess:c.ess,open:c.part+c.no,answered:c.all-c.none,at:S.updated}))}catch(e){}}
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=id=>document.getElementById(id);
 const say=t=>{const e=$('msg');e.textContent=t;e.hidden=!t};
@@ -466,6 +466,10 @@ function makeVault(o){
   draw();
   (async()=>{try{if(window.claude&&window.claude.use){const u=await window.claude.use('user'),d=await window.claude.use('db');uid=u?await u.id():null;db=d||null;if(online()){await refresh()}}}catch(e){db=null}ready=true;draw()})();
 }
+/* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
+   window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
+(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
+  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a)}catch(e){}})();
 /* VAULT:END */
 makeVault({mount:$('vault'),app:'otf',what:'your map',getState:()=>S,download:(n,d)=>offer(n,d,'application/json'),
   setState:o=>{if(!o||!o.items)throw 0;S=Object.assign(blank(),o);isExample=false;save();init()}});
