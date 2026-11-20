@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'prism', 'index.html'), 'utf8');
 const eng = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
-const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships};')();
+const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats};')();
 let pass = 0, fail = 0;
 const check = (name, actual, expected, tol) => {
   const ok = typeof expected === 'number' ? Math.abs(actual - expected) <= (tol == null ? 1e-6 : tol) : JSON.stringify(actual) === JSON.stringify(expected);
@@ -53,19 +53,22 @@ check('date: text date', E.toDate('2026-11-04'), '2026-11-04');
 }
 
 console.log('--- The provider\'s full download ---');
-// The headings of the 49 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
+// The headings of the 63 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
 // them. Headings only: the values below are invented.
 { const FULL = ['Symbol', 'Company Name', 'Sector', 'Industry', 'Stock Price', 'Market Cap', 'Avg. Volume', 'Revenue', 'PE Ratio', 'EV/EBITDA',
     'Debt / EBITDA', 'Total Cash', 'Total Debt', 'Net Cash', 'FCF Yield', 'ROIC', 'Rev. Growth', 'FCF Growth', 'Shares Ch. (YoY)', 'Return 1Y',
     'Country', 'Exchange', 'CIK Code', 'Price Date', 'Last Split Date', 'Ent. Value', 'FCF', 'SBC', 'Shares', 'Forward PE', 'EV/FCF', 'PB Ratio',
     'Int. Cov.', 'Z-Score', 'F-Score', 'Analysts', 'Earnings Yield', 'ROIC (5Y)', 'ROE', 'Gross Margin', 'Oper. Margin', 'FCF Margin',
-    'Rev. Growth 3Y', 'Rev. Growth 5Y', 'EPS Growth', 'Buyback Yield', '52W High Chg', 'Shares Insiders', 'Short % Float'];
+    'Rev. Growth 3Y', 'Rev. Growth 5Y', 'EPS Growth', 'Buyback Yield', '52W High Chg', 'Shares Insiders', 'Short % Float',
+    'Profit Years', 'Rev. Growth 10Y', 'Operating CF', 'Net Income', 'ND / EBITDA', 'PE (5Y)', 'PE (10Y)', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR',
+    'Options', 'Next Earnings', 'Rev Gr. Next Y'];
   // look-alike headings that are also in the download and must not be mistaken for the ones above
-  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (Q)', 'Return 1W', 'PE (5Y)', 'Short % Shares', 'FCF / EV', 'ND / EBITDA', 'ROE (5Y)'];
+  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (Q)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', 'ROE (5Y)', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date'];
   const row = FULL.map(() => ''), set = (h, v) => { row[FULL.indexOf(h)] = v; };
   set('Symbol', 'zzz.x'); set('Stock Price', '40'); set('Market Cap', '2000000000'); set('FCF Yield', '9.00%'); set('FCF', '100000000'); set('ROIC', '12.50%');
   set('Shares Ch. (YoY)', '-0.21%'); set('CIK Code', '0000123456'); set('Price Date', '2026-11-19'); set('Ent. Value', '2500000000'); set('Int. Cov.', '-4.5');
   set('Z-Score', '2.75'); set('F-Score', '7'); set('52W High Chg', '-10.88%'); set('Short % Float', '0.82%');
+  set('Profit Years', '35'); set('50MA Chg %', '-4.18%'); set('Options', 'Yes'); set('Next Earnings', '2027-01-27'); set('ND / EBITDA', '-0.0356');
   const m = E.mapTable(FULL.concat(DECOYS), [row.concat(DECOYS.map(() => '99'))]), r = m.rows[0];
   check('full download: every column Prism reads is found', Object.keys(m.report.found).length, E.FIELDS.length);
   check('full download: none missing', m.report.missing, []);
@@ -76,6 +79,8 @@ console.log('--- The provider\'s full download ---');
   check('full download: CIK keeps its leading zeros', r.cik, '0000123456'); check('full download: price date', r.pdate, '2026-11-19');
   check('full download: enterprise value', r.ev, 2.5e9); check('full download: interest cover can be negative', r.cov, -4.5);
   check('full download: Altman score', r.altman, 2.75); check('full download: Piotroski score', r.piotroski, 7);
+  check('full download: profit years', r.py, 35); check('full download: "-4.18%" against the 50-day average', r.ma50, -0.0418, 1e-12);
+  check('full download: options and the next earnings date', [r.opt, r.earn], ['Yes', '2027-01-27']); check('full download: net debt over EBITDA can be negative', r.ndlev, -0.0356);
   check('full download: percentages carry a % sign, so no whole-number conversion', m.report.percentUnits, false);
   // a spelling that is only a guess is reported as one: "Ticker" and "Enterprise Value" are not the provider's headings
   check('a guessed spelling is reported', E.mapTable(['Ticker', 'Enterprise Value'], [['x', '5']]).report.guessed, ['sym', 'ev']);
@@ -87,6 +92,130 @@ console.log('--- The provider\'s full download ---');
   // with no yield column: 30 / 600 = 5%
   const c = {fcf: 30, cap: 600}; E.derive(c); check('cash flow only: yield is 30 / 600', c.fcfy, 0.05); check('cash flow only: no file figure', c.fcfy_file, null);
 }
+console.log('--- Financial companies that are fee businesses ---');
+// In a mixed financial industry, a company with EBITDA-based figures in the file reports like an ordinary company.
+check('lane: a card network with debt over EBITDA given is scored', E.laneOf({sector: 'Financials', industry: 'Credit Services', lev: 0.7}), 'standard');
+check('lane: a fund manager with EV over EBITDA given is scored', E.laneOf({sector: 'Financials', industry: 'Asset Management', ev_ebitda: 14}), 'standard');
+check('lane: a lender in the same industry, with neither figure, is set aside', E.laneOf({sector: 'Financials', industry: 'Credit Services'}), 'financial');
+check('lane: a bank stays set aside even with the figure', E.laneOf({sector: 'Financials', industry: 'Banks - Regional', lev: 2}), 'financial');
+check('lane: an insurer stays set aside', E.laneOf({sector: 'Financials', industry: 'Insurance - Life', lev: 2}), 'financial');
+
+console.log('--- The A-list: six tests of the business ---');
+// Lines: 15% return on capital over five years and 12% now; 10 profitable years; sales up 4% a year over five and ten years;
+// cash from operations at least 80% of profit; share count up at most 2%; net cash, or net debt up to 3 x EBITDA with interest covered 5 times.
+{ const C = E.CONTROLS, base = {roic5: 0.20, roic: 0.18, py: 12, revg5: 0.06, revg10: 0.05, ni: 100, ocf: 110, sh: 0, netcash: -50, ndlev: 1, cov: 10};
+  const G = o => E.gradeOf(Object.assign({}, base, o), C);
+  check('A: a company that passes all six', [G({}).yes, G({}).no, G({}).unk], [6, [], []]);
+  check('A: 11% return this year is under the 12% line', G({roic: 0.11}).no, ['returns']);
+  check('A: no five-year return in the file is unknown, not a pass', [G({roic5: null}).yes, G({roic5: null}).unk], [5, ['returns']]);
+  check('A: nine profitable years is one short', G({py: 9}).no, ['profitable']);
+  check('A: 3% growth over ten years fails though five years pass', G({revg10: 0.03}).no, ['grows']);
+  check('A: with no ten-year figure, five years decide', G({revg10: null}).yes, 6);
+  check('A: cash of 70 on profit of 100 is under 80%', G({ocf: 70}).no, ['cash']);
+  check('A: a loss fails the cash test', G({ni: -5}).no, ['cash']);
+  check('A: share count up 3% is over the 2% line', G({sh: 0.03}).no, ['shares']);
+  check('A: net debt of 3.5 x EBITDA is over 3', G({ndlev: 3.5}).no, ['debt']);
+  check('A: more cash than debt passes whatever the ratio says', G({netcash: 10, ndlev: 9}).yes, 6);
+  check('A: interest covered 4 times is under 5', G({cov: 4}).no, ['debt']);
+  check('A: with no net-debt ratio the plain debt ratio is used', [G({ndlev: null, lev: 2}).yes, G({ndlev: null, lev: 4}).no], [6, ['debt']]);
+  check('A: net debt with negative EBITDA fails', G({ndlev: -1}).no, ['debt']);
+}
+console.log('--- On sale: two of three signs ---');
+// P/E at most 75% of its own ten-year average; price implies growth at least 5 points under the record; 25% under the high.
+{ const C = E.CONTROLS, base = {pe: 12, pe10: 20, revg5: 0.10, revg10: 0.08, impg: 0.02, dd: -0.30}, Z = o => E.saleOf(Object.assign({}, base, o), C);
+  check('sale: P/E 12 against a usual 20, growth 2% against a record of 8%, 30% off the high', [Z({}).own, Z({}).implied, Z({}).high, Z({}).n], [true, true, true, 3]);
+  check('sale: P/E 16 is above 75% of 20', Z({pe: 16}).own, false);
+  check('sale: implied 4% is not 5 points under a record of 8%', Z({impg: 0.04}).implied, false);
+  check('sale: the record is the lower of five and ten years', Z({}).rec, 0.08);
+  check('sale: 20% off the high is not enough', [Z({dd: -0.20}).high, Z({dd: -0.20}).n], [false, 2]);
+  check('sale: with no ten-year average the five-year one is used (12 against 16)', Z({pe10: null, pe5: 16}).own, true);
+  check('sale: a loss-making company has no P/E to compare', Z({pe: null}).own, null);
+  // its own past is the lower of the two averages: 14 here, so 12 is not a quarter under it (the line is 10.5)
+  check('sale: the lower of the five- and ten-year averages is used', [Z({pe10: 30, pe5: 14}).ownPE, Z({pe10: 30, pe5: 14}).own], [14, false]);
+  // an average of 138 comes from a few thin years: it counts as 40, so the line is a P/E of 30
+  check('sale: an absurd average counts as 40', [Z({pe10: 138, pe: 31}).ownPE, Z({pe10: 138, pe: 31}).own, Z({pe10: 138, pe: 29}).own], [40, false, true]);
+  // with no implied growth worked out yet, it comes from the yields: a cash yield that needs no growth implies 0%
+  const y0 = 1 / E.annuity(0, C.exp_r, C.exp_gT, C.exp_N);
+  check('sale: implied growth worked out from the cash yield when missing', Z({impg: null, fcfy: y0}).imp, 0, 1e-6);
+}
+console.log('--- Rising or falling, the put desk, pins ---');
+{ const C = E.CONTROLS, mk = o => Object.assign({sym: 'X', scored: true, primary: true, price: 10, pool: 'main', roic5: 0.20, roic: 0.18, py: 12, revg5: 0.06, ni: 100, ocf: 110, sh: 0, netcash: 5, pe: 30, pe10: 30, dd: -0.05, impg: 0.08, blocks: [], lists: [], flags: [], hold: false}, o);
+  const J = (o, opt) => { const r = mk(o); E.judge([r], C, Object.assign({today: '2026-11-19'}, opt)); return r; };
+  check('trend: under its 50-day average and down over a month is falling', J({ma50: -0.02, ret1m: -0.03}).trend, 'down');
+  check('trend: above its 50-day average is rising', J({ma50: 0.01, ret1m: -0.03}).trend, 'up');
+  check('trend: under the average but up over the month is neither', J({ma50: -0.02, ret1m: 0.01}).trend, 'flat');
+  check('trend: unknown without the figures', J({}).trend, null);
+  check('earnings: 2026-11-19 to 2026-12-09 is 20 days', J({earn: '2026-12-09'}).earnIn, 20);
+  check('A-list: grade A is on it', [J({}).grade, J({}).alist], ['A', true]);
+  check('A-list: the reader can take a company off', J({}, {pins: {X: 'out'}}).alist, false);
+  check('A-list: the reader can add a company that fails a test', [J({py: 3}).grade, J({py: 3}).alist, J({py: 3}, {pins: {X: 'in'}}).alist], ['B', false, true]);
+  check('A-list: one missed test counts only when that option is on', J({py: 3}, {tierB: true}).alist, true);
+  check('A-list: two missed tests never count', [J({py: 3, sh: 0.05}).grade, J({py: 3, sh: 0.05}, {tierB: true}).alist], [null, false]);
+  check('put desk: A-list but not on sale and not down is off the desk', J({ret1w: -0.02}).put, false);
+  check('put desk: A-list and down 9% in a week is on it', J({ret1w: -0.09}).put, true);
+  check('put desk: A-list and on sale is on it', [J({pe: 12, dd: -0.30}).onSale, J({pe: 12, dd: -0.30}).put], [true, true]);
+  check('put desk: no listed options keeps it off', J({ret1w: -0.09, opt: 'No'}).put, false);
+  check('put desk: not on the A-list keeps it off', J({py: 3, ret1w: -0.09}).put, false);
+}
+console.log('--- Moonshots ---');
+// Up to $20B in size, $100M of sales, sales up 30% (20% over three years and expected next year), gross margin 50%,
+// more cash than debt, three years of cash, share count up at most 8%, and growth plus cash margin of at least 40 points.
+{ const C = E.CONTROLS, base = {scored: true, hold: false, cyc: false, cap: 2e9, rev: 2e8, revg: 0.60, revg3: 0.30, revgn: 0.25, gm: 0.70, netcash: 1e8, cash: 3e8, fcf: -5e7, fcfm: -0.15, sh: 0.03};
+  const M = o => { const r = Object.assign({}, base, o); return [E.moonOf(r, C), r.runway]; };
+  check('moon: passes, with cash of 300 for a burn of 50 a year: six years', M({}), [true, 6]);
+  check('moon: cash for two years is too little', M({cash: 1e8}), [false, 2]);
+  check('moon: a company that earns cash needs no runway', M({fcf: 1e7, fcfm: 0.05}), [true, 99]);
+  check('moon: gross margin of 45% is under 50%', M({gm: 0.45})[0], false);
+  check('moon: more debt than cash fails', M({netcash: -1})[0], false);
+  check('moon: share count up 10% fails', M({sh: 0.10})[0], false);
+  check('moon: too big at $30B', M({cap: 3e10})[0], false);
+  check('moon: sales of $50M are too small to judge', M({rev: 5e7})[0], false);
+  check('moon: a cyclical industry is left out', M({cyc: true})[0], false);
+  check('moon: 10% expected next year is too slow', M({revgn: 0.10})[0], false);
+  check('moon: no forecast in the file is not held against it', M({revgn: null})[0], true);
+  check('moon: growth 30% and cash margin -15% add to 15, under 40', M({revg: 0.30})[0], false);
+}
+console.log('--- The scorecard ---');
+check('days: 2026-11-10 to 2026-12-10 is 30', E.daysBetween('2026-11-10', '2026-12-10'), 30);
+check('median of 3, 1, 2', E.median([3, 1, 2]), 2); check('median of 1, 2, 3, 10', E.median([1, 2, 3, 10]), 2.5); check('median of nothing', E.median([]), null);
+{ // 25 large companies at $10 on day one. Thirty days later C0 is $12, C1 is $9 and the other 23 are $11.
+  const day = (px, extra) => Array.from({length: 25}, (_, i) => Object.assign({sym: 'C' + i, scored: true, pool: 'main', price: px(i)}, (extra || {})['C' + i]));
+  const d1 = day(() => 10), d2px = i => i === 0 ? 12 : i === 1 ? 9 : 11, d2 = day(d2px);
+  let card = E.cardStep(null, '2026-11-10', d1, {x: ['C0', 'C1']});
+  check('card: the index starts at 100', card.idx, [['2026-11-10', 100, 0]]);
+  check('card: the entry price is remembered', card.ent.x, {C0: ['2026-11-10', 10], C1: ['2026-11-10', 10]});
+  check('card: nothing to report after one file', E.cardStats(card, d1), null);
+  const c2 = E.cardStep(card, '2026-12-10', d2, {x: ['C0', 'C1', 'C2']});
+  // the typical company: the median of 25 changes, 23 of which are +10%
+  check('card: the typical company rose 10%, so the index is 110', c2.idx[1][1], 110, 1e-9); check('card: same run of the index', [c2.idx[1][0], c2.idx[1][2]], ['2026-12-10', 0]);
+  check('card: a company joining later is entered at that day\'s price', c2.ent.x.C2, ['2026-12-10', 11]);
+  check('card: the first card is left untouched', [card.idx.length, Object.keys(card.ent.x).length], [1, 2]);
+  const st = E.cardStats(c2, d2).lists.x;
+  // C0 +20% and C1 -10%: median +5%. Against +10% for the typical company: +10 and -20 points, median -5. One of two ahead.
+  check('card: two measured, the newcomer not yet', [st.n, st.dropped], [2, 0]);
+  check('card: median change since joining is +5%', st.ret, 0.05, 1e-9); check('card: the typical company over the same days: +10%', st.bench, 0.10, 1e-9);
+  check('card: behind by 5 points', st.excess, -0.05, 1e-9); check('card: one of two ahead', st.ahead, 0.5); check('card: thirty days', st.days, 30);
+  check('card: the same file again changes nothing', E.cardStep(c2, '2026-12-10', d2, {x: ['C5']}).idx.length, 2);
+  check('card: an older file changes nothing', E.cardStep(c2, '2026-11-01', d1, {x: ['C5']}).ent.x.C5, undefined);
+  // a share split after joining makes the two prices incomparable: the company is dropped from the count
+  const sp = day(d2px, {C0: {split: '2026-12-01'}}), cs = E.cardStep(card, '2026-12-10', sp, {x: []});
+  check('card: a split since joining drops the company', [E.cardStats(cs, sp).lists.x.n, E.cardStats(cs, sp).lists.x.dropped], [1, 1]);
+  check('card: an older split does not', E.cardStats(E.cardStep(card, '2026-12-10', day(d2px, {C0: {split: '2020-01-01'}}), {x: []}), d2).lists.x.n, 2);
+  const gone = d2.filter(r => r.sym !== 'C1');
+  check('card: a company that left the file is dropped', [E.cardStats(E.cardStep(card, '2026-12-10', gone, {x: []}), gone).lists.x.n, E.cardStats(E.cardStep(card, '2026-12-10', gone, {x: []}), gone).lists.x.dropped], [1, 1]);
+  // with too few companies to compare, the typical company can't be carried forward: no comparison is claimed
+  const few = d2.slice(0, 10), cf = E.cardStep(card, '2026-12-10', few, {x: []}), sf = E.cardStats(cf, few).lists.x;
+  check('card: too few companies starts a new run of the index', cf.idx[1][2], 1); check('card: and no comparison is made across it', [sf.n, sf.bench, sf.excess], [2, null, null]);
+}
+console.log('--- Membership of the newer lists ---');
+{ const row = o => Object.assign({sym: 'S', scored: true, pool: 'main', hold: false, blocks: [], lists: [], g: {Q: true, V: true, S: true, P: true, T: true}}, o);
+  const m = E.memberships([row({sym: 'A1', alist: true}), row({sym: 'A2', alist: true, onSale: true, put: true}), row({sym: 'M1', moon: true, pool: 'small'}), row({sym: 'H1', alist: true, hold: true}), row({sym: 'S1', alist: true, pool: 'ext'}), row({sym: 'B1', alist: true, blocks: ['burn']})], ['Q', 'V', 'S', 'P', 'T']);
+  check('members: the A-list keeps large companies without data warnings, blocked or not', m.A, ['A1', 'A2', 'B1']);
+  check('members: on sale and put desk', [m.sale, m.put], [['A2'], ['A2']]);
+  check('members: a moonshot can be small', m.moon, ['M1']);
+  check('members: the all-five list still leaves out blocked companies', m.all, ['A1', 'A2']);
+}
+
 console.log('--- Strong enough to wait: interest cover ---');
 // Limits: debt up to 3 x EBITDA, share count up to +3%, and with net debt, profit must cover interest 3 times.
 { const C = E.CONTROLS, S = o => E.strengthOf(Object.assign({netcash: -100, lev: 2, sh: 0}, o), C, C.s_lev).ok;

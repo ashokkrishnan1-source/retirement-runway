@@ -16,7 +16,7 @@ const read = f => { const s = fs.readFileSync(path.join(root, f), 'utf8'); if (/
 const pages = {
   home: {src: read('home/index.html'), desc: 'Financial Tools of Life: plain tools for the money decisions that matter. They run in your browser; nothing you type is sent anywhere.'},
   runway: {src: read('index.html'), desc: 'Retirement Runway: see how long your money lasts, which account should pay the bills, and how much to convert to Roth each year, using real federal and state tax rules. Runs in your browser; nothing you type is sent anywhere.'},
-  prism: {src: read('prism/index.html'), desc: 'Prism: turn a whole-market stock screener download into a short reading list. Every company is asked five separate questions. Runs in your browser; the file you load is never uploaded.'},
+  prism: {src: read('prism/index.html'), desc: 'Prism: turn a whole-market stock screener download into a short reading list: the best businesses in it, and which of them are on sale. Runs in your browser; the file you load is never uploaded.'},
   otf: {src: read('open-this-first/index.html'), desc: 'Open This First: a short interview that makes a one-page guide for your family: who to call, where things are, and what not to do yet. Runs in your browser; nothing you type is sent anywhere.'}
 };
 // `pre` is a small script placed before the page, telling it where the other pages of the collection are.

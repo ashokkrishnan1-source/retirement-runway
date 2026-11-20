@@ -88,7 +88,7 @@ ul.next li:first-child{border-top:0;padding-top:0}
       <div class="tool">
         <div class="mark" style="background:var(--prism)" aria-hidden="true">PR</div>
         <h3>Prism</h3>
-        <p class="what">Turns a whole-market stock screener download into a short reading list: the few companies that pass five separate tests.</p>
+        <p class="what">Turns a whole-market stock screener download into a short reading list: the best businesses in it, and which of them are on sale.</p>
         <div class="status" id="stPrism"></div>
         <a class="btn primary" id="goPrism" href="prism.html">Open Prism</a>
       </div>
@@ -128,7 +128,7 @@ function draw(){
   $('stRunway').innerHTML=hasR?'<b>'+esc(r.line)+'</b><br><span class="note">Last opened '+esc(day(r.at))+'</span>':'Not started. It opens with a sample couple so you can see how it works.';
   $('stOtf').innerHTML=hasO?'<b>'+o.essDone+' of '+o.ess+' essentials sorted</b>'+(o.open?' · '+o.open+' marked to sort out':'')+'<br><span class="note">Last changed '+esc(day(o.at))+'</span>':'Not started. It opens with a made-up example packet.';
   const p=get(KEYS.sumPrism),daysOld=p?Math.round((Date.now()-new Date(p.date+'T12:00:00'))/864e5):0;
-  $('stPrism').innerHTML=p?'<b>'+p.n+(p.n===1?' company passes':' companies pass')+' all five questions</b>'+(p.watch?' · '+p.watch+' on your watch list':'')+'<br><span class="note">Screener file dated '+esc(day(p.date))+'</span>':'Not started. It opens with made-up companies so you can see how it works.';
+  $('stPrism').innerHTML=p?'<b>'+(p.sale!=null?p.sale+(p.sale===1?' A-class business is':' A-class businesses are')+' on sale':p.n+(p.n===1?' company passes':' companies pass')+' all five questions')+'</b>'+(p.watch?' · '+p.watch+' on your watch list':'')+'<br><span class="note">Screener file dated '+esc(day(p.date))+'</span>':'Not started. It opens with made-up companies so you can see how it works.';
   const add=(t,pill,cls,href,label)=>next.push('<li><span>'+t+'</span><span class="row">'+(pill?'<span class="pill '+cls+'">'+pill+'</span>':'')+'<a class="btn sm" href="'+href+'">'+label+'</a></span></li>');
   if(!hasR)add('Enter your own numbers in Retirement Runway.','','',LINKS.runway,'Start');
   else if(monthsSince(r.at)>=6)add('Your retirement plan was last opened '+esc(day(r.at))+'. Tax rules change each November; check it still holds.','Review','warn',LINKS.runway,'Open');

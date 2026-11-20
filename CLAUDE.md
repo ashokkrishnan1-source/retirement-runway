@@ -11,7 +11,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `tests/check-rules.js` | Checks against hand-worked answers (107 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
-| `tests/check-prism.js` | Prism's engine checks (112 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
+| `tests/check-prism.js` | Prism's engine checks (200 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -118,25 +118,53 @@ single file, no backend, answers stay in the browser (localStorage key `open-thi
 ## Tool 3: Prism (`prism/index.html`)
 
 A stock screener that runs on a file the user brings: one whole-market screener download (CSV or Excel, one row
-per stock). It sets aside what it can't judge, asks every other company five separate questions, builds nine named
-shortlists, and works out what growth today's price implies. Same page format as the other tools; no AI, no live data.
+per stock). It grades each business on its own merits (the A-list), says which A-list companies are on sale, and
+keeps a put desk, a moonshot list and a scorecard. Its original part asks every company five separate questions
+(cheap and out of favor), builds nine named shortlists, and works out what growth today's price implies. Same page
+format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (112 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (200 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
   warnings, shortlists), `impliedGrowth` / `annuity` (reverse valuation and the entry ceiling), `memberships`.
 - **Five separate answers, no combined score.** Q quality, V price, P progress and T timing are sector percentiles;
   S strength is an absolute test. The default order is by the weakest of Q, V, P, T. Do not add a weighted score.
-- **Page layout: the short list first.** After the file card comes the list itself: a title with the count, one
-  plain sentence, and a "Show" menu that swaps the short list (a yes to every required question) for the near
-  misses (one question short) or one of the nine named lists (shown in full). Rows say what was found in words
-  ("4 of 5. No: out of favor.", the named lists a company is on, cautions); the Q/V/S/P/T letters and ranks
-  appear only in a row's detail. Company size, order, find, the question toggles and the tally sit in the
-  collapsed "More options", whose summary line says when a setting is not the default. Keep the first company
-  on the first screen at phone width.
+- **Page layout: the list first.** After the file card comes the list itself: a title with the count, one plain
+  sentence, and a "Show" menu. The page opens on "A-list on sale" (the owner asked for this on 2026-11-20); a file
+  without the A-list columns falls back to the five-question list. The menu groups are: businesses worth owning
+  (A-list on sale, put desk, the whole A-list), cheap and out of favor (yes to all five, near misses), long shots
+  (moonshots), and the nine named lists. Rows say what was found in words, differently for each view (`found`);
+  the Q/V/S/P/T letters and ranks appear only in a row's detail. Company size, order, find, the question toggles
+  and the tally sit in the collapsed "More options", whose summary line says when a setting is not the default.
+  Keep the first company on the first screen at phone width.
+- **The A-list (`gradeOf`, `judge`).** Six tests of the business, price ignored, all absolute rather than ranked
+  within a sector: return on capital (five-year and latest), years of profit in a row, sales growth (five and ten
+  years), cash from operations against profit, share-count growth, and debt (net cash, or net debt over EBITDA
+  with interest cover). Six yeses is grade A, five is grade B, and a test the file can't answer is not a pass. The
+  reader's own choice wins: `S.mine` holds `{symbol: 'in' | 'out'}` and reaches the engine as `opt.pins`; any
+  company can be pinned, even one that is set aside. `S.tierB` (off by default) lets grade B onto the list. The
+  A-list views and moonshots ignore the five-question "not now" blocks; they have their own tests.
+- **On sale (`saleOf`).** Two of three signs: P/E at most `sale_pe` of the company's own average (the lower of
+  the five- and ten-year averages, capped at `sale_pecap` because thin years inflate an average); the price
+  implying growth at least `sale_gap` under its sales record; `sale_dd` under the 52-week high.
+- **Put desk.** A-list companies that are on sale or fell `put_drop` in a week, with listed options. Rows show the
+  weekly fall, the average daily range, the entry ceiling with the price, and days to the next earnings (marked
+  inside `put_earn` days). The file has no option prices, and Prism never suggests a strike.
+- **Rising or falling (`r.trend`).** Falling is below the 50-day average and down over a month; rising is above it.
+- **Moonshots (`moonOf`).** Small, fast-growing, able to pay their own way: size, sales, growth, gross margin, net
+  cash, years of cash at today's spending, dilution, and growth plus cash margin. Cyclical industries are left
+  out. Always carry the line that most such companies disappoint.
+- **Scorecard (`cardStep`, `cardStats`, `S.card`).** With each newer file it records who joined each list and at
+  what price, and chains an index of the typical large company (the median price change between files). Later it
+  shows each list's median change since joining against that index over the same days. Price only; a company that
+  left the file or split its shares is dropped. It says plainly when the history is under three months. This is
+  the only test any Prism threshold has had: never describe a list as proven.
+- **Fee businesses in financial industries.** In Credit Services, Asset Management, Capital Markets and Financial
+  Conglomerates, a company is scored like any other when the file gives it EBITDA-based figures (a card network,
+  a fund manager); a lender gets none and stays set aside. Banks and insurers are always set aside.
 - **Unknown is never a pass.** Missing data gives "unknown", which fails a required question.
 - **Verdicts and the owner's put selling.** He mostly gets in by selling cash-secured puts, and sells a near call
   if he is assigned and doesn't want to hold. The record for that: Act while a put is open (strike and expiry
@@ -145,8 +173,8 @@ shortlists, and works out what growth today's price implies. Same page format as
   five verdict names come from his case-notes headings: don't add trade types as verdicts. Separate strike and
   expiry boxes, with each file showing the distance from the strike, were offered and are not built.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
-- `FIELDS`: the first spelling of each of the 49 columns was checked against the owner's real downloads (a
-  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 49 headings.
+- `FIELDS`: the first spelling of each of the 63 columns was checked against the owner's real downloads (a
+  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 63 headings.
   Later spellings are guesses for other files, and a match on one is reported on the page as "matched by name
   only". What the full file taught us, so nobody has to find it twice:
   - Statement figures are already in US dollars, whatever currency the company reports in.
@@ -168,11 +196,15 @@ shortlists, and works out what growth today's price implies. Same page format as
   says the full screener export has 336 fields. The page's case-notes file uses the owner's existing column headings exactly (`NOTE_HEAD`); keep them.
 - "Columns found in the file" has a list of every column heading in the loaded file (`colText`), to copy or save.
   It holds headings only, never figures, so the owner can send it when asking for more columns to be read.
-- State: `localStorage` key `prism-v1` (settings, verdicts, last two list memberships); IndexedDB `prism` keeps the
-  last file in that browser only; `ftol-summary-prism` feeds the home page. The vault copy holds verdicts and
-  settings, never the file.
-- Not built yet (ask the owner): scoring banks and property (needs P/B, ROE), ten-year divergence, split handling
-  between files, a paper-test scorecard of how list entrants did later, the owner's industry and override maps.
+- State: `localStorage` key `prism-v1` (settings, verdicts, A-list choices, the scorecard, last two list
+  memberships; `v: 2` marks state saved since the A-list became the opening view); IndexedDB `prism` keeps the
+  last file in that browser only; `ftol-summary-prism` feeds the home page. The vault copy holds the same things
+  except the file: the scorecard carries entry prices and the last prices of the large companies, nothing more.
+- The built-in example carries made-up values for the newer columns too (a second random stream, so the first
+  twenty columns stay as they were), including a few young fast growers so the moonshot list has something to show.
+- Not built yet (ask the owner): scoring banks and property (needs P/B, ROE), ten-year divergence, adjusting for
+  share splits (the scorecard drops a split company instead), the owner's industry and override maps, strike and
+  expiry boxes for puts, a "copy a research brief" button.
 
 ## Encrypted and online copies (shared by all tools)
 

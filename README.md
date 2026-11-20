@@ -7,7 +7,7 @@ browser: nothing a user types or loads is sent anywhere.
 |---|---|---|
 | **Retirement Runway** | How long your money lasts, which account should pay the bills, and how much to move into a Roth each year, using real federal and state tax rules. | `index.html` |
 | **Open This First** | A short interview that makes a one-page guide for your family: who to call, where things are, and what not to do yet. | `open-this-first/index.html` |
-| **Prism** | Turns a whole-market stock screener download into a short reading list: the few companies that pass five separate tests. Bring your own screener file; none is included. | `prism/index.html` |
+| **Prism** | Turns a whole-market stock screener download into a short reading list: the best businesses in it, and which of them are on sale. Bring your own screener file; none is included. | `prism/index.html` |
 
 **Use them online:** https://ashokkrishnan1-source.github.io/retirement-runway/
 
