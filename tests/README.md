@@ -31,6 +31,10 @@ a total. The run ends with an error code if anything fails.
   care costs before retirement, the 10% early-withdrawal penalty, conversion tax
   paid from brokerage with gains taxed, big one-time expenses, edge cases, and a
   fuzz test of 1,500 random plans for negative balances or missing numbers.
+- **The guide:** every button, heading, view and calculator that the guide
+  (`guide/index.html`) names must be on the page, word for word, and the guide
+  must carry no tax figures of its own. If you rename something on the page, this
+  check tells you which line of the guide to change.
 
 ## After the yearly update
 

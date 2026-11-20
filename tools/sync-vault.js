@@ -6,7 +6,9 @@ const root = path.join(__dirname, '..');
 const snip = fs.readFileSync(path.join(__dirname, 'vault-snippet.js'), 'utf8').trim();
 const re = /\/\* VAULT:START[\s\S]*?\/\* VAULT:END \*\//;
 let stale = 0;
-for (const f of ['index.html', 'open-this-first/index.html', 'home/index.html', 'prism/index.html']) {
+// The guide has nothing to save, but it carries the snippet for its last part: the link back to the home page and the
+// note that lets a refresh return to the page that was open.
+for (const f of ['index.html', 'open-this-first/index.html', 'home/index.html', 'prism/index.html', 'guide/index.html']) {
   const p = path.join(root, f), s = fs.readFileSync(p, 'utf8');
   if (!re.test(s)) throw new Error(f + ' has no VAULT markers');
   const out = s.replace(re, () => snip);

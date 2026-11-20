@@ -50,6 +50,8 @@ section{display:flex;flex-direction:column;gap:12px}
 .btn:hover{border-color:var(--fg3)}
 .btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);align-self:flex-start}
 .btn.sm{font-size:13px;padding:6px 10px;min-height:34px}
+.lnk{font:500 15px var(--body);color:var(--accent);text-decoration:none;padding:10px 4px;min-height:44px;display:inline-flex;align-items:center}
+.lnk:hover{text-decoration:underline}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -76,7 +78,7 @@ ul.next li:first-child{border-top:0;padding-top:0}
         <h3>Retirement Runway</h3>
         <p class="what">How long your money lasts, which account should pay the bills, and how much to convert to Roth each year, using real tax rules.</p>
         <div class="status" id="stRunway"></div>
-        <a class="btn primary" id="goRunway" href="runway.html">Open Retirement Runway</a>
+        <div class="row"><a class="btn primary" id="goRunway" href="runway.html">Open Retirement Runway</a><a class="lnk" id="goGuide" href="runway-guide.html">Guide: how to use it</a></div>
       </div>
       <div class="tool">
         <div class="mark" style="background:var(--otf)" aria-hidden="true">OF</div>
@@ -121,13 +123,13 @@ ul.next li:first-child{border-top:0;padding-top:0}
 (function(){try{
   if(window.FTOL_LINKS)return;
   const at=JSON.parse(localStorage.getItem('ftol-at')||'null'),nav=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];
-  if(!at||!/^(runway|open-this-first|prism)\.html$/.test(at.p)||!(Date.now()-at.t<180000))return;
+  if(!at||!/^(runway|runway-guide|open-this-first|prism)\.html$/.test(at.p)||!(Date.now()-at.t<180000))return;
   if(nav&&nav.type==='back_forward')return;
   if(document.referrer&&document.referrer.indexOf(location.origin+'/')===0)return;
   location.replace(at.p);
 }catch(e){}})();
 /* The build sets window.FTOL_LINKS for the standalone website, where each tool has its own folder. */
-const LINKS=window.FTOL_LINKS||{runway:'runway.html',otf:'open-this-first.html',prism:'prism.html'};
+const LINKS=window.FTOL_LINKS||{runway:'runway.html',guide:'runway-guide.html',otf:'open-this-first.html',prism:'prism.html'};
 const KEYS={runway:'retirement-runway-v2',otf:'open-this-first-v1',prism:'prism-v1',sumRunway:'ftol-summary-runway',sumOtf:'ftol-summary-otf',sumPrism:'ftol-summary-prism'};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -136,6 +138,7 @@ const day=t=>{try{return new Date(t).toLocaleDateString('en-US',{year:'numeric',
 const monthsSince=t=>{const d=new Date(t),n=new Date();return (n.getFullYear()-d.getFullYear())*12+n.getMonth()-d.getMonth()};
 function draw(){
   $('goRunway').href=LINKS.runway;$('goOtf').href=LINKS.otf;$('goPrism').href=LINKS.prism;
+  if(LINKS.guide)$('goGuide').href=LINKS.guide;else $('goGuide').hidden=true;
   const r=get(KEYS.sumRunway),o=get(KEYS.sumOtf),hasR=r&&!r.example&&get(KEYS.runway),hasO=o&&get(KEYS.otf),next=[];
   $('stRunway').innerHTML=hasR?'<b>'+esc(r.line)+'</b><br><span class="note">Last opened '+esc(day(r.at))+'</span>':'Not started. It opens with a sample couple so you can see how it works.';
   $('stOtf').innerHTML=hasO?'<b>'+o.essDone+' of '+o.ess+' essentials sorted</b>'+(o.open?' · '+o.open+' marked to sort out':'')+'<br><span class="note">Last changed '+esc(day(o.at))+'</span>':'Not started. It opens with a made-up example packet.';

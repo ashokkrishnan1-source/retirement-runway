@@ -3,11 +3,13 @@
 // Every check has a hand-calculated expected value. Exit code is 1 if anything fails.
 // Covers: federal tax reference figures, Social Security (spousal, survivor,
 // earnings test), RMDs, payroll tax, state tax, cash-flow accounting, what-ifs and a fuzz test.
+// It also checks that the guide (guide/index.html) names only buttons and headings that are really on the page.
 // Note: expected values assume the 2027 rules. When you update RULES for a new year, the
 // federal reference figures below will change; re-derive them (or confirm the differences) first.
 const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const guide = fs.readFileSync(path.join(__dirname, '..', 'guide', 'index.html'), 'utf8');
 const eng = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
 const E = new Function(eng + '\nreturn {fedTax,simulate,makePaths,mcJob,spendJob,maxScale,WI,RULES,STATES,START_YEAR,solveScale};')();
 const EX = eval('(' + html.match(/const EXAMPLE=(\{[\s\S]*?\n\});/)[1] + ')');
@@ -278,10 +280,39 @@ console.log('--- Keeping figures current ---');
   const vals = new Set(); (function walk(o) { for (const k in o) { const v = o[k]; if (typeof v === 'number' && v >= 1000) vals.add(v); else if (v && typeof v === 'object') walk(v) } })(E.RULES);
   // Known figures that are NOT tax rules but happen to equal a RULES value (sample data, market benchmarks).
   const ALLOW = [/spending $/, /average retired worker gets about $/, /often costs \$?[0-9,]* ?(to )?$/, /it is often \$?[0-9,]* ?(to )?$/, /spending $/, /check federal tax on $/, /Each extra $/ /* spending step in the trade-off chart, not a rule */];
-  const hits = []; const re = /\$([0-9]{1,3}(?:,[0-9]{3})+)/g; let m;
-  while ((m = re.exec(ui))) { const n = +m[1].replace(/,/g, ''), before = ui.slice(Math.max(0, m.index - 40), m.index).replace(/\s+/g, ' ');
-    if (vals.has(n) && !ALLOW.some(a => a.test(before))) hits.push('$' + m[1] + ' near "' + before + '"') }
-  hits.forEach(h => console.log('     typed-in figure: ' + h));
-  check('no rule figures typed into the page text (they must come from RULES)', hits.length, 0, 0); }
+  const typed = src => { const hits = []; const re = /\$([0-9]{1,3}(?:,[0-9]{3})+)/g; let m;
+    while ((m = re.exec(src))) { const n = +m[1].replace(/,/g, ''), before = src.slice(Math.max(0, m.index - 40), m.index).replace(/\s+/g, ' ');
+      if (vals.has(n) && !ALLOW.some(a => a.test(before))) hits.push('$' + m[1] + ' near "' + before + '"') }
+    hits.forEach(h => console.log('     typed-in figure: ' + h)); return hits.length };
+  check('no rule figures typed into the page text (they must come from RULES)', typed(ui), 0, 0);
+  // The guide explains how to use the page and leaves the figures to the page itself, so it has nothing to update each year.
+  check('the guide: no rule figures typed in', typed(guide), 0, 0); }
+console.log('--- The guide keeps step with the page ---');
+{ // guide/index.html is a page of lessons about this tool. It must not drift from it. Every name it sets as a label
+  // (class "k") must be on the page, word for word. Every "Show me" link must name a real view, a real calculator and a
+  // real part of the page. Every calculator on the page must be in the guide's list under its own name.
+  const plain = t => t.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
+  const onPage = n => [n, n.replace(/&/g, '&amp;'), n.replace(/'/g, "\\'")].some(v => html.includes(v));
+  const names = []; let m; const reK = /<(b|span|a)\b[^>]*\bclass="k(?: s)?"[^>]*>([\s\S]*?)<\/\1>/g;
+  while ((m = reK.exec(guide))) names.push(plain(m[2]));
+  const missing = [...new Set(names)].filter(n => !onPage(n));
+  missing.forEach(n => console.log('     the guide names "' + n + '", which is not on the page'));
+  check('the guide names buttons and headings (at least 60 of them)', names.length >= 60 ? 1 : 0, 1, 0);
+  check('every name in the guide is on the page, word for word', missing.length, 0, 0);
+  const attr = (re, src) => { const o = []; let x; while ((x = re.exec(src))) o.push(x); return o };
+  const views = attr(/<button type="button" data-l="([a-z]+)"[^>]*>([^<]+)<\/button>/g, html).map(x => [x[1], plain(x[2])]);
+  const calcs = attr(/<button type="button" data-w="([a-z0-9]+)"[^>]*>([^<]+)<\/button>/g, html).map(x => [x[1], plain(x[2])]);
+  check('the page has four views and twelve calculators (update the guide if this changes)', views.length * 100 + calcs.length, 412, 0);
+  const gos = attr(/<a\b[^>]*\bdata-go='([^']+)'[^>]*>([\s\S]*?)<\/a>/g, guide).map(x => [JSON.parse(x[1]), plain(x[2])]);
+  const bad = gos.filter(([g]) => (g.lens && !views.some(v => v[0] === g.lens)) || (g.wi && !calcs.some(c => c[0] === g.wi)) || !g.el || !html.includes('id="' + g.el + '"'));
+  bad.forEach(([g, t]) => console.log('     "' + t + '" points at something the page does not have: ' + JSON.stringify(g)));
+  check('the guide has "Show me" links (at least 25)', gos.length >= 25 ? 1 : 0, 1, 0);
+  check('every "Show me" link names a real view, calculator and part of the page', bad.length, 0, 0);
+  const unlisted = calcs.filter(([k, lab]) => !gos.some(([g, t]) => g.wi === k && t === lab));
+  unlisted.forEach(c => console.log('     calculator "' + c[1] + '" is not in the guide under that name'));
+  check('every calculator is in the guide under its own name', unlisted.length, 0, 0);
+  check('every view is named in the guide', views.filter(v => !names.includes(v[1])).length, 0, 0);
+  // Opening at a place: the page must read the note the guide leaves.
+  check('the page reads the note the guide leaves', /localStorage\.getItem\('ftol-show'\)/.test(html) && /localStorage\.setItem\('ftol-show'/.test(guide) ? 1 : 0, 1, 0); }
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exitCode = fail ? 1 : 0;

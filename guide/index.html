@@ -1,0 +1,492 @@
+<title>Retirement Runway Guide</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a field guide. One narrow reading column: a short list of questions, each opening to a few numbered steps.
+   The names of Runway's buttons and boxes are set as small labels, so the reader can match them on the page. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --sunk:#e9edf1; --line:#d6dde4;
+  --fg:#14202b; --fg2:#4b5966; --fg3:#74828f;
+  --accent:#1f4e79; --accent-soft:#e2ebf4; --on-accent:#ffffff;
+  --warn:#9a5b00; --warn-bg:#fbf0dc;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f151b; --surface:#172029; --sunk:#1e2933; --line:#2c3a47;
+  --fg:#e8eef3; --fg2:#a9b6c2; --fg3:#8996a3;
+  --accent:#8db8e3; --accent-soft:#1d2f42; --on-accent:#0f151b;
+  --warn:#e3a640; --warn-bg:#33270f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#172029; --sunk:#1e2933; --line:#2c3a47;
+  --fg:#e8eef3; --fg2:#a9b6c2; --fg3:#8996a3;
+  --accent:#8db8e3; --accent-soft:#1d2f42; --on-accent:#0f151b;
+  --warn:#e3a640; --warn-bg:#33270f; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+header{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font:500 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg3)}
+h1{font:700 clamp(28px,5vw,38px)/1.08 var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font:600 13px/1.2 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--fg2);margin:0}
+h2 small{font:400 13px/1.2 var(--body);letter-spacing:0;text-transform:none;color:var(--fg3);margin-left:6px}
+p{margin:0}
+.sub{color:var(--fg2);font-size:17px;max-width:62ch}
+.note{font-size:14px;color:var(--fg2);max-width:66ch}
+section{display:flex;flex-direction:column;gap:10px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 15px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:9px 14px;border-radius:8px;cursor:pointer;min-height:44px;text-decoration:none;display:inline-flex;align-items:center}
+.btn:hover{border-color:var(--fg3)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+
+/* the list of lessons */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+details.lesson{border-top:1px solid var(--line);scroll-margin-top:12px}
+details.lesson:first-child{border-top:0}
+details.lesson>summary{list-style:none;cursor:pointer;display:flex;gap:12px;align-items:center;padding:13px 16px;min-height:60px;border-radius:12px}
+details.lesson>summary::-webkit-details-marker{display:none}
+details.lesson>summary::after{content:"+";margin-left:auto;flex:none;font:400 22px/1 var(--body);color:var(--fg3)}
+details.lesson[open]>summary::after{content:"\2013"}
+.num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:600 14px/28px var(--body);text-align:center}
+.t{min-width:0}
+.q{display:block;font:600 18px/1.25 var(--display);text-wrap:balance}
+.where{display:block;font-size:13.5px;line-height:1.35;color:var(--fg3);margin-top:2px}
+.body{padding:2px 16px 18px;display:flex;flex-direction:column;gap:12px}
+.body>p,.body>ol,.body>ul,.body>dl{max-width:66ch}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:9px}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
+ol.steps>li::before{content:counter(s) ".";font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+ul.points{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+ul.points>li{padding-left:14px;border-left:2px solid var(--line)}
+ul.points>li>span{display:block}
+ul.points>li>span+span{margin-top:3px}
+/* a name exactly as it appears in Runway */
+/* A short name (class "k s") never breaks across lines. A long one may, or it would not fit on a phone. */
+.k{font-weight:600;color:var(--fg);background:var(--sunk);border-radius:5px;padding:1px 5px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.k.s{white-space:nowrap}
+a.k{color:var(--accent);text-decoration:none}
+a.k:hover{text-decoration:underline}
+.tip{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:15px;max-width:66ch}
+.tip.warn{background:var(--warn-bg)}
+.tip b:first-child{font-weight:600}
+.go{display:flex;flex-wrap:wrap;gap:8px}
+
+/* the page at a glance: two panes, side by side as in Runway, stacked on a phone as Runway is */
+.map{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.map{grid-template-columns:1fr}}
+.pane{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.pane h3{font:600 15px/1.2 var(--display);margin:0}
+.pane h3 small{display:block;font:400 13px/1.35 var(--body);color:var(--fg3);margin-top:2px}
+.pane ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+
+/* the what-if calculators: name, then the question it answers */
+ul.calc{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:minmax(0,15em) minmax(0,1fr);gap:9px 14px;align-items:baseline}
+ul.calc>li{display:contents}
+ul.calc>li>a{justify-self:start}
+@media (max-width:560px){ul.calc{grid-template-columns:1fr;gap:0}ul.calc>li{display:block;padding:8px 0;border-top:1px solid var(--line)}ul.calc>li:first-child{border-top:0;padding-top:0}ul.calc>li>span{display:block;margin-top:3px}}
+
+dl.words{margin:0;display:flex;flex-direction:column;gap:12px}
+dl.words dt{font-weight:600}
+dl.words dd{margin:2px 0 0;color:var(--fg2)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Financial Tools of Life · Guide</div>
+    <h1>How to use Retirement Runway</h1>
+    <p class="sub">Runway answers three questions. Will the money last? Which account should pay the bills? How much should move into a Roth each year? This guide shows where each answer is on the page, one short lesson at a time.</p>
+    <div class="row"><a class="btn primary run" href="#">Open Retirement Runway</a></div>
+    <p class="note" id="howNote">A <b>Show me in Runway</b> button opens Runway at the right place. <b>←&nbsp;Back to the guide</b> brings you back to the lesson.</p>
+  </header>
+
+  <section aria-labelledby="gStart">
+    <h2 id="gStart">Start here <small>about ten minutes</small></h2>
+    <div class="list">
+
+      <details class="lesson" id="look">
+        <summary><span class="num">1</span><span class="t"><span class="q">Look around with the sample couple</span><span class="where">No typing yet</span></span></summary>
+        <div class="body">
+          <p>Runway opens with two made-up people, Dan and Linda, so you can see a finished plan before you type anything. If you have already typed your own numbers, you will see those, and this lesson works the same way.</p>
+          <ol class="steps">
+            <li><span>Find the two halves of the page. Your numbers are on the left and the answers are on the right. On a phone your numbers come first and the answers are below them. Tap <b class="k s">See results ↓</b> to jump down.</span></li>
+            <li><span>Read the headline. The label above it says how many of 1,000 simulated markets the money survived. For the sample couple it is green and says <b class="k s">On track</b>. The sentence under it says how long the money lasts and how much is left at the end.</span></li>
+            <li><span>Look at the four boxes under the headline: <b class="k s">Saved today</b>, <b class="k s">Safe yearly spending</b>, <b class="k s">Lifetime tax vs. typical</b> and <b class="k">First required withdrawal</b>. Lesson 3 explains them.</span></li>
+            <li><span>Tap any <b class="k s">?</b> on the page. Each one opens a short note: what the number is, what it assumes and what is typical.</span></li>
+          </ol>
+          <p><b>The page at a glance.</b> Runway has more on it than you need on day one. This is the order things come in.</p>
+          <div class="map">
+            <div class="pane">
+              <h3>Your numbers<small>on the left; first on a phone</small></h3>
+              <ul>
+                <li><span class="k s">Household</span></li>
+                <li><span class="k s">Retirement accounts</span></li>
+                <li><span class="k s">State taxes</span></li>
+                <li><span class="k s">Shared accounts</span></li>
+                <li><span class="k s">Retirement spending</span></li>
+                <li><span class="k s">Roth conversion plan</span></li>
+                <li><span class="k">Market &amp; growth assumptions</span></li>
+                <li><span class="k">Save or load a scenario, encrypted and online copies</span></li>
+              </ul>
+            </div>
+            <div class="pane">
+              <h3>The answers<small>on the right; below on a phone</small></h3>
+              <ul>
+                <li><span class="k s">Withdrawal plan to show</span></li>
+                <li><span class="k s">Plan</span> <span class="k s">This year</span> <span class="k s">Health</span> <span class="k s">Legacy</span></li>
+                <li>The headline and the four boxes</li>
+                <li><span class="k s">What if…</span></li>
+                <li><span class="k s">Compare the three plans</span></li>
+                <li><span class="k">When should you claim Social Security?</span></li>
+                <li><span class="k s">Year-by-year details</span></li>
+                <li><span class="k s">How this works</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="go"><a class="btn" data-go='{"lens":"plan","el":"verdict"}' href="#">Show me in Runway →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="numbers">
+        <summary><span class="num">2</span><span class="t"><span class="q">Put in your own numbers</span><span class="where">The few that matter most</span></span></summary>
+        <div class="body">
+          <p>Start with the numbers below and leave everything else as it is. You can refine it later.</p>
+          <ol class="steps">
+            <li><span>Under <b class="k s">Household</b>, choose <b class="k s">Couple</b> or <b class="k s">Single</b>. Type each person's <b class="k s">Name</b> and <b class="k s">Date of birth</b>.</span></li>
+            <li><span>Enter <b class="k s">Annual income</b> before tax (0 if you have stopped working) and <b class="k s">Retire at age</b>. If you are still working, also enter <b class="k s">401(k) contribution %</b> and <b class="k s">Employer match %</b>.</span></li>
+            <li><span>Enter what you have saved, by type of account, because each type is taxed differently. For each person: <b class="k s">401(k) / 403(b)</b>, <b class="k s">Traditional IRA</b> and <b class="k s">Roth (IRA + 401k)</b>. Under <b class="k s">Shared accounts</b>: <b class="k s">Cash &amp; savings</b> and <b class="k s">Brokerage (taxable)</b>.</span></li>
+            <li><span>Enter <b class="k s">Social Security / mo</b>. Use the monthly amount at full retirement age from your statement at ssa.gov. Then set <b class="k">Claim Social Security at age</b>. If you have a pension, enter <b class="k s">Pension per year</b> as well.</span></li>
+            <li><span>Set <b class="k s">Plan to age</b>. Pick an age you are unlikely to outlive, so the plan errs on the safe side.</span></li>
+            <li><span>Under <b class="k s">Retirement spending</b>, enter <b class="k s">Annual spending</b>. This is what you spend in a year after tax, in today's dollars. Runway works out the tax and adds it.</span></li>
+            <li><span>Under <b class="k s">State taxes</b>, choose <b class="k s">State you live in now</b>.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> The sample banner disappears as soon as you change a number. Runway saves your plan in this browser as you type. Nothing is sent anywhere.</p>
+          <p class="tip"><b>Don't know a number?</b> Tap its <b class="k s">?</b> for a typical value, use that, and come back to it later.</p>
+          <div class="go"><a class="btn" data-go='{"el":"people"}' href="#">Show me in Runway →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="answer">
+        <summary><span class="num">3</span><span class="t"><span class="q">Read your answer</span><span class="where">The headline and the four boxes</span></span></summary>
+        <div class="body">
+          <p>The top of the answers tells you where you stand. Everything there is in today's dollars: an amount thirty years away is shown as what it would buy now.</p>
+          <ul class="points">
+            <li><span><b class="k s">On track</b>, <b class="k s">Borderline</b> or <b class="k s">At risk</b></span><span>Runway replays your plan through 1,000 made-up market histories, some kind and some rough. On track means the money lasted in at least 85 of every 100. Borderline means 70 to 85. At risk means fewer than 70.</span></li>
+            <li><span><b class="k s">Safe yearly spending</b></span><span>The most you could spend each year and still have the money last in 85 of every 100 of those markets. If it is above the spending you entered, you have room. If it is below, the plan is tight.</span></li>
+            <li><span><b class="k s">Lifetime tax vs. typical</b></span><span>The tax this plan saves over your lifetime, compared with the common habit of spending from the IRA first. A minus sign means you pay less. With <b class="k s">Typical</b> selected, the box shows that plan's total tax instead.</span></li>
+            <li><span><b class="k">First required withdrawal</b></span><span>In your seventies the tax rules start forcing money out of pre-tax accounts every year. This is a required minimum distribution, or RMD. The box shows the first one and its year. A smaller one leaves you more control over your tax later.</span></li>
+          </ul>
+          <p class="tip"><b>If the headline says the money runs short,</b> try a lower <b class="k s">Annual spending</b> or a later <b class="k s">Retire at age</b>. Under <b class="k s">What if…</b>, <b class="k s">We spend it all</b> shows a spending level that works.</p>
+          <div class="go"><a class="btn" data-go='{"lens":"plan","el":"verdict"}' href="#">Show me in Runway →</a></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="gAsk">
+    <h2 id="gAsk">Then, the question you have</h2>
+    <div class="list">
+
+      <details class="lesson" id="order">
+        <summary><span class="t"><span class="q">Which account should pay the bills?</span><span class="where">Withdrawal plan to show · Compare the three plans</span></span></summary>
+        <div class="body">
+          <p>The order in which you draw on your accounts changes your lifetime tax, even with the same savings and the same spending. Runway works out three ways of doing it.</p>
+          <ol class="steps">
+            <li><span>Find <b class="k s">Withdrawal plan to show</b> at the top of the answers.</span></li>
+            <li><span>Tap each choice in turn. <b class="k s">Typical</b> pays the bills from the IRA first. <b class="k s">Brokerage first</b> spends cash and the brokerage account before the IRA. <b class="k">Brokerage first + conversions</b> does the same and also moves some IRA money into a Roth each year.</span></li>
+            <li><span>Watch the headline and the boxes change. Every panel below follows the plan you pick.</span></li>
+            <li><span>Scroll down to <b class="k s">Compare the three plans</b> to see all three side by side.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> Judge the plans mainly on two rows: <b class="k s">Lifetime taxes</b> and <b class="k s">After-tax value to heirs</b>. The IRA rows always look best under Typical, only because that plan empties the IRA fastest.</p>
+          <div class="go"><a class="btn" data-go='{"lens":"plan","el":"stratToggle"}' href="#">Show me the three plans →</a><a class="btn" data-go='{"lens":"plan","el":"compare"}' href="#">Show me the comparison →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="roth">
+        <summary><span class="t"><span class="q">How much should we move into a Roth?</span><span class="where">Roth conversion plan · Find the best plan</span></span></summary>
+        <div class="body">
+          <p>A Roth conversion moves money from a pre-tax IRA or 401(k) into a Roth account. You pay income tax on it that year. After that it grows and comes out tax-free, for you and for your heirs. The skill is to convert in the years when your tax rate is low.</p>
+          <ol class="steps">
+            <li><span>Choose <b class="k">Brokerage first + conversions</b> under <b class="k s">Withdrawal plan to show</b>. Conversions are part of that plan only.</span></li>
+            <li><span>In your numbers, under <b class="k s">Roth conversion plan</b>, find <b class="k">Once either of you retires, convert each year up to</b>. It starts at <b class="k">The 0% capital-gains line</b>, the gentlest choice. The other choices fill a tax bracket and convert more.</span></li>
+            <li><span>Not sure which to pick? Press <b class="k">Find the best conversion and Social Security settings →</b>. Runway tries hundreds of combinations and looks for the one that leaves the most at the end of the plan, after all taxes. If it finds a better plan, <b class="k s">Apply</b> puts it in.</span></li>
+            <li><span>For the whole schedule, scroll to the Roth conversion plan table among the yearly details. The highlighted first row is the amount for this year.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> Large conversions from age 63 can raise your Medicare premiums two years later. <b class="k">From age 63, convert up to</b> and <b class="k">Keep income under the Medicare surcharge</b> deal with that. The <b class="k s">Health</b> view shows the cost.</p>
+          <div class="go"><a class="btn" data-go='{"el":"workConvTarget"}' href="#">Show me the conversion settings →</a><a class="btn" data-go='{"lens":"plan","wi":"best","el":"whatif"}' href="#">Show me the search for the best plan →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="year">
+        <summary><span class="t"><span class="q">What do we do this year?</span><span class="where">This year view</span></span></summary>
+        <div class="body">
+          <p>The plan covers decades. This view turns it into this year's jobs.</p>
+          <ol class="steps">
+            <li><span>Tap <b class="k s">This year</b> in the bar above the headline.</span></li>
+            <li><span>Read the boxes: what you will spend, what comes in, what comes out of savings, how much to convert and the tax.</span></li>
+            <li><span>Look at the Roth conversion table. It sets your plan's amount beside other amounts, with the tax each one costs now and what it does to your lifetime tax. Type a figure in the box above the table to test your own. The button under the table puts that amount into your plan.</span></li>
+            <li><span><b class="k s">Monthly paycheck</b> shows where each month's money comes from and what is left after tax.</span></li>
+            <li><span><b class="k s">To do this year</b> lists the jobs and their dates, such as the conversion by December 31 and your tax payments.</span></li>
+            <li><span>Use the <b class="k s">Year</b> menu to look ahead.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> Amounts in this view are in that year's dollars, so they match your statements.</p>
+          <div class="go"><a class="btn" data-go='{"lens":"year","el":"lens-year"}' href="#">Show me in Runway →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="social">
+        <summary><span class="t"><span class="q">When should we claim Social Security?</span><span class="where">The claiming grid · Best Social Security ages</span></span></summary>
+        <div class="body">
+          <p>Claiming early gives a smaller check for more years. Waiting gives a larger check for life, and after a death the survivor keeps the larger of the two checks.</p>
+          <ol class="steps">
+            <li><span>In the <b class="k s">Plan</b> view, scroll to <b class="k">When should you claim Social Security?</b> The grid shows what would be left to your heirs for a few claiming ages. Higher is better.</span></li>
+            <li><span>For every age from 62 to 70, go to <b class="k s">What if…</b> and choose <b class="k">Best Social Security ages</b>. Green marks the best choice. A blue outline marks yours.</span></li>
+            <li><span>To change your plan, set <b class="k">Claim Social Security at age</b> for each person.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> The grid measures money left at the end. It can't know your health. If either of you expects a shorter life, claiming earlier gains ground.</p>
+          <p class="tip"><b>Worried that benefits will be cut?</b> <b class="k s">Social Security cut</b>, also under What if…, tests it.</p>
+          <div class="go"><a class="btn" data-go='{"lens":"plan","el":"ssgrid"}' href="#">Show me the grid →</a><a class="btn" data-go='{"lens":"plan","wi":"ss","el":"whatif"}' href="#">Show me every age →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="health">
+        <summary><span class="t"><span class="q">What will health cover cost?</span><span class="where">Health view</span></span></summary>
+        <div class="body">
+          <p>Two health costs depend on your income, so your withdrawals and conversions change them. Runway counts both.</p>
+          <ol class="steps">
+            <li><span>Tap <b class="k s">Health</b>.</span></li>
+            <li><span><b>Before 65.</b> If you will retire before Medicare starts, tell Runway how you will be covered. Under <b class="k s">Retirement spending</b>, set <b class="k">Health insurance before 65</b> to <b class="k s">A fixed yearly cost</b> or <b class="k s">Marketplace (ACA) plan</b>. With a marketplace plan, Runway works out your subsidy, which shrinks as your income rises.</span></li>
+            <li><span><b>From 65.</b> Medicare charges a higher premium when your income two years earlier was above set limits. The extra is called IRMAA. The table shows each year's income, tier and cost.</span></li>
+            <li><span>If conversions are costing you a subsidy or causing a surcharge, the view offers an <b class="k s">Apply</b> button that keeps them under the limit.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> Runway counts only the surcharge. Medicare's ordinary premiums and your other health costs after 65 belong in <b class="k s">Annual spending</b>.</p>
+          <div class="go"><a class="btn" data-go='{"lens":"health","el":"lens-health"}' href="#">Show me in Runway →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="legacy">
+        <summary><span class="t"><span class="q">What will the family receive?</span><span class="where">Legacy view</span></span></summary>
+        <div class="body">
+          <p>A dollar left in a Roth is worth more to your heirs than a dollar left in an IRA, because they pay income tax on IRA money. This view shows what they would keep.</p>
+          <ol class="steps">
+            <li><span>Tap <b class="k s">Legacy</b>.</span></li>
+            <li><span><b class="k s">After-tax value to heirs</b> is the main figure: everything left at the end of the plan, less the tax your heirs would pay on the IRA.</span></li>
+            <li><span>The table lists each kind of account and how heirs are taxed on it.</span></li>
+            <li><span><b class="k">If your heirs' tax rate is different</b> shows how the answer moves. Set your own under <b class="k s">Heirs' tax rate %</b> in your numbers.</span></li>
+            <li><span>The <b class="k s">Checklist</b> covers the paperwork, starting with naming beneficiaries on every account.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> For the handoff itself (who to call, where things are), use Open This First, the second tool in this collection.</p>
+          <div class="go"><a class="btn" data-go='{"lens":"legacy","el":"lens-legacy"}' href="#">Show me in Runway →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="whatif">
+        <summary><span class="t"><span class="q">What if things change?</span><span class="where">The calculators under What if…</span></span></summary>
+        <div class="body">
+          <p>In the <b class="k s">Plan</b> view, <b class="k s">What if…</b> sits under the headline and its four boxes. Each calculator tests one change on a copy of your plan. Your plan stays as it is unless you press <b class="k s">Apply</b>.</p>
+          <ul class="calc" id="calcList">
+            <li><a class="k s" data-go='{"lens":"plan","wi":"spend","el":"whatif"}' href="#">We spend it all</a><span>The most you could spend each year, at different levels of caution.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"best","el":"whatif"}' href="#">Find the best plan</a><span>The Roth and Social Security settings that leave the most after tax.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"trade","el":"whatif"}' href="#">Spending vs heirs</a><span>What each extra dollar of spending costs the family.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"early","el":"whatif"}' href="#">Retire earlier?</a><span>How early you could stop working.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"shock","el":"whatif"}' href="#">Bad market timing</a><span>A market drop early in your retirement.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"ltc","el":"whatif"}' href="#">Long-term care</a><span>Some years of nursing or in-home care.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"curve","el":"whatif"}' href="#">Spend more early</a><span>More in the active early years, less later.</span></li>
+            <li><a class="k" data-go='{"lens":"plan","wi":"ss","el":"whatif"}' href="#">Best Social Security ages</a><span>Every claiming age from 62 to 70.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"lump","el":"whatif"}' href="#">Windfall or big expense</a><span>An inheritance, a home sale, a wedding.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"sscut","el":"whatif"}' href="#">Social Security cut</a><span>Benefits reduced from a year you choose.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"k401","el":"whatif"}' href="#">401(k): pre-tax or Roth</a><span>Which way to save while you still work.</span></li>
+            <li><a class="k s" data-go='{"lens":"plan","wi":"after63","el":"whatif"}' href="#">Roth conversions from 63</a><span>Whether to ease off conversions so Medicare costs stay down.</span></li>
+          </ul>
+          <p class="note" id="calcNote">Tap a name to open that calculator in Runway. A few take ten to twenty seconds, because they rerun hundreds of plans.</p>
+        </div>
+      </details>
+
+      <details class="lesson" id="details">
+        <summary><span class="t"><span class="q">Where do the numbers come from?</span><span class="where">Year-by-year details · How this works</span></span></summary>
+        <div class="body">
+          <p>Everything under <b class="k s">Year-by-year details</b> shows the working, one year at a time.</p>
+          <ul class="points">
+            <li><span><b class="k s">Today's $</b> or <b class="k s">Future $</b></span><span>Today's dollars take inflation out, so every amount means what it would buy now. Future dollars are the amounts your statements and tax returns will show.</span></li>
+            <li><b class="k s">Your tax building</b> draws one year's tax return as a building. Deductions are the tax-free ground floor, and income fills the floors above it, each taxed at a higher rate. Slide <b class="k s">Year</b> to move through the plan.</li>
+            <li><b class="k">Account balances over time</b> shows each account in average markets. The grey band shows where 8 in 10 of the simulated markets land.</li>
+            <li><b class="k s">Taxes paid each year</b> compares the three plans.</li>
+            <li><b class="k s">Year by year</b> has every year of the plan in one table. <b class="k s">Download CSV</b> saves it for a spreadsheet.</li>
+            <li><b class="k">Market &amp; growth assumptions</b>, at the bottom of your numbers, holds the returns and inflation the plan uses. Each has a <b class="k s">?</b> with typical values.</li>
+            <li><b class="k s">How this works</b> says what the model assumes and what it leaves out. Read it once.</li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> The line under the title at the top of Runway says which year's tax figures are in use. They are updated each November.</p>
+          <div class="go"><a class="btn" data-go='{"lens":"plan","el":"realBtn"}' href="#">Show me in Runway →</a></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="gKeep">
+    <h2 id="gKeep">Keeping it</h2>
+    <div class="list">
+
+      <details class="lesson" id="save">
+        <summary><span class="t"><span class="q">Save it, print it, move it</span><span class="where">Downloads · encrypted copies</span></span></summary>
+        <div class="body">
+          <p>Your plan stays in this browser on this device. To keep a copy, print it or move it to another device, save a file.</p>
+          <ul class="points">
+            <li><b class="k s">Download PDF</b> makes a report you can print or give to your tax preparer.</li>
+            <li><b class="k s">Download report</b> saves the report as a text file. <b class="k s">Download CSV</b> saves the year-by-year table.</li>
+            <li><b class="k s">Open saved file</b> reopens any of those files, on any device, and picks up where you left off.</li>
+            <li>For a private copy, open <b class="k">Save or load a scenario, encrypted and online copies</b> at the bottom of your numbers. Choose a passphrase, then <b class="k">Download an encrypted file</b>. On the private claude.ai link you can also <b class="k s">Save a version online</b>.</li>
+          </ul>
+          <p class="tip warn"><b>A forgotten passphrase cannot be recovered.</b> Nobody can open an encrypted copy without it. Keep an ordinary copy as well.</p>
+          <p class="tip"><b>Take care.</b> <b class="k s">Reset to example</b> brings back Dan and Linda and erases your numbers. Save a copy first.</p>
+          <div class="go"><a class="btn" data-go='{"el":"exportRow"}' href="#">Show me the downloads →</a><a class="btn" data-go='{"el":"vault"}' href="#">Show me the encrypted copies →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="yearly">
+        <summary><span class="t"><span class="q">Once a year</span><span class="where">A November check-up</span></span></summary>
+        <div class="body">
+          <p>A plan is a snapshot. Go through it again each November, when most of the year's income is known and the new tax figures are in.</p>
+          <ol class="steps">
+            <li><span>Update your balances, your pay and your spending.</span></li>
+            <li><span>Open <b class="k s">This year</b> and read the to-do list.</span></li>
+            <li><span>Give this year's Roth conversion amount to your tax preparer, or check it in your tax software, before December 31.</span></li>
+            <li><span>Download the PDF for your records and save a fresh encrypted copy.</span></li>
+          </ol>
+          <p class="tip"><b>Good to know.</b> Run the plan again after any big change: a move, a new retirement date, an inheritance, a death in the family.</p>
+          <div class="go"><a class="btn" data-go='{"lens":"year","el":"lens-year"}' href="#">Show me in Runway →</a></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="gWords">
+    <h2 id="gWords">Words explained</h2>
+    <div class="list">
+      <details class="lesson" id="words">
+        <summary><span class="t"><span class="q">The terms Runway uses</span><span class="where">Roth conversion, RMD, IRMAA and the rest</span></span></summary>
+        <div class="body">
+          <dl class="words">
+            <div><dt>Roth conversion</dt><dd>Moving money from a pre-tax IRA or 401(k) into a Roth. You pay income tax on it that year. Afterwards it grows and comes out tax-free.</dd></div>
+            <div><dt>Required withdrawal (RMD)</dt><dd>In your seventies the tax rules start making you take a minimum amount out of pre-tax accounts every year, and pay tax on it. RMD stands for required minimum distribution.</dd></div>
+            <div><dt>Tax bracket</dt><dd>Income is taxed in layers. Each layer has its own rate, and only the dollars inside a layer pay that rate. Filling a bracket means converting until the next dollar would be taxed at a higher rate.</dd></div>
+            <div><dt>The 0% capital-gains line</dt><dd>While your taxable income stays under this line, long-term gains and qualified dividends are taxed at 0%. Converting only up to it keeps the gains in your brokerage account tax-free.</dd></div>
+            <div><dt>Brokerage account</dt><dd>An ordinary investment account with no special tax treatment. When you sell, only the gain is taxed. The gain share is the part of the account that is growth above what you paid.</dd></div>
+            <div><dt>Medicare surcharge (IRMAA)</dt><dd>An extra Medicare premium for people whose income two years earlier was above set limits. IRMAA stands for income-related monthly adjustment amount.</dd></div>
+            <div><dt>Marketplace subsidy</dt><dd>Help with the premium of a health plan bought on healthcare.gov or a state marketplace before 65. It shrinks as income rises.</dd></div>
+            <div><dt>Qualified charitable distribution (QCD)</dt><dd>A gift made straight from an IRA to a charity, allowed once you reach the qualifying age. It is not taxed and it counts toward your required withdrawal. Runway does this for you when you enter <b class="k s">Yearly giving to charity</b>.</dd></div>
+            <div><dt>Full retirement age</dt><dd>The age at which Social Security pays your full benefit. Claim earlier and the check is smaller for life. Wait, up to 70, and it is larger.</dd></div>
+            <div><dt>Today's dollars</dt><dd>Amounts with inflation taken out, so a figure for a year far ahead means what it would buy now.</dd></div>
+            <div><dt>Simulated markets</dt><dd>Runway replays your plan through 1,000 made-up market histories with random good and bad years. The share in which the money lasts is its measure of safety.</dd></div>
+          </dl>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <p class="note">This guide explains how to use the tool. Runway helps you plan and prepares you for a conversation with your tax preparer. It is not tax, legal or investment advice.</p>
+</div>
+
+<script>
+'use strict';
+/* The build tells this page where Runway is (window.FTOL_RUNWAY). A "Show me" link leaves Runway a short-lived note saying
+   which view, which calculator and which part of the page to open at; Runway reads it once and clears it. The note is in
+   localStorage, which the pages of the collection share, so nothing depends on the address. */
+(function(){
+  const RUN=window.FTOL_RUNWAY,KEY='ftol-guide-runway';
+  const links=document.querySelectorAll('a[data-go],a.run');
+  if(RUN)links.forEach(a=>{a.href=RUN});
+  else{links.forEach(a=>{if(a.classList.contains('k')){const s=document.createElement('span');s.className=a.className;s.textContent=a.textContent;a.replaceWith(s)}else a.hidden=true});
+    ['howNote','calcNote'].forEach(id=>{document.getElementById(id).hidden=true})}
+  const put=id=>{try{localStorage.setItem(KEY,JSON.stringify({at:id,t:Date.now()}))}catch(e){}};
+  document.addEventListener('click',ev=>{const a=ev.target.closest('a[data-go]');if(!a||!RUN)return;
+    try{const go=JSON.parse(a.dataset.go);go.p='runway';go.from='guide';go.t=Date.now();localStorage.setItem('ftol-show',JSON.stringify(go))}catch(e){}
+    const les=a.closest('details.lesson');if(les)put(les.id)});
+  /* Remember the lesson that was opened last, and reopen it for a reader who comes back within half an hour. */
+  document.querySelectorAll('details.lesson').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)put(d.id)}));
+  let was=null;try{was=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+  if(was&&Date.now()-was.t<18e5){const d=document.getElementById(String(was.at));
+    if(d&&d.matches('details.lesson')){d.open=true;requestAnimationFrame(()=>d.scrollIntoView({block:'start'}))}}
+})();
+/* VAULT:START (shared by every tool; edit tools/vault-snippet.js, then run node tools/sync-vault.js) */
+/* Encrypted copies. The plan is encrypted in the browser with a passphrase (PBKDF2-SHA256, 310,000 rounds, then
+   AES-GCM 256) before it is stored or downloaded. The passphrase is kept in memory only and is never stored or sent.
+   Online copies use the claude.ai `db` capability under data/users/<viewer id>/, which is private to each signed-in
+   person. On a standalone website there is no online store, so only encrypted files are offered. */
+function makeVault(o){
+  const el=o.mount,enc=new TextEncoder(),dec=new TextDecoder(),ITER=310000;
+  let pass=null,db=null,uid=null,items=[],note='',ready=false,armedDel=null;
+  const b64=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+  const unb=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const keyFor=async(p,salt)=>crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},await crypto.subtle.importKey('raw',enc.encode(p),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  async function seal(obj,p){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},await keyFor(p,salt),enc.encode(JSON.stringify(obj)));
+    return {enc:1,kdf:'PBKDF2-SHA256-'+ITER,salt:b64(salt),iv:b64(iv),ct:b64(new Uint8Array(ct))}}
+  async function unseal(rec,p){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb(rec.iv)},await keyFor(p,unb(rec.salt)),unb(rec.ct));return JSON.parse(dec.decode(pt))}
+  const col=()=>db.collection('data/users/'+uid);
+  const online=()=>!!(db&&uid);
+  const when=t=>{try{return new Date(t).toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch(e){return t}};
+  async function refresh(){if(!online())return;try{const q=await col().get();items=q.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>d&&d.app===o.app&&d.ct).sort((a,b)=>String(b.at).localeCompare(String(a.at)))}catch(e){note='Could not read your online copies just now.'}}
+  function draw(){
+    const can=!!(window.crypto&&crypto.subtle);
+    let h='<h3 style="margin:0">Encrypted copies</h3>';
+    if(!can){el.innerHTML=h+'<p class="note" style="margin:0">This browser can\'t encrypt here. Use the ordinary save options.</p>';return}
+    h+='<p class="note" style="margin:0">Protect a copy of '+esc(o.what)+' with a passphrase. It is encrypted in your browser first, so nobody can read it without the passphrase: not us, and not whoever stores the file. <b>If you forget the passphrase, those copies cannot be recovered.</b> Keep your printed or ordinary copy as well.</p>';
+    if(!pass){const first=online()&&ready&&!items.length;
+      h+='<div class="row" style="align-items:flex-end"><label class="f" for="'+o.app+'VPass" style="flex:1 1 220px">Passphrase<span class="h">four or more words is best; at least 10 characters</span><input type="password" id="'+o.app+'VPass" autocomplete="off" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label>'+
+        (first?'<label class="f" for="'+o.app+'VPass2" style="flex:1 1 220px">Type it again<input type="password" id="'+o.app+'VPass2" autocomplete="off" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label>':'')+
+        '<button type="button" class="btn" data-v="unlock">Unlock</button></div>'+
+        (online()?'<p class="note" style="margin:0">'+(ready?(items.length?items.length+' online '+(items.length>1?'copies':'copy')+' saved. Unlock to see or load them.':'No online copies yet. Choose a passphrase to start.'):'Checking for online copies…')+'</p>':'<p class="note" style="margin:0">Online copies are available on the private claude.ai link, when you are signed in. Here you can save and open encrypted files.</p>');
+    }else{
+      h+='<div class="row"><span class="note">Unlocked for this visit.</span><button type="button" class="btn sm" data-v="lock">Lock</button></div>';
+      if(online()){
+        h+='<div class="row" style="align-items:flex-end"><label class="f" for="'+o.app+'VName" style="flex:1 1 220px">Name for this version<span class="h">the name and date are stored unencrypted, so keep it plain</span><input type="text" id="'+o.app+'VName" maxlength="60" placeholder="e.g. November baseline" style="font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--sunk);color:var(--fg);min-height:40px;width:100%"></label><button type="button" class="btn" data-v="save">Save a version online</button></div>';
+        h+=items.length?'<div>'+items.map(d=>'<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding:8px 0"><span><b>'+esc(d.name||'Untitled')+'</b> <span class="note">· '+esc(when(d.at))+'</span></span><span class="row"><button type="button" class="btn sm" data-v="load" data-id="'+esc(d.id)+'">Load</button><button type="button" class="btn sm" data-v="del" data-id="'+esc(d.id)+'">'+(armedDel===d.id?'Click again to delete':'Delete')+'</button></span></div>').join('')+'</div>':'<p class="note" style="margin:0">No online copies yet.</p>';
+      }
+      h+='<div class="row"><button type="button" class="btn" data-v="file">Download an encrypted file</button><label class="btn" for="'+o.app+'VFile" style="display:inline-flex;align-items:center">Open an encrypted file</label><input type="file" id="'+o.app+'VFile" accept=".json,application/json" hidden></div>';
+    }
+    h+='<p class="note" role="status" style="margin:0"'+(note?'':' hidden')+'>'+esc(note)+'</p>';
+    el.innerHTML=h;
+    const f=document.getElementById(o.app+'VFile');if(f)f.onchange=ev=>{const file=ev.target.files[0];if(!file)return;const r=new FileReader();
+      r.onload=async()=>{try{const rec=JSON.parse(r.result);if(!rec||rec.app!==o.app||!rec.ct)throw 0;let st;try{st=await unseal(rec,pass)}catch(e){note='The passphrase doesn\'t open that file.';return draw()}o.setState(st);note='Opened the encrypted file.'}catch(e){note='That isn\'t an encrypted file from this tool.'}draw()};r.readAsText(file)};
+    const p1=document.getElementById(o.app+'VPass');if(p1)p1.onkeydown=ev=>{if(ev.key==='Enter')act('unlock')};
+  }
+  async function act(a,id){
+    try{
+      if(a==='unlock'){const p=document.getElementById(o.app+'VPass').value,p2=document.getElementById(o.app+'VPass2');
+        if(p.length<10){note='Use at least 10 characters. Four unrelated words work well.';return draw()}
+        if(p2&&p2.value!==p){note='The two passphrases don\'t match.';return draw()}
+        if(items.length){try{await unseal(items[0],p)}catch(e){note='That passphrase doesn\'t open your saved copies.';return draw()}}
+        pass=p;note='';return draw()}
+      if(a==='lock'){pass=null;note='';return draw()}
+      if(a==='save'){const nm=(document.getElementById(o.app+'VName').value||'').trim()||'Untitled';note='Saving…';draw();
+        const rec=Object.assign(await seal(o.getState(),pass),{app:o.app,name:nm,at:new Date().toISOString()});
+        await col().doc('v'+Date.now()).set(rec);await refresh();note='Saved "'+nm+'" online, encrypted.';return draw()}
+      if(a==='load'){const d=items.find(x=>x.id===id);if(!d)return;let st;try{st=await unseal(d,pass)}catch(e){note='The passphrase doesn\'t open "'+(d.name||'Untitled')+'". It may have been saved with a different one.';return draw()}
+        o.setState(st);note='Loaded "'+(d.name||'Untitled')+'".';return draw()}
+      if(a==='del'){if(armedDel!==id){armedDel=id;return draw()}armedDel=null;await col().doc(id).delete();await refresh();note='Deleted that online copy.';return draw()}
+      if(a==='file'){const rec=Object.assign(await seal(o.getState(),pass),{app:o.app,at:new Date().toISOString()});
+        await o.download(o.app+'-encrypted-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(rec));note='';return draw()}
+    }catch(e){const c=e&&e.code;note=c==='not_granted'||c==='permission_denied'?'Online copies aren\'t allowed for this view.':'That didn\'t work. Please try again.';draw()}
+  }
+  el.addEventListener('click',ev=>{const b=ev.target.closest('button[data-v]');if(b)act(b.dataset.v,b.dataset.id)});
+  draw();
+  (async()=>{try{if(window.claude&&window.claude.use){const u=await window.claude.use('user'),d=await window.claude.use('db');uid=u?await u.id():null;db=d||null;if(online()){await refresh()}}}catch(e){db=null}ready=true;draw()})();
+}
+/* Inside the Financial Tools of Life collection, each tool shows a link back to the home page. The build sets
+   window.FTOL_HOME on the collection's copies; a tool opened on its own has no such link. */
+(function(){try{if(!window.FTOL_HOME)return;const w=document.querySelector('.wrap');if(!w)return;const a=document.createElement('a');
+  a.href=window.FTOL_HOME;a.textContent='\u2190 Financial Tools of Life';a.className='noprint';a.style.cssText='font:500 14px var(--body);color:var(--accent);text-decoration:none;align-self:flex-start';w.prepend(a);
+  /* Inside the claude.ai collection the address belongs to the collection, not to this tool, so refreshing the browser
+     reloads the home page. This tool therefore leaves a note that it is the page on show and keeps the note fresh while it
+     is open; the home page reads it and comes straight back. Going home on purpose, by the link above, clears the note. */
+  if(window.FTOL_SELF){let leaving=false;const mark=()=>{if(leaving)return;try{localStorage.setItem('ftol-at',JSON.stringify({p:window.FTOL_SELF,t:Date.now()}))}catch(e){}};
+    mark();setInterval(mark,20000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)mark()});window.addEventListener('pagehide',mark);
+    a.addEventListener('click',()=>{leaving=true;try{localStorage.removeItem('ftol-at')}catch(e){}})}
+  }catch(e){}})();
+/* VAULT:END */
+</script>

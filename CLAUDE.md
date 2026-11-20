@@ -10,7 +10,8 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `index.html` | The whole app, written in the **claude.ai page format**: no `<!doctype>`, `<html>`, `<head>` or `<body>` tags (claude.ai adds them). Do not add them here. |
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
-| `tests/check-rules.js` | Checks against hand-worked answers (107 so far), plus a scan for typed-in rule figures. Run `node tests/check-rules.js` after any engine or rules change. |
+| `guide/index.html` | Runway's companion guide: a page of short lessons on how to use the tool (see "The guide to Runway" below). No engine and no data of its own. |
+| `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
 | `tests/check-prism.js` | Prism's engine checks (220 so far) on invented companies. Run `node tests/check-prism.js` after any change to Prism's engine. |
 
 Inside `index.html`:
@@ -19,7 +20,8 @@ Inside `index.html`:
   `mcJob`), and the what-if calculators (`WI.*`). The engine's text is also loaded into Web Workers,
   so it must stay self-contained, ES5-style plain functions, with no references to the page.
 - The second `<script>` is the UI: inputs, rendering, charts (hand-drawn SVG), exports (report .md,
-  CSV, PDF via jsPDF from cdnjs, pinned versions), file import, help popovers, maintainer checklist.
+  CSV, PDF via jsPDF from cdnjs, pinned versions), file import, help popovers, maintainer checklist, and the
+  small part that opens the page where the guide asks (`showSpot`, see "The guide to Runway").
 
 ## Where it's published
 
@@ -96,6 +98,41 @@ panels), **This year** (`drawYear`: paycheck, estimated tax, to-do list), **Heal
 marketplace subsidy and Medicare IRMAA from `RULES.aca` / `RULES.irmaa`), **Legacy** (`drawLegacy`).
 Anything that changes the plan's numbers goes in the engine (health costs, QCDs); views only read rows.
 New inputs should default to off and sit in collapsed or optional sections, to keep the page simple.
+
+## The guide to Runway (`guide/index.html`)
+
+The owner asked for it on 2026-11-20: Runway "has become quite sophisticated", so could it have a companion
+tutorial. It is a separate page, so that Runway itself gains nothing new to look at.
+
+- **What it is.** A list of lessons, each closed until tapped. "Start here" has three numbered lessons (look around
+  with the sample couple, put in your own numbers, read your answer). Then one lesson per question the tool answers
+  (which account pays the bills, Roth conversions, this year, Social Security, health, legacy, the what-if
+  calculators, where the numbers come from), then saving and the yearly check-up, then the terms explained. The
+  first screen is the list and nothing else. Keep it that way.
+- **It shows where things are and leaves the figures to the page.** No tax or benefit figure goes in the guide
+  (the rules check scans it), so nothing in it needs the yearly update. For a figure, it sends the reader to the
+  page's own "?" notes.
+- **Names must match the page word for word.** Every button, heading, box or field the guide names is set as
+  `<b class="k">` (`class="k s"` for a short name, which then never breaks across lines; long ones wrap). The rules
+  check reads those names and fails if one is not in `index.html`. It also fails if a view or a what-if calculator
+  is added, removed or renamed without the guide's list following. So **when you rename, add or remove a button,
+  heading, view or calculator in Runway, change the guide in the same commit.**
+- **"Show me in Runway" links.** Each carries `data-go='{"lens":…,"wi":…,"el":…}'`: a view, a what-if calculator
+  and the id of a part of the page (any may be left out). On a tap the guide writes that as a note in `localStorage`
+  key `ftol-show`, and Runway reads it once as it loads (under a minute old, then deleted): it switches view and
+  calculator, opens any closed section around the part, scrolls it into view, keeps it there while results are
+  still arriving (until the reader touches the page), and outlines it for a few seconds (`showSpot`, `.spot`).
+  For that visit Runway shows "← Back to the guide" (`#guideBack`). The note is used instead of the address
+  because on claude.ai the address belongs to the collection and only a plain `#name` passes through it.
+- **Coming back.** The guide remembers the lesson opened last (`ftol-guide-runway`, `{at, t}`) and reopens it for
+  a reader who returns within half an hour.
+- **Links.** The build sets `window.FTOL_GUIDE` on Runway (a "Guide" link beside the link home, and a sentence in
+  the sample banner) and `window.FTOL_RUNWAY` on the guide. A page opened on its own has neither: Runway then shows
+  no guide link, so the single-tool Runway link has no guide, and the guide hides its "Show me" links.
+- It carries the shared snippet (`VAULT` markers) only for its last part: the link back to the home page and the
+  note that lets a refresh return to the page that was open. It has nothing to save.
+- Write it the way the rest is written: as you would say it to a friend, one step per line, naming exactly what
+  to tap. Not built, and offered to the owner: a copy of the guide to print.
 
 ## Tool 2: Open This First (`open-this-first/index.html`)
 
@@ -258,23 +295,25 @@ The tools are published together behind a home page (`home/index.html`): tool ca
 next steps, and one "Your data" panel that saves every tool's state as a single encrypted copy.
 
 - **One link, linked pages.** On claude.ai the collection is one artifact: the home page plus `runway.html`,
-  `open-this-first.html` and `prism.html` beside it. Pages of one artifact share browser storage and the `db` store, and each keeps
+  `runway-guide.html`, `open-this-first.html` and `prism.html` beside it. Pages of one artifact share browser storage and the `db` store, and each keeps
   its capabilities. Collection link (owner's private link): https://claude.ai/artifact/MjYUrdnkLTLMZDNKJbgThE
 - **To publish the collection:** `node tools/build-pages.js`, then publish `home/index.html` to that `url` with
-  `files: {"runway.html": "_artifact/runway.html", "open-this-first.html": "_artifact/open-this-first.html",
-  "prism.html": "_artifact/prism.html"}` and
+  `files: {"runway.html": "_artifact/runway.html", "runway-guide.html": "_artifact/runway-guide.html",
+  "open-this-first.html": "_artifact/open-this-first.html", "prism.html": "_artifact/prism.html"}` and
   `capabilities: {downloads: true, db: {}, user: {}}`. The two single-tool links above are the earlier homes;
   keep them working until the owner says the collection link has replaced them.
-- **Standalone site:** the home page is at the top, tools at `/retirement-runway/`, `/open-this-first/` and `/prism/`.
-- The build tells each page where the others are: `window.FTOL_LINKS` (home) and `window.FTOL_HOME` (tools, which
-  then show a link back). A tool opened on its own has neither and works unchanged.
+- **Standalone site:** the home page is at the top, tools at `/retirement-runway/`, `/open-this-first/` and `/prism/`,
+  and Runway's guide at `/retirement-runway/guide/`.
+- The build tells each page where the others are: `window.FTOL_LINKS` (home), `window.FTOL_HOME` (tools and the
+  guide, which then show a link back), `window.FTOL_GUIDE` (Runway) and `window.FTOL_RUNWAY` (the guide). A tool
+  opened on its own has none of them and works unchanged.
 - **A refresh must not throw the reader back to the home page.** On claude.ai the address belongs to the whole
   collection, so refreshing the browser reloads `index.html` whatever tool was on show (the owner hit this on
   2026-11-20). The build gives each collection page its own file name (`window.FTOL_SELF`); the shared snippet
   makes a tool write `localStorage` key `ftol-at` (`{p: file, t: time}`) on load, every 20 seconds, when it becomes
   visible and as it is left; the home page, when the note is under three minutes old, goes straight back with
   `location.replace`. It does not when the reader came home on purpose: the link back clears the note, and the
-  browser's Back button is recognised by its navigation type. Only the three tool file names are accepted. The
+  browser's Back button is recognised by its navigation type. Only the three tool file names and the guide's are accepted. The
   standalone site and a tool opened on its own have their own addresses and do none of this.
 - Tools tell the home page their status through `localStorage` keys `ftol-summary-runway`, `ftol-summary-otf` and
   `ftol-summary-prism`.
