@@ -23,4 +23,11 @@ const dir = path.join(root, '_site');
 fs.mkdirSync(dir, {recursive: true});
 fs.writeFileSync(path.join(dir, 'index.html'), out);
 fs.writeFileSync(path.join(dir, '.nojekyll'), '');
+// Tool 2, Open This First, is published in its own folder with the same wrapper.
+const otf = fs.readFileSync(path.join(root, 'open-this-first', 'index.html'), 'utf8');
+if (/^\s*<!doctype/i.test(otf)) throw new Error('open-this-first/index.html already has a document wrapper.');
+const otfHead = head.replace(/<meta name="description"[^\n]*/, '<meta name="description" content="Open This First: a short interview that makes a one-page guide for your family: who to call, where things are, and what not to do yet. Runs in your browser; nothing you type is sent anywhere.">');
+fs.mkdirSync(path.join(dir, 'open-this-first'), {recursive: true});
+fs.writeFileSync(path.join(dir, 'open-this-first', 'index.html'), otfHead + '\n' + otf + '\n</body>\n</html>\n');
+console.log('Wrote _site/open-this-first/index.html');
 console.log('Wrote _site/index.html (' + Math.round(out.length / 1024) + ' KB)');

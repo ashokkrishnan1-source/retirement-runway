@@ -87,9 +87,27 @@ marketplace subsidy and Medicare IRMAA from `RULES.aca` / `RULES.irmaa`), **Lega
 Anything that changes the plan's numbers goes in the engine (health costs, QCDs); views only read rows.
 New inputs should default to off and sit in collapsed or optional sections, to keep the page simple.
 
+## Tool 2: Open This First (`open-this-first/index.html`)
+
+A family handoff guide: a short interview that produces a one-page "Open This First" cover sheet and a fuller map
+(who to call, where things are, what not to do yet, what doesn't exist). Same page format and rules as Runway:
+single file, no backend, answers stay in the browser (localStorage key `open-this-first-v1`) and in a save file.
+
+- **A map, not a vault.** Never add fields for passwords, account numbers, SSNs or combinations. The page warns
+  when an answer looks like one.
+- Content lives in the `Q` list (id, area, kind, essential, title, question, why, "doesn't exist" label), `INDIA`
+  hints, `DONT` and `FIRST`. These are general prompts, not legal advice; keep jurisdiction-specific claims soft
+  ("a lawyer there can confirm") unless verified.
+- claude.ai pages cannot open the print dialog: the packet downloads as a print-ready HTML file (`downloads`
+  capability); the standalone site also shows a Print button.
+- Published at https://claude.ai/artifact/8LVuAhJux3rvysgJx8Fw2H (owner's private link) and on GitHub Pages under
+  `/open-this-first/` (built by `tools/build-pages.js`). The example is the fictional "Dan Rivera".
+- Source: the owner's business requirements document (pilot stage). Accounts, sharing, payments and assisted
+  setup are deliberately out of scope until the free local version shows demand.
+
 ## Roadmap ideas (ask the owner before starting)
 
 Survivor benefit switching; a "best plan" optimizer button; health costs rising faster than inflation;
 PolicyEngine-based rules sync; verifying low-confidence entries (DC, LA, SC, NM, AZ deductions; 2027
-Part D surcharges; the ACA applicable-percentage table). Later: Tool #2, "Where to live in retirement",
+Part D surcharges; the ACA applicable-percentage table). Later: Tool #3, "Where to live in retirement",
 which should hand its results to Runway through the scenario file.

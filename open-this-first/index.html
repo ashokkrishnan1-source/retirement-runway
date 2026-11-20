@@ -1,0 +1,416 @@
+<title>Open This First</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column. A short interview on top, and a paper-like packet the family will read. Same type family as Retirement Runway; green accent. */
+:root{
+  --bg:#f2f5f3; --surface:#ffffff; --sunk:#e8eeea; --line:#d3ddd7;
+  --fg:#13231d; --fg2:#47594f; --fg3:#6f8177;
+  --accent:#1c5a4a; --accent-soft:#deeee7; --on-accent:#ffffff;
+  --good:#0a7d32; --warn:#8f5600; --bad:#b42828; --mute:#5a6a62;
+  --good-bg:#e1f3e7; --warn-bg:#fbf0dc; --bad-bg:#fbe5e5; --mute-bg:#e8eeea;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1613; --surface:#16211c; --sunk:#1d2a24; --line:#2b3b33;
+  --fg:#e7f0eb; --fg2:#a8b8af; --fg3:#84958b;
+  --accent:#86d3b6; --accent-soft:#1a3329; --on-accent:#0e1613;
+  --good:#4cc46f; --warn:#e3a640; --bad:#f07a7a; --mute:#a8b8af;
+  --good-bg:#15301f; --warn-bg:#33270f; --bad-bg:#3a1a1a; --mute-bg:#1d2a24; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1613; --surface:#16211c; --sunk:#1d2a24; --line:#2b3b33;
+  --fg:#e7f0eb; --fg2:#a8b8af; --fg3:#84958b;
+  --accent:#86d3b6; --accent-soft:#1a3329; --on-accent:#0e1613;
+  --good:#4cc46f; --warn:#e3a640; --bad:#f07a7a; --mute:#a8b8af;
+  --good-bg:#15301f; --warn-bg:#33270f; --bad-bg:#3a1a1a; --mute-bg:#1d2a24; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 56px}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font:500 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--fg3)}
+h1{font:700 34px/1.1 var(--display);margin:0;text-wrap:balance}
+h2{font:600 22px/1.25 var(--display);margin:0;text-wrap:balance}
+h3{font:600 13px/1.2 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--fg2);margin:0}
+p{margin:0}
+.sub{color:var(--fg2);max-width:65ch}
+.note{font-size:14px;color:var(--fg2);max-width:70ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 15px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:10px 16px;border-radius:8px;cursor:pointer;min-height:44px}
+.btn:hover{border-color:var(--fg3)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn.sm{font-size:13px;padding:6px 10px;min-height:34px}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--sunk);border-radius:10px;padding:4px}
+.tabs button{font:500 15px var(--body);border:0;background:transparent;color:var(--fg2);padding:10px 6px;border-radius:7px;cursor:pointer;min-height:44px}
+.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+@media (max-width:520px){.tabs{grid-template-columns:1fr 1fr}h1{font-size:28px}}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--fg2)}
+label.f .h{font-size:12.5px;color:var(--fg3)}
+input[type=text],input[type=month],select,textarea{font:16px var(--body);color:var(--fg);background:var(--sunk);border:1px solid transparent;border-radius:8px;padding:10px 12px;width:100%;min-height:44px}
+textarea{min-height:76px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:620px){.grid2{grid-template-columns:1fr}}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:520px){.choices{grid-template-columns:1fr}}
+.choice{font:500 16px var(--body);text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--fg);padding:14px 16px;border-radius:10px;cursor:pointer;min-height:56px;display:flex;gap:10px;align-items:center}
+.choice .ic{font:600 15px var(--mono);width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.choice[data-s="yes"] .ic{background:var(--good-bg);color:var(--good)}
+.choice[data-s="part"] .ic{background:var(--warn-bg);color:var(--warn)}
+.choice[data-s="no"] .ic{background:var(--bad-bg);color:var(--bad)}
+.choice[data-s="na"] .ic{background:var(--mute-bg);color:var(--mute)}
+.choice[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.pill{display:inline-flex;gap:5px;align-items:center;font:500 12.5px var(--body);padding:3px 9px;border-radius:99px;white-space:nowrap}
+.pill.yes{background:var(--good-bg);color:var(--good)}.pill.part{background:var(--warn-bg);color:var(--warn)}
+.pill.no{background:var(--bad-bg);color:var(--bad)}.pill.na,.pill.none{background:var(--mute-bg);color:var(--mute)}
+.bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.bar>div{height:100%;background:var(--accent);border-radius:99px}
+.warnbox{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:14px}
+.why{border-left:3px solid var(--accent);padding-left:12px;color:var(--fg2);font-size:15px;max-width:65ch}
+.item{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px 0;border-top:1px solid var(--line);align-items:start}
+.item:first-of-type{border-top:0}
+.item .t{font-weight:600}
+.item .d{grid-column:1/-1;font-size:14px;color:var(--fg2);overflow-wrap:anywhere}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat .v{font:600 24px var(--display)}.stat .k{font-size:13px;color:var(--fg2)}
+/* the packet: a paper document inside the page */
+.paper{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:28px 26px;display:flex;flex-direction:column;gap:16px;overflow-wrap:anywhere}
+.paper .mast{border-bottom:3px solid var(--accent);padding-bottom:10px;display:flex;flex-direction:column;gap:4px}
+.paper .mast .big{font:700 30px/1.05 var(--display);letter-spacing:.01em}
+.paper h4{font:600 12.5px var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin:0 0 4px}
+.paper ul,.paper ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.paper table{width:100%;border-collapse:collapse;font-size:14.5px}
+.paper td{padding:5px 8px 5px 0;vertical-align:top;border-top:1px solid var(--line)}
+.paper td:first-child{font-weight:600;width:34%}
+.paper .small{font-size:12.5px;color:var(--fg3)}
+.paper .sec{display:flex;flex-direction:column;gap:6px}
+.paper .pgbrk{border-top:1px dashed var(--line);margin-top:6px;padding-top:14px}
+details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--fg2)}
+@media print{body{background:#fff;padding:0}.noprint{display:none!important}.paper{border:0;padding:0}.paper .pgbrk{break-before:page;border:0}}
+</style>
+
+<div class="wrap">
+  <header class="noprint">
+    <div class="eyebrow">Financial Tools of Life · Tool 2</div>
+    <h1>Open This First</h1>
+    <p class="sub">A short interview that turns what only you know into one page your family can act on: who to call, where things are, what not to do yet, and what doesn't exist so nobody searches for it.</p>
+  </header>
+
+  <div class="card noprint" id="privacy">
+    <p class="note"><b>A map, not a vault.</b> Write where things are, never the secrets themselves: no passwords, PINs, account numbers, Social Security numbers or safe combinations. Your answers stay in this browser and in files you save. Nothing is sent anywhere.</p>
+    <div class="row">
+      <button type="button" class="btn" id="saveBtn">Save my file</button>
+      <label class="btn" for="loadFile" style="display:inline-flex;align-items:center">Open a saved file</label><input type="file" id="loadFile" accept=".json,application/json" hidden>
+      <button type="button" class="btn" id="exBtn">See an example</button>
+      <button type="button" class="btn" id="clearBtn">Start empty</button>
+    </div>
+    <p class="note" id="msg" hidden aria-live="polite"></p>
+  </div>
+
+  <div class="tabs noprint" role="group" aria-label="View" id="tabs">
+    <button type="button" data-v="ask" aria-pressed="true">Interview</button>
+    <button type="button" data-v="map" aria-pressed="false">My map</button>
+    <button type="button" data-v="gaps" aria-pressed="false">To sort out</button>
+    <button type="button" data-v="packet" aria-pressed="false">Family packet</button>
+  </div>
+
+  <section id="v-ask" class="noprint" style="display:flex;flex-direction:column;gap:18px">
+    <div class="card" id="setup">
+      <h3>About you</h3>
+      <div class="grid2">
+        <label class="f" for="ownName">Your name<input type="text" id="ownName" autocomplete="off"></label>
+        <label class="f" for="abroad">Family, accounts or property in another country?<select id="abroad"><option value="no">No</option><option value="india">Yes, in India</option><option value="other">Yes, somewhere else</option></select></label>
+      </div>
+      <label class="f" for="abroadName" id="abroadNameWrap" hidden>Which country?<input type="text" id="abroadName" autocomplete="off"></label>
+    </div>
+    <div class="card" id="qcard"></div>
+  </section>
+
+  <section id="v-map" class="noprint" hidden style="display:flex;flex-direction:column;gap:18px"></section>
+  <section id="v-gaps" class="noprint" hidden style="display:flex;flex-direction:column;gap:18px"></section>
+  <section id="v-packet" hidden style="display:flex;flex-direction:column;gap:18px">
+    <div class="card noprint">
+      <p class="note">This is what your family will read. Print it, sign and date it, and keep it where they will look first. Tell at least one person it exists and where it is.</p>
+      <div class="row">
+        <button type="button" class="btn primary" id="dlPacket">Download the packet (print-ready)</button>
+        <button type="button" class="btn" id="printBtn" hidden>Print</button>
+        <button type="button" class="btn" id="dlText">Download as text</button>
+        <button type="button" class="btn" id="dlIcs">Yearly review reminder</button>
+        <button type="button" class="btn" id="cpNote">Copy a note for people you trust</button>
+      </div>
+      <textarea id="noteFallback" hidden readonly aria-label="Note for people you trust"></textarea>
+    </div>
+    <div class="paper" id="paper"></div>
+  </section>
+</div>
+
+<script>
+'use strict';
+/* ---------- content: areas of life and the questions (no tax or legal figures; prompts only) ---------- */
+const DOMAINS=[
+  ['people','People with authority'],['legal','Legal and identity papers'],['money','Money and benefits'],['home','Running the household'],
+  ['digital','Phone, passwords and online life'],['health','Health and incapacity'],['care','People and pets who rely on you'],
+  ['meaning','Wishes and family things'],['abroad','Outside the US']
+];
+/* [id, area, kind, essential, short title, question, why it matters, "doesn't exist" label] */
+const Q=[
+ ['p_first','people','person',1,'First person to call','Who should your family call first for help: someone steady who knows your affairs?','In the first days, one calm person saves many wrong turns.','No one in mind'],
+ ['p_exec','people','person',1,'Executor (personal representative)','Who does your will name to carry out your wishes?','Banks and courts ask who has authority. Only this person can act for the estate.','No will, so no executor'],
+ ['p_poa','people','person',0,'Financial power of attorney','If you were alive but unable to act, who can handle money for you?','A power of attorney works only while you are alive. Without one, family may need a court order.','I haven\'t given anyone this'],
+ ['p_health','people','person',0,'Health care decision-maker','Who decides on medical care if you can\'t speak for yourself?','Hospitals ask at once. This is called a health care proxy or surrogate.','I haven\'t named anyone'],
+ ['p_lawyer','people','person',0,'Lawyer','Which lawyer drew up your will or knows your affairs?','The lawyer often holds copies and knows what was signed last.','No lawyer'],
+ ['p_tax','people','person',0,'Tax preparer or accountant','Who prepares your tax returns?','A final tax return must be filed, and this person knows which accounts exist.','I do my own taxes'],
+ ['p_adv','people','person',0,'Financial advisor','Do you work with a financial advisor?','An advisor can list the accounts they manage and start the transfer paperwork.','No advisor'],
+ ['l_will','legal','doc',1,'Will (signed original)','Where is the signed original of your current will?','Courts usually need the signed original, not a copy.','I don\'t have a will'],
+ ['l_old','legal','note',0,'Old versions to ignore','Are there older wills, drafts or copies that could be mistaken for the current one?','An old will found first can send the family the wrong way. Say which is current and where old ones are.','No old versions exist'],
+ ['l_trust','legal','doc',0,'Trust','Do you have a living trust? Where are the trust papers?','If there is no trust, saying so stops a search for one.','No trust'],
+ ['l_id','legal','doc',0,'Birth and marriage certificates','Where are your birth and marriage certificates?','They are needed for benefit and insurance claims.','None to find'],
+ ['l_pass','legal','doc',0,'Passport and citizenship papers','Where are your passport and any citizenship or naturalization papers?','They prove identity and status, and are hard to replace.','None'],
+ ['l_ssn','legal','doc',0,'Social Security card','Where is your Social Security card kept? Location only, never the number.','The family will need the number for the death certificate and benefits.','Lost or none'],
+ ['l_deed','legal','doc',0,'Home deed and vehicle titles','Where are the deed to your home and the titles to your vehicles?','These prove ownership when property is sold or passed on.','I don\'t own a home or vehicle'],
+ ['l_mil','legal','doc',0,'Military service papers','Where are your discharge papers?','They unlock burial and survivor benefits.','Never served'],
+ ['m_bank','money','acct',1,'Bank accounts','Which banks do you use? Names only.','Accounts nobody knows about can sit unclaimed for years.','No bank accounts'],
+ ['m_inv','money','acct',0,'Brokerage and investments','Which companies hold your investments outside retirement accounts?','Each company has its own process, and they will not come looking for your family.','None'],
+ ['m_ret','money','acct',1,'Retirement accounts','Which companies hold your 401(k)s, IRAs and Roth accounts, including from old employers?','Old employer plans are the most often forgotten.','None'],
+ ['m_ben','money','note',1,'Beneficiaries','Are the beneficiaries named on your retirement accounts and life insurance up to date?','These forms override your will. A former spouse or a late parent still named is a common, costly surprise.','Nothing has a beneficiary form'],
+ ['m_life','money','acct',1,'Life insurance','Which companies insure your life, including through work?','Insurers pay only when someone claims. Unknown policies go unpaid.','No life insurance'],
+ ['m_pen','money','acct',0,'Pension or annuity','Do you have a pension or annuity? Who pays it?','A spouse may be due a survivor payment, but must ask for it.','None'],
+ ['m_ss','money','note',0,'Social Security','Are you receiving Social Security, and what should your spouse know?','Payments made after a death must be returned. A spouse may be due a survivor benefit.','Not applicable'],
+ ['m_work','money','acct',0,'Employer benefits','Who is the HR contact at your employer, and what benefits exist (final pay, stock, health savings account)?','Employers pay out what is owed only when told.','Not employed'],
+ ['m_debt','money','acct',0,'Mortgage, loans and cards','What do you owe, and to whom?','Family should not pay your debts from their own money. The estate pays them.','No debts'],
+ ['m_box','money','doc',0,'Safe deposit box','Do you have a safe deposit box? Which branch, and where is the key?','A box can hold the will itself, and banks restrict access after a death.','No safe deposit box'],
+ ['m_tax','money','doc',0,'Tax returns','Where are your last few years of tax returns?','Returns list income sources, so they reveal accounts.','None kept'],
+ ['m_crypto','money','note',0,'Crypto','Do you hold any cryptocurrency? Say where the recovery instructions are, never the keys.','Without the recovery phrase it is lost for good. If you have none, say so.','No crypto'],
+ ['m_owed','money','note',0,'Money owed to you','Does anyone owe you money: a loan to family or a friend, a deposit, a refund?','Informal loans are forgotten unless written down.','Nothing owed to me'],
+ ['h_auto','home','note',1,'Bills on autopay','Which bills pay automatically, and from which account or card?','Closing an account too soon can cut off insurance, power or the phone.','Nothing is on autopay'],
+ ['h_home','home','acct',0,'Housing costs','Mortgage or rent, property tax, homeowners\' association: who is paid, and how?','Missed payments here have the heaviest consequences.','None'],
+ ['h_ins','home','acct',0,'Home, auto and umbrella insurance','Which companies insure your home and vehicles, and who is the agent?','Cover must continue while the estate is settled.','None'],
+ ['h_util','home','note',0,'Utilities, phone and internet','Which companies provide power, water, phone and internet?','The phone line matters most: it receives security codes.','None in my name'],
+ ['h_subs','home','note',0,'Subscriptions','Which subscriptions and memberships renew on their own?','They keep charging until cancelled.','None'],
+ ['h_keys','home','note',0,'Keys, safe and storage','Where are spare keys, a home safe or a storage unit? Say where the combination is kept, not the combination.','Families often learn of a storage unit from an unpaid bill.','No safe or storage unit'],
+ ['d_phone','digital','note',1,'Unlocking your phone','How will your family unlock your phone? Say where the instructions are, not the passcode.','The phone receives the security codes for almost every account.','No smartphone'],
+ ['d_pw','digital','note',1,'Passwords','Do you use a password manager, and where is its emergency access or recovery sheet?','Without it, every account becomes a separate recovery process.','I don\'t use one'],
+ ['d_email','digital','note',1,'Main email account','Which email address do your accounts send password resets to, and is a legacy contact set up?','Email is the key to the rest. Apple, Google and others let you name a legacy contact in advance.','No email account'],
+ ['d_2fa','digital','note',0,'Two-step sign-in','Which app or device gives your sign-in codes, and where are the backup codes?','Losing the device can lock everyone out.','I don\'t use two-step sign-in'],
+ ['d_photos','digital','note',0,'Photos and files','Where are your photos and important files stored?','Photos are what families most regret losing.','Nothing stored online'],
+ ['d_social','digital','note',0,'Social media wishes','What should happen to your social media accounts?','Accounts can be memorialized or closed, if someone knows your wish.','No accounts'],
+ ['d_web','digital','note',0,'Websites, domains and online work','Do you own websites, domain names or online projects that renew or earn money?','Domains expire and can be lost within weeks.','None'],
+ ['c_dir','health','doc',0,'Living will (advance directive)','Where is your living will or advance directive?','Doctors need it at the moment of crisis, not later.','I don\'t have one'],
+ ['c_docs','health','person',0,'Doctors and health insurance','Who is your main doctor, and which health insurance do you have?','Care and claims both start here.','None'],
+ ['c_meds','health','note',0,'Medications','Where is your current list of medications kept?','Emergency staff ask for it first.','No medications'],
+ ['c_ltc','health','acct',0,'Long-term care insurance','Do you have a long-term care policy?','These policies pay only when claimed, and are often forgotten.','No policy'],
+ ['c_donor','health','note',0,'Organ donation','What are your wishes on organ donation?','The family is asked within hours.','No preference'],
+ ['k_dep','care','note',1,'People who rely on you','Does anyone depend on you for money or care: a child, a parent, a relative abroad?','Their support must not stop without warning.','No one depends on me'],
+ ['k_pets','care','note',0,'Pets','Who will care for your pets, and who is the vet?','Pets need someone the same day.','No pets'],
+ ['f_fun','meaning','note',1,'Funeral wishes','Burial or cremation, religious rites, and where? Is anything prepaid?','This is decided within a day or two, often before anyone finds the will.','No wishes; family decides'],
+ ['f_tell','meaning','note',0,'People to tell','Who should be told, beyond close family: friends, groups, former colleagues?','Your family may not know your wider circle.','No one else'],
+ ['f_heir','meaning','note',0,'Heirlooms and keepsakes','Which things matter, and who should have them?','Small things cause the largest quarrels when nothing is written.','Nothing specific'],
+ ['f_msg','meaning','note',0,'Letters and messages','Have you left letters or messages, and where are they?','They are only read if someone knows they exist.','None'],
+ ['a_person','abroad','person',1,'Trusted person there','Who is your trusted person there: a relative, lawyer or accountant on the ground?','Your family here cannot act from a distance without someone local.','No one'],
+ ['a_bank','abroad','acct',1,'Accounts there','Which banks or funds hold money for you there? Names only.','Foreign accounts are the easiest to lose track of.','No accounts there'],
+ ['a_prop','abroad','doc',0,'Property there','Do you own or share property there? Where are the title papers, and who has the keys?','Property abroad needs local papers, in the local form.','No property there'],
+ ['a_nom','abroad','note',0,'Nominees on accounts there','Is a nominee named on each account there, and is it the person you intend?','Without a nominee, the bank will ask for court papers before releasing money.','No accounts there'],
+ ['a_id','abroad','doc',0,'Tax and identity papers there','Where are your tax and identity papers for that country?','Banks and registrars there ask for these first.','None'],
+ ['a_will','abroad','doc',0,'Will covering assets there','Does your will cover assets there, or is there a separate will for them?','A US will may not be simple to use abroad. A lawyer there can confirm.','No assets there'],
+ ['a_inh','abroad','note',0,'Inheritance in progress','Is anything you inherited, or expect to inherit, still unfinished there?','Half-finished transfers are the hardest for the next person to pick up.','Nothing in progress'],
+ ['a_tax','abroad','note',0,'US reporting of foreign accounts','Who files the US forms that report your foreign accounts?','The final US return still has to report them.','No foreign accounts'],
+ ['a_parent','abroad','note',0,'A parent or relative there you look after','If you look after someone there: who steps in, what do you pay for, and where are their own papers?','Their care must continue, and one day their affairs will need the same map.','No one']
+];
+const INDIA={a_bank:'In India this often means NRE and NRO accounts, fixed deposits, mutual funds or a demat account, and PPF.',
+ a_prop:'In India: the sale deed and the local land and tax records in your name.',
+ a_nom:'In India a nominee usually receives the money to hold for the legal heirs. Ask the bank or a lawyer how it works for each account.',
+ a_id:'In India: PAN card, Aadhaar, and your OCI card.',
+ a_inh:'In India this can involve a legal heir certificate or succession certificate, and updating property records. A local lawyer will confirm what applies.',
+ a_tax:'US rules require reporting foreign accounts above set limits each year. Your tax preparer will know which forms apply.'};
+const KIND={person:['Name and relationship','How to reach them (phone or email)'],doc:['Where it is kept','Who else has a copy or can get to it'],
+  acct:['Names of the companies or institutions','Where the paperwork is, or who to contact'],note:['What your family should know','Where the details are kept']};
+const SLAB={yes:'Sorted',part:'Partly',no:'Not sorted',na:'Doesn\'t exist',none:'Not answered'};
+const SIC={yes:'✓',part:'~',no:'?',na:'–',none:'·'};
+const DONT=['Don\'t cancel the phone line or close the main email account. They receive the security codes for everything else.',
+ 'Don\'t close bank accounts or cards until you know which bills they pay.',
+ 'Don\'t pay the person\'s debts from your own money. The estate pays them; ask the executor or a lawyer first.',
+ 'Don\'t throw away papers, wipe devices or give away belongings until the estate is settled.',
+ 'Don\'t sign in to accounts as the person who died. Ask each company for its process for a death.'];
+const FIRST=['Call the first person named above. You don\'t have to do this alone.',
+ 'Look after people and pets who depend on the household, and secure the home, car and valuables.',
+ 'Find the will and tell the executor. Only the executor can act for the estate.',
+ 'Order 10 to 15 certified copies of the death certificate. Nearly every company asks for one.',
+ 'Within the first weeks: tell Social Security, the employer or pension payer, and the life insurers.',
+ 'Then work through the sections that follow, one area at a time.'];
+
+/* ---------- state ---------- */
+const STORE='open-this-first-v1';
+const blank=()=>({name:'',abroad:'no',abroadName:'',items:{},mode:'ess',pos:0,view:'ask',updated:''});
+let S=blank();
+const EXAMPLE={name:'Dan Rivera (example)',abroad:'no',abroadName:'',mode:'ess',pos:0,view:'packet',updated:'',items:{
+ p_first:{s:'yes',a:'Maria Rivera, sister',b:'Mobile, in the kitchen address book under "Maria"',chk:'2026-10'},
+ p_exec:{s:'yes',a:'Linda Rivera, wife. Alternate: Maria Rivera',b:'At home',chk:'2026-10'},
+ p_lawyer:{s:'yes',a:'Harbor Estate Law, Ms. Okafor',b:'Card stapled inside the green folder',chk:'2026-10'},
+ p_tax:{s:'part',a:'A local tax office, we change every few years',b:'',note:'Find this year\'s preparer\'s name on the latest return.'},
+ l_will:{s:'yes',a:'Green folder, top drawer of the study filing cabinet',b:'The lawyer holds a signed copy',orig:'Original',chk:'2026-10'},
+ l_old:{s:'yes',a:'A 2011 will is in the blue box in the garage. It is replaced. Ignore it.',b:'',chk:'2026-10'},
+ l_trust:{s:'na'},l_mil:{s:'na'},m_crypto:{s:'na'},m_box:{s:'na'},
+ m_bank:{s:'yes',a:'First Coast Credit Union (checking, savings); Marlin Bank (old savings)',b:'Statements arrive by email; paper in the grey binder',chk:'2026-09'},
+ m_ret:{s:'part',a:'Northway Funds (IRA); a 401(k) from my old employer Calder Supply',b:'Grey binder, tab 3',note:'Not sure the Calder plan still has my current address.'},
+ m_ben:{s:'no',note:'Check every form. The IRA form may still name my late father.'},
+ m_life:{s:'yes',a:'Keystone Mutual, term policy; plus cover through work',b:'Policy in the grey binder, tab 5',chk:'2026-06'},
+ h_auto:{s:'part',a:'Power, water, phone, car insurance all pay from First Coast checking',b:'',note:'Make a full list from three months of statements.'},
+ d_phone:{s:'yes',a:'Linda knows how. Written instructions are in the sealed envelope in the green folder.',b:'',chk:'2026-10'},
+ d_pw:{s:'yes',a:'I use a password manager. Linda is set as emergency contact.',b:'Recovery sheet: sealed envelope, green folder',chk:'2026-10'},
+ d_email:{s:'no',note:'Set up a legacy contact on my main email account.'},
+ k_dep:{s:'yes',a:'I send my mother money on the 1st of each month from First Coast checking.',b:'Details in the grey binder, tab 8',chk:'2026-10'},
+ k_pets:{s:'yes',a:'Biscuit (dog). Maria will take him. Vet: Lakeside Animal Clinic.',b:'',chk:'2026-10'},
+ f_fun:{s:'yes',a:'Cremation. A simple service at home. Nothing is prepaid.',b:'',chk:'2026-10'}}};
+let isExample=false;
+function load(){try{const r=localStorage.getItem(STORE);if(r){const o=JSON.parse(r);if(o&&o.items){S=Object.assign(blank(),o);return}}}catch(e){}S=blank()}
+function save(){if(isExample)return;S.updated=new Date().toISOString();try{localStorage.setItem(STORE,JSON.stringify(S))}catch(e){}}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+const say=t=>{const e=$('msg');e.textContent=t;e.hidden=!t};
+const thisMonth=()=>new Date().toISOString().slice(0,7);
+const country=()=>S.abroad==='india'?'India':(S.abroadName||'the other country');
+const active=()=>Q.filter(q=>q[1]!=='abroad'||S.abroad!=='no');
+const list=()=>S.mode==='ess'?active().filter(q=>q[3]):active();
+const it=id=>S.items[id]||{};
+const st=id=>it(id).s||'none';
+const txt=q=>q[5].replace(/\bthere\b/g,'in '+country()).replace(/that country/g,country());
+const title=q=>q[4].replace(/\bthere\b/g,'in '+country());
+const monthsOld=m=>{if(!m)return null;const [y,mo]=m.split('-').map(Number),n=new Date();return (n.getFullYear()-y)*12+(n.getMonth()+1-mo)};
+const stale=id=>{const a=monthsOld(it(id).chk);return (st(id)==='yes'||st(id)==='part')&&a!==null&&a>12};
+const secret=v=>/\d{3}-\d{2}-\d{4}/.test(v)||/\d[\d -]{8,}\d/.test(v)||/\b(password|passcode|pin)\s*(is|:|=)/i.test(v);
+const fmtMonth=m=>{if(!m)return '';const [y,mo]=m.split('-');return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo-1]+' '+y};
+
+/* ---------- interview ---------- */
+function drawSetup(){$('ownName').value=S.name;$('abroad').value=S.abroad;$('abroadName').value=S.abroadName;$('abroadNameWrap').hidden=S.abroad!=='other'}
+function drawQ(){
+  const L=list();if(S.pos>=L.length)S.pos=L.length-1;if(S.pos<0)S.pos=0;
+  const q=L[S.pos],id=q[0],x=it(id),s=st(id),lab=KIND[q[2]],dn=DOMAINS.find(d=>d[0]===q[1])[1].replace('Outside the US','In '+country());
+  const done=L.filter(z=>st(z[0])!=='none').length,ess=active().filter(z=>z[3]).length,all=active().length;
+  const hint=q[1]==='abroad'&&S.abroad==='india'&&INDIA[id]?' '+INDIA[id]:'';
+  const fields=s==='yes'||s==='part'?
+    '<div class="grid2"><label class="f" for="fa">'+lab[0]+'<textarea id="fa">'+esc(x.a)+'</textarea></label><label class="f" for="fb">'+lab[1]+'<textarea id="fb">'+esc(x.b)+'</textarea></label></div>'+
+    '<div class="grid2">'+(q[2]==='doc'?'<label class="f" for="forig">Original or copy?<select id="forig"><option value="">Not sure</option><option>Original</option><option>Copy</option></select></label>':'')+
+    '<label class="f" for="fchk">Last checked<span class="h">so your family knows how fresh this is</span><input type="month" id="fchk" value="'+esc(x.chk||'')+'"></label></div>'+
+    (s==='part'?'<label class="f" for="fnote">What is still missing or unsure?<textarea id="fnote">'+esc(x.note)+'</textarea></label>':''):
+    s==='no'?'<label class="f" for="fnote">What do you need to find out or do? (optional)<textarea id="fnote">'+esc(x.note)+'</textarea></label>':
+    s==='na'?'<p class="note">Good. The packet will tell your family not to look for this.</p>':'';
+  $('qcard').innerHTML=
+    '<div class="row" style="justify-content:space-between"><div class="row" role="group" aria-label="How many questions">'+
+      '<button type="button" class="btn sm" data-mode="ess" aria-pressed="'+(S.mode==='ess')+'">Essentials ('+ess+')</button>'+
+      '<button type="button" class="btn sm" data-mode="all" aria-pressed="'+(S.mode==='all')+'">Everything ('+all+')</button></div>'+
+      '<span class="note">Question '+(S.pos+1)+' of '+L.length+' · '+done+' answered</span></div>'+
+    '<div class="bar" aria-hidden="true"><div style="width:'+Math.round(done/L.length*100)+'%"></div></div>'+
+    '<div class="eyebrow">'+esc(dn)+'</div><h2 id="qtext">'+esc(txt(q))+'</h2>'+
+    '<p class="why">'+esc(q[6]+hint)+'</p>'+
+    '<div class="choices" role="group" aria-labelledby="qtext">'+[['yes','Yes, and I can say where'],['part','Partly'],['no','Not sure, or not done yet'],['na',q[7]]].map(c=>
+      '<button type="button" class="choice" data-s="'+c[0]+'" aria-pressed="'+(s===c[0])+'"><span class="ic" aria-hidden="true">'+SIC[c[0]]+'</span>'+esc(c[1])+'</button>').join('')+'</div>'+
+    fields+'<div class="warnbox" id="secWarn" hidden>This looks like a number or password. The map only needs where to find it, so please leave the secret itself out.</div>'+
+    '<div class="row" style="justify-content:space-between"><button type="button" class="btn" id="prevQ"'+(S.pos===0?' disabled':'')+'>← Back</button>'+
+    (S.pos<L.length-1?'<button type="button" class="btn primary" id="nextQ">'+(s==='none'?'Skip for now →':'Next →')+'</button>':'<button type="button" class="btn primary" id="finQ">See the family packet →</button>')+'</div>';
+  const card=$('qcard');
+  card.querySelectorAll('[data-mode]').forEach(b=>{b.style.borderColor=b.getAttribute('aria-pressed')==='true'?'var(--accent)':'';b.onclick=()=>{const cur=q[0];S.mode=b.dataset.mode;const i=list().findIndex(z=>z[0]===cur);S.pos=i<0?0:i;save();drawQ()}});
+  card.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{const o=S.items[id]=Object.assign({},S.items[id]);o.s=b.dataset.s;if((o.s==='yes'||o.s==='part')&&!o.chk)o.chk=thisMonth();touch();drawQ();const f=$('fa')||$('fnote');if(f)f.focus()});
+  const bind=(eid,k)=>{const e=$(eid);if(!e)return;if(k==='orig')e.value=x.orig||'';e.oninput=e.onchange=()=>{(S.items[id]=Object.assign({},S.items[id]))[k]=e.value;$('secWarn').hidden=!['a','b','note'].some(f=>secret(it(id)[f]||''));touch()}};
+  bind('fa','a');bind('fb','b');bind('forig','orig');bind('fchk','chk');bind('fnote','note');
+  $('secWarn').hidden=!['a','b','note'].some(f=>secret(x[f]||''));
+  $('prevQ').onclick=()=>{S.pos--;save();drawQ();scrollQ()};
+  if($('nextQ'))$('nextQ').onclick=()=>{S.pos++;save();drawQ();scrollQ()};
+  if($('finQ'))$('finQ').onclick=()=>show('packet');
+}
+const scrollQ=()=>{const r=$('qcard').getBoundingClientRect();if(r.top<0)$('qcard').scrollIntoView({block:'start'})};
+function touch(){if(isExample){isExample=false;say('You are now editing a copy of the example. Use "Start empty" to begin your own.')}save()}
+function goTo(id){S.mode='all';S.pos=Math.max(0,list().findIndex(q=>q[0]===id));save();show('ask');drawQ();$('qcard').scrollIntoView({block:'start'})}
+
+/* ---------- map and gaps ---------- */
+const summary=id=>{const x=it(id),s=st(id);if(s==='na')return 'Does not exist. Your family will be told not to look.';if(s==='none')return '';
+  return [x.a,x.b&&('· '+x.b),x.orig&&('· '+x.orig),x.note&&('· Open: '+x.note),x.chk&&('· checked '+fmtMonth(x.chk))].filter(Boolean).join(' ')};
+const row=(q,btn)=>'<div class="item"><div class="t">'+esc(title(q))+'</div><div class="row"><span class="pill '+st(q[0])+'">'+SIC[st(q[0])]+' '+SLAB[st(q[0])]+'</span><button type="button" class="btn sm" data-go="'+q[0]+'">'+btn+'</button></div>'+(summary(q[0])?'<div class="d">'+esc(summary(q[0]))+'</div>':'')+'</div>';
+function counts(){const A=active(),E=A.filter(q=>q[3]),c=k=>A.filter(q=>st(q[0])===k).length;
+  return {essDone:E.filter(q=>st(q[0])==='yes'||st(q[0])==='na').length,ess:E.length,yes:c('yes'),part:c('part'),no:c('no'),na:c('na'),none:c('none'),all:A.length}}
+function drawMap(){const c=counts();
+  $('v-map').innerHTML='<div class="stats"><div class="stat"><div class="v">'+c.essDone+' of '+c.ess+'</div><div class="k">essentials sorted</div></div><div class="stat"><div class="v">'+c.yes+'</div><div class="k">items your family can find</div></div><div class="stat"><div class="v">'+c.na+'</div><div class="k">things they won\'t search for</div></div><div class="stat"><div class="v">'+(c.part+c.no+c.none)+'</div><div class="k">still to sort out</div></div></div>'+
+    DOMAINS.filter(d=>d[0]!=='abroad'||S.abroad!=='no').map(d=>'<div class="card"><h3>'+esc(d[0]==='abroad'?'In '+country():d[1])+'</h3><div>'+active().filter(q=>q[1]===d[0]).map(q=>row(q,st(q[0])==='none'?'Answer':'Edit')).join('')+'</div></div>').join('');
+  wireGo($('v-map'))}
+function drawGaps(){const A=active(),grp=(h,p,f)=>{const L=A.filter(f);return L.length?'<div class="card"><h3>'+h+' ('+L.length+')</h3><p class="note">'+p+'</p><div>'+L.map(q=>row(q,'Sort this out')).join('')+'</div></div>':''};
+  const h=grp('Essentials not sorted yet','Start here. These are what a family needs in the first days.',q=>q[3]&&!['yes','na'].includes(st(q[0])))+
+    grp('Not sure or not done','You said these need finding out or doing.',q=>!q[3]&&st(q[0])==='no')+
+    grp('Partly done','Something is still missing or unsure.',q=>!q[3]&&st(q[0])==='part')+
+    grp('Checked more than a year ago','Confirm these are still true, then update the date.',q=>stale(q[0]))+
+    grp('Not answered yet','Answer when you can. "Doesn\'t exist" is a useful answer too.',q=>!q[3]&&st(q[0])==='none');
+  $('v-gaps').innerHTML=h||'<div class="card"><h2>Nothing left to sort out.</h2><p class="note">Review once a year, or after a move, a new account, a death or a marriage in the family.</p></div>';
+  wireGo($('v-gaps'))}
+const wireGo=el=>el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>goTo(b.dataset.go));
+
+/* ---------- the family packet ---------- */
+function packetHTML(){
+  const A=active(),has=id=>st(id)==='yes'||st(id)==='part',nm=S.name||'[your name]',today=new Date(),rev=new Date(today.getFullYear()+1,today.getMonth(),1);
+  const d=x=>x.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),qById=id=>Q.find(q=>q[0]===id);
+  const line=id=>{const x=it(id);return esc([x.a,x.b].filter(Boolean).join(' · '))+(st(id)==='part'?' <span class="small">(partly: check this)</span>':'')};
+  const calls=['p_first','p_exec','p_lawyer','p_tax','p_adv','a_person'].filter(has),keys=['l_will','d_phone','d_pw','d_email','m_life','m_bank','m_ret','h_auto','k_dep','f_fun'].filter(has);
+  const na=A.filter(q=>st(q[0])==='na'),open=A.filter(q=>['part','no'].includes(st(q[0]))),unans=A.filter(q=>st(q[0])==='none').length,old=has('l_old')?it('l_old').a:'';
+  let h='<div class="mast"><div class="big">OPEN THIS FIRST</div><div>For the family of <b>'+esc(nm)+'</b></div><div class="small">Prepared '+d(today)+' · Review by '+rev.toLocaleDateString('en-US',{year:'numeric',month:'long'})+' · Things change: if this is old, check before relying on it.</div></div>'+
+    '<div class="sec"><p>This page tells you who to call, where the important things are, and what not to do yet. It is a guide written by '+esc(nm)+', not a legal document. It gives no one authority: the will and the law do that.</p></div>'+
+    '<div class="sec"><h4>Before you do anything</h4><ul>'+DONT.map(x=>'<li>'+esc(x)+'</li>').join('')+(old?'<li><b>Ignore old versions:</b> '+esc(old)+'</li>':'')+'</ul></div>'+
+    '<div class="sec"><h4>Who to call</h4>'+(calls.length?'<table>'+calls.map(id=>'<tr><td>'+esc(title(qById(id)))+'</td><td>'+line(id)+'</td></tr>').join('')+'</table>':'<p class="small">Not filled in yet.</p>')+'</div>'+
+    '<div class="sec"><h4>Where the key things are</h4>'+(keys.length?'<table>'+keys.map(id=>'<tr><td>'+esc(title(qById(id)))+'</td><td>'+line(id)+'</td></tr>').join('')+'</table>':'<p class="small">Not filled in yet.</p>')+'</div>'+
+    '<div class="sec"><h4>First steps</h4><ol>'+FIRST.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol></div>'+
+    (na.length?'<div class="sec"><h4>Don\'t look for these: they don\'t exist</h4><p>'+na.map(q=>esc(title(q))+' ('+esc(q[7].charAt(0).toLowerCase()+q[7].slice(1))+')').join('; ')+'.</p></div>':'')+
+    '<div class="sec small">Signed: ______________________________ &nbsp; Date: ______________ &nbsp; Where this page is kept: ______________________________</div>';
+  /* the fuller runbook */
+  h+='<div class="pgbrk sec"><div class="mast"><div class="big" style="font-size:22px">The fuller map</div><div class="small">Everything '+esc(nm)+' recorded, area by area. "Checked" is when it was last confirmed.</div></div></div>';
+  DOMAINS.forEach(dm=>{if(dm[0]==='abroad'&&S.abroad==='no')return;const L=A.filter(q=>q[1]===dm[0]&&has(q[0]));if(!L.length)return;
+    h+='<div class="sec"><h4>'+esc(dm[0]==='abroad'?'In '+country():dm[1])+'</h4><table>'+L.map(q=>{const x=it(q[0]),lab=KIND[q[2]];
+      return '<tr><td>'+esc(title(q))+'</td><td>'+esc(x.a||'')+(x.b?'<br><span class="small">'+esc(lab[1])+':</span> '+esc(x.b):'')+(x.orig?'<br><span class="small">'+esc(x.orig)+'</span>':'')+(st(q[0])==='part'&&x.note?'<br><span class="small">Still unsure:</span> '+esc(x.note):'')+(x.chk?'<br><span class="small">Checked '+fmtMonth(x.chk)+(stale(q[0])?' (over a year ago: confirm)':'')+'</span>':'')+'</td></tr>'}).join('')+'</table></div>'});
+  if(S.abroad==='india')h+='<div class="sec small">For assets in India, banks and registrars follow their own steps, and may ask for a legal heir or succession certificate. The trusted person named above, or a lawyer there, can confirm what is needed.</div>';
+  if(open.length||unans)h+='<div class="sec"><h4>Not confirmed when this was written</h4>'+(open.length?'<p class="small">'+esc(nm)+' had not finished these. They may or may not exist.</p><ul>'+open.map(q=>'<li>'+esc(title(q))+(it(q[0]).note?': '+esc(it(q[0]).note):'')+'</li>').join('')+'</ul>':'')+(unans?'<p class="small">'+unans+' other topics were not covered in this guide. Nothing here says whether they exist.</p>':'')+'</div>';
+  h+='<div class="sec small">General guidance only, not legal, tax or financial advice. Rules differ by state and country; the executor, a lawyer or each company will confirm the steps.</div>';
+  return h}
+function drawPacket(){$('paper').innerHTML=packetHTML()}
+function packetFile(){
+  const css='body{font:15px/1.5 Georgia,"Times New Roman",serif;color:#111;max-width:760px;margin:24px auto;padding:0 20px}.paper{display:block}.sec{margin:14px 0}.mast{border-bottom:3px solid #1c5a4a;padding-bottom:8px;margin-bottom:10px}.big{font:700 30px/1.05 Helvetica,Arial,sans-serif}h4{font:700 12px Helvetica,Arial,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:#1c5a4a;margin:0 0 4px}ul,ol{margin:0;padding-left:20px}table{width:100%;border-collapse:collapse}td{padding:5px 8px 5px 0;vertical-align:top;border-top:1px solid #ccc}td:first-child{font-weight:700;width:34%}.small{font-size:12.5px;color:#444}.pgbrk{break-before:page;margin-top:28px}@media print{body{margin:0}}';
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Open This First</title><style>'+css+'</style></head><body><div class="paper">'+packetHTML()+'</div></body></html>'}
+function packetText(){const e=document.createElement('div');e.innerHTML=packetHTML().replace(/<\/(tr|li|h4|p|div)>/g,'\n').replace(/<br>/g,'\n   ').replace(/<\/td><td>/g,': ').replace(/<h4>/g,'\n## ').replace(/<li>/g,'- ');return e.textContent.replace(/\n{3,}/g,'\n\n').trim()+'\n'}
+
+/* ---------- saving, loading, sharing ---------- */
+let DL=null;
+const STANDALONE=(()=>{try{return window.top===window&&!(window.claude&&window.claude.use)}catch(e){return false}})();
+function plain(name,data,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:type+';charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+async function offer(name,data,type){
+  if(!DL){if(STANDALONE){plain(name,data,type);say('Saved '+name+'.')}else say('Saving files isn\'t available in this view. Open the page on its own site to download.');return}
+  try{await DL.save({filename:name,data});say('Saved '+name+'.')}catch(e){const c=e&&e.code;say(c==='declined'?'Download cancelled.':'Could not save the file here. Try again, or open the page on its own site.')}}
+const stamp=()=>new Date().toISOString().slice(0,10);
+$('saveBtn').onclick=()=>offer('open-this-first-'+stamp()+'.json',JSON.stringify({app:'open-this-first',v:1,s:S},null,1),'application/json');
+$('loadFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||o.app!=='open-this-first'||!o.s||!o.s.items)throw 0;S=Object.assign(blank(),o.s);isExample=false;save();init();say('Loaded your saved file.')}catch(x){say('That file isn\'t an Open This First save file.')}};r.readAsText(f);e.target.value=''};
+$('exBtn').onclick=()=>{S=JSON.parse(JSON.stringify(Object.assign(blank(),EXAMPLE)));isExample=true;init();say('Showing a made-up example. Your own answers are untouched; reload the page to return to them.')};
+let armed=false;$('clearBtn').onclick=e=>{if(!armed&&!isExample&&Object.keys(S.items).length){armed=true;e.target.textContent='Click again to erase my answers';return}armed=false;e.target.textContent='Start empty';S=blank();isExample=false;save();init();say('Started an empty map.')};
+$('dlPacket').onclick=()=>offer('open-this-first-packet-'+stamp()+'.html',packetFile(),'text/html');
+$('dlText').onclick=()=>offer('open-this-first-'+stamp()+'.md',packetText(),'text/markdown');
+$('dlIcs').onclick=()=>{const n=new Date(),y=n.getFullYear()+1,dt=y+String(n.getMonth()+1).padStart(2,'0')+'01';
+  offer('review-open-this-first.ics','BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Open This First//EN\r\nBEGIN:VEVENT\r\nUID:otf-review-'+Date.now()+'@open-this-first\r\nDTSTAMP:'+n.toISOString().replace(/[-:]/g,'').slice(0,15)+'Z\r\nDTSTART;VALUE=DATE:'+dt+'\r\nRRULE:FREQ=YEARLY\r\nSUMMARY:Review "Open This First"\r\nDESCRIPTION:Check that the family packet is still true. Update it after any move\\, new account\\, marriage or death in the family. Reprint and replace the old copy.\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n','text/calendar')};
+$('cpNote').onclick=()=>{const t='I have written a short guide called "Open This First" for my family. It says who to call, where my important papers are, and what to do first if I die or can\'t act for myself. It holds no passwords or account numbers.\n\nIt is kept: [where]\nA copy is with: [who]\n\nYou don\'t need to do anything now. I just want you to know it exists.\n\n'+(S.name||'');
+  const fb=()=>{const ta=$('noteFallback');ta.value=t;ta.hidden=false;ta.select();say('Select the note below and copy it.')};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>say('Note copied. Paste it into a message or letter, and fill in where the packet is kept.'),fb);else fb()};
+if(STANDALONE){$('printBtn').hidden=false;$('printBtn').onclick=()=>window.print()}
+
+/* ---------- views ---------- */
+function show(v){S.view=v;if(!isExample)save();['ask','map','gaps','packet'].forEach(k=>{const e=$('v-'+k);e.hidden=k!==v});
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));
+  if(v==='ask')drawQ();if(v==='map')drawMap();if(v==='gaps')drawGaps();if(v==='packet')drawPacket()}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+$('ownName').oninput=e=>{S.name=e.target.value;touch()};
+$('abroad').onchange=e=>{S.abroad=e.target.value;touch();drawSetup();drawQ()};
+$('abroadName').oninput=e=>{S.abroadName=e.target.value;touch()};$('abroadName').onchange=()=>drawQ();
+function init(){drawSetup();show(S.view||'ask')}
+load();
+/* a first-time visitor sees the example packet, so the page shows what it makes */
+if(!Object.keys(S.items).length&&!S.name){S=JSON.parse(JSON.stringify(Object.assign(blank(),EXAMPLE)));isExample=true;say('This is a made-up example. Press "Start empty" to begin your own, or open the Interview tab.')}
+init();
+(async()=>{try{DL=window.claude&&window.claude.use?await window.claude.use('downloads'):null}catch(e){DL=null}})();
+</script>
