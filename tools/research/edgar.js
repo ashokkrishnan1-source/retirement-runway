@@ -52,26 +52,27 @@ function toText(html) {
    followed by the most text before the next part's heading wins: in the table of contents the next heading is on the
    next line. */
 const ITEMS = [['1', /^\s*item\s*1\s*[.:\-]?\s*(business|$)/i], ['1a', /^\s*item\s*1a\s*[.:\-]?\s*(risk|$)/i], ['1b', /^\s*item\s*1b\b/i], ['1c', /^\s*item\s*1c\b/i], ['2', /^\s*item\s*2\s*[.:\-]?\s*(propert|$)/i],
-  ['3', /^\s*item\s*3\s*[.:\-]?\s*(legal|$)/i], ['5', /^\s*item\s*5\b/i], ['7', /^\s*item\s*7\s*[.:\-]?\s*(management|$)/i], ['7a', /^\s*item\s*7a\b/i], ['8', /^\s*item\s*8\b/i], ['9', /^\s*item\s*9\b/i]];
+  ['3', /^\s*item\s*3\s*[.:\-]?\s*(legal|$)/i], ['4', /^\s*item\s*4\b/i], ['5', /^\s*item\s*5\b/i], ['7', /^\s*item\s*7\s*[.:\-]?\s*(management|$)/i], ['7a', /^\s*item\s*7a\b/i], ['8', /^\s*item\s*8\b/i], ['9', /^\s*item\s*9\b/i],
+  ['9a', /^\s*item\s*9a\b/i], ['9b', /^\s*item\s*9b\b/i], ['9c', /^\s*item\s*9c\b/i], ['10', /^\s*item\s*10\b/i]];
 function items10K(text) {
   const lines = text.split('\n'), at = []; let pos = 0;
   lines.forEach(l => { if (l.length < 140) for (const [id, re] of ITEMS) if (re.test(l)) { at.push({id, pos}); break; } pos += l.length + 1; });
   const out = {};
-  for (const want of ['1', '1a', '7']) { let best = '';
+  for (const want of ['1', '1a', '3', '7', '9a']) { let best = '';
     at.forEach((h, i) => { if (h.id !== want) return; const next = at.slice(i + 1).find(x => x.id !== want); const body = text.slice(h.pos, next ? next.pos : text.length); if (body.length > best.length) best = body; });
     out[want] = best; }
   return out;
 }
 /* A proxy statement has no fixed parts. These headings find the ones that answer "how do the managers treat
    themselves, and how do they treat the owners"; each gets the text that follows it, up to a limit. */
-const PROXY = [['pay', /compensation discussion (and|&) analysis/i, 45000], ['table', /summary compensation table/i, 9000], ['versus', /pay versus performance/i, 9000],
-  ['owners', /(security|stock|share|beneficial) ownership of|ownership of (certain|our|directors|management|common)|beneficial owners/i, 9000], ['dealings', /(certain relationships and related|related[- ](person|party) transactions|transactions with related)/i, 7000], ['ratio', /pay ratio/i, 2500]];
+const PROXY = [['pay', /compensation discussion (and|&) analysis/i, 70000], ['table', /summary compensation table/i, 14000], ['versus', /pay versus performance/i, 9000],
+  ['owners', /(security|stock|share|beneficial) ownership of|ownership of (certain|our|directors|management|common)|beneficial owners/i, 9000], ['dealings', /(certain relationships and related|related[- ](person|party) transactions|transactions with related)/i, 12000], ['ratio', /pay ratio/i, 2500]];
 /* Some proxies set the title of the pay section as a picture, so it is not in the text. The headings that usually open
    that section are then tried instead. */
 const PAY_ALSO = /(compensation philosophy|components of compensation|elements of (our |executive )*compensation|executive compensation highlights|executive compensation program|how we pay|what we pay)/i;
 function partsProxy(text) {
   const out = {};
-  for (const [id, re0, max] of PROXY.concat([['pay2', PAY_ALSO, 45000]])) { if (id === 'pay2' && out.pay) continue; const re = re0; let best = '', m; const g = new RegExp(re.source, 'gi');
+  for (const [id, re0, max] of PROXY.concat([['pay2', PAY_ALSO, 70000]])) { if (id === 'pay2' && out.pay) continue; const re = re0; let best = '', m; const g = new RegExp(re.source, 'gi');
     while ((m = g.exec(text))) { const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index)); if (line.length > 160) continue;      /* a heading, not a mention in a sentence */
       const body = text.slice(m.index, m.index + max); const dots = (body.slice(0, 400).match(/\.{4,}|\s\d{1,3}\n/g) || []).length;   /* a table of contents is all dots and page numbers */
       if (dots < 3 && body.length > best.length) best = body; if (best.length === max) break; }
@@ -118,12 +119,17 @@ function tenYears(facts) {
 }
 
 /* ---------- what other companies' annual reports say about it ---------- */
-/* The name a rival would use: the company's name without its legal tail. */
+/* The name a rival would use: the company's name without its legal tail. "Holdings", "Group" and "Trust" go too, but
+   only when at least two words are left: a single word left over may be an everyday one ("Booking", "Match", "Block"),
+   which other reports use all the time without meaning the company. */
 function shortName(name) {
-  return String(name || '').replace(/[,.]/g, ' ').replace(/\b(incorporated|inc|corporation|corp|company|co|plc|ltd|limited|holdings?|group|n ?v|s ?a|ag|se|lp|llc|trust|the)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+  const base = String(name || '').replace(/[,.]/g, ' ').replace(/\b(incorporated|inc|corporation|corp|company|co|plc|ltd|limited|n ?v|s ?a|ag|se|lp|llc|the)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+  const less = base.replace(/\b(holdings?|group|trust)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+  return less.split(' ').length >= 2 ? less : base;
 }
 function mentions(text, name, max) {
-  const out = [], re = new RegExp('(^|[^A-Za-z])' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^A-Za-z]|$)', 'i');
+  /* as the name is written, capitals and all: "Apple" is the company, "apple" is not */
+  const out = [], re = new RegExp('(^|[^A-Za-z])' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^A-Za-z]|$)');
   text.split(/\n+/).forEach(p => { if (out.length < max && p.length > 60 && re.test(p)) out.push(p.length > 900 ? p.slice(0, 900) + ' [...]' : p); });
   return out;
 }
@@ -165,10 +171,10 @@ function fetchCompany(co, today) {
   const save = (name, text, max) => { if (!text || text.length < 500) return; const t = text.length > max ? text.slice(0, max) + '\n[... cut here: ' + (text.length - max) + ' more characters in the filing ...]' : text; fs.writeFileSync(path.join(dir, name), t); meta.parts[name] = t.length; };
   const k = latest(sub, ['10-K', '20-F', '40-F']);
   if (k) { const text = doc(k, 'k');
-    if (k.form === '10-K') { const it = items10K(text); save('k.business.txt', it['1'], 70000); save('k.risks.txt', it['1a'], 60000); save('k.discussion.txt', it['7'], 60000); }
+    if (k.form === '10-K') { const it = items10K(text); save('k.business.txt', it['1'], 70000); save('k.risks.txt', it['1a'], 90000); save('k.discussion.txt', it['7'], 60000); save('k.legal.txt', it['3'], 12000); save('k.controls.txt', it['9a'], 9000); }
     else save('k.report.txt', text, 150000); }
   const p = latest(sub, ['DEF 14A', 'DEFA14A'].slice(0, 1));
-  if (p) { const parts = partsProxy(doc(p, 'p')); save('p.pay.txt', parts.pay, 45000); save('p.rest.txt', ['table', 'versus', 'ratio', 'owners', 'dealings'].map(x => parts[x] ? '===== ' + x + ' =====\n' + parts[x] : '').filter(Boolean).join('\n\n'), 40000); }
+  if (p) { const parts = partsProxy(doc(p, 'p')); save('p.pay.txt', parts.pay, 70000); save('p.rest.txt', ['table', 'versus', 'ratio', 'owners', 'dealings'].map(x => parts[x] ? '===== ' + x + ' =====\n' + parts[x] : '').filter(Boolean).join('\n\n'), 60000); }
   try { const ty = tenYears(json('https://data.sec.gov/api/xbrl/companyfacts/CIK' + cik + '.json', path.join(raw, 'facts.json'), 30)); if (ty) { fs.writeFileSync(path.join(dir, 'tenyears.json'), JSON.stringify(ty)); meta.parts['tenyears.json'] = ty.years.length; } } catch (e) { meta.noFacts = String(e.message || e).slice(0, 80); }
   /* what its rivals' annual reports say: Prism's picks first, in full where they speak of competition; then whoever names it */
   const rv = [];

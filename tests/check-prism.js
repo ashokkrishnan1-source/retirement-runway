@@ -752,7 +752,11 @@ console.log('--- Research from the filings ---');
   check('ten years: a year with no figure is a gap, not a zero', ty.rows.back, [3, 3, null, 4]);
   check('ten years: a year-end balance, and a count of shares', [ty.rows.goodwill, ty.rows.shares], [[50, 50, 60, 60], [1000, 990, 980, 970]]);
   check('ten years: a line with no tag is left out, and two years are too few for a table', [ty.rows.kept, ED.tenYears({facts: {'us-gaap': {Revenues: {units: {USD: [yr(2023, 1), yr(2024, 2)]}}}}})], [undefined, null]);
-  check('the name a rival would use', ['Widget Holdings, Inc.', 'The Gadget Company', 'Acme plc', 'Bolt Corp.'].map(ED.shortName), ['Widget', 'Gadget', 'Acme', 'Bolt']);
+  check('the name a rival would use', ['Widget Works Holdings, Inc.', 'The Gadget Company', 'Acme plc', 'Bolt Corp.'].map(ED.shortName), ['Widget Works', 'Gadget', 'Acme', 'Bolt']);
+  // "Booking" alone is an everyday word in other companies' reports, so the fuller name is kept
+  check('a name that would shrink to one everyday word keeps its second', ['Booking Holdings Inc.', 'Match Group, Inc.'].map(ED.shortName), ['Booking Holdings', 'Match Group']);
+  check('mentions: the name as it is written, capitals and all', [ED.mentions('We compete with Booking Holdings and with other online travel companies in every market we serve.', 'Booking Holdings', 5).length, ED.mentions('Our online booking volumes compete for attention with many other things that travelers could be doing.', 'Booking', 5).length], [1, 0]);
+  check('annual report: legal proceedings and the report on controls are cut out too', (() => { const t = ['Item 3. Legal Proceedings', 'We are party to a claim. '.repeat(20), 'Item 4. Mine Safety Disclosures', 'None.', 'Item 9A. Controls and Procedures', 'Our controls were effective. '.repeat(20), 'Item 9B. Other Information', 'None.'].join('\n'), it = ED.items10K(t); return [it['3'].includes('party to a claim'), it['3'].includes('Mine Safety'), it['9a'].includes('controls were effective'), it['9a'].includes('Other Information')]; })(), [true, false, true, false]);
   check('mentions: whole words only, as paragraphs', ED.mentions('Our rivals include Acme and others, with whom we compete on price in every one of our markets.\nAcmeology is a different thing altogether and has nothing to do with it, in any market.\nShort Acme.', 'Acme', 5).length, 1);
   // checking a passage against a filing
   const T = BR.norm('We compete with Acme Corp. and  Bolt  Inc.\nOur “platform” grew 12% | in 2026 — a record.');

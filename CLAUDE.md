@@ -13,7 +13,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `guide/index.html`, `prism/guide/index.html` | The companion guides to Runway and to Prism: pages of short lessons on how to use each tool (see "The guides" below). No engine and no data of their own. |
 | `tools/research/` | Prism's research from the filings: `edgar.js` fetches a company's filings from the regulator, `READING.md` tells the reader what to write, `brief.js` checks every quoted passage and packs the research file (see "Research from the filings" under Prism). Needs network access to the regulator and a contact given at run time. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (484 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (487 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -193,7 +193,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (484 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (487 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data

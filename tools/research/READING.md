@@ -14,6 +14,8 @@ You are given a folder for one company. Read it, and write a brief as one JSON f
 | `k.business.txt` | The annual report: what the business is, and usually its own account of its competition. |
 | `k.risks.txt` | The annual report: risk factors. The first part of a long section. |
 | `k.discussion.txt` | The annual report: management's discussion of the year's results. |
+| `k.legal.txt` | The annual report: legal proceedings, where the company gives any. |
+| `k.controls.txt` | The annual report: whether its checks on its own accounts worked. A weakness named here belongs under `warnings`. |
 | `k.report.txt` | Only for a company that files a 20-F or 40-F: the whole annual report, cut short. |
 | `p.pay.txt` | The proxy statement: how the executives are paid, and what the pay depends on. |
 | `p.rest.txt` | The proxy statement: the pay table, pay against performance, the pay ratio, who owns the shares, dealings with insiders. |
