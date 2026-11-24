@@ -445,7 +445,16 @@ command also copies the two guide snippets (see "The guides").
 - The state is encrypted in the browser (PBKDF2-SHA256, 310,000 rounds, AES-GCM 256) with a passphrase that is
   held in memory only. There is no recovery: say so plainly wherever it is offered.
 - Online copies use the claude.ai `db` capability under `data/users/<viewer id>/` (private per signed-in person),
-  one document per saved version: `{app, name, at, enc, kdf, salt, iv, ct}`. Name and date are not encrypted.
+  one document per saved version: `{app, name, at, enc, kdf, salt, iv, ct}`, with `z: 1` when the text was
+  squeezed before it was encrypted (see below). Name and date are not encrypted.
+- **Copies are squeezed (gzip) before they are encrypted**, since 2026-11-24, wherever the browser has
+  `CompressionStream`. Why: an online copy may be no larger than 256 KiB, the home page keeps every tool's state in
+  one copy, and Prism's state grows (the scorecard, and now the record of signs). On the owner's file the home
+  page's copy was 140 KB on the first day and is 36 KB squeezed. A copy from before has no `z` and opens as it
+  always did. A browser without the stream makes plain copies, and when handed a squeezed one says the browser is
+  too old, not that the passphrase is wrong. A copy still over 250,000 characters is refused with a plain message
+  that points to the encrypted file, which has no limit. All three artifacts must carry the same snippet, or a
+  file saved by one page will not open in another: republish all of them when the snippet changes.
 - Both artifacts declare `capabilities: {downloads: true, db: {}, user: {}}`; keep all three on redeploys.
   Each artifact has its own store, so Runway versions and Open This First versions are kept separately.
 - On the standalone site there is no online store: only encrypted files are offered.

@@ -2216,7 +2216,10 @@ $('upNotes').onchange = async e => { const f = e.target.files[0]; e.target.value
 /* Encrypted copies. The plan is encrypted in the browser with a passphrase (PBKDF2-SHA256, 310,000 rounds, then
    AES-GCM 256) before it is stored or downloaded. The passphrase is kept in memory only and is never stored or sent.
    Online copies use the claude.ai `db` capability under data/users/<viewer id>/, which is private to each signed-in
-   person. On a standalone website there is no online store, so only encrypted files are offered. */
+   person. On a standalone website there is no online store, so only encrypted files are offered.
+   The text is squeezed (gzip) before it is encrypted, where the browser can: an online copy may be no larger than
+   256 KiB, and what a tool keeps grows with use. A copy made that way carries z:1. A copy without it is plain text
+   inside, as every copy was before, and opens the same way. */
 function makeVault(o){
   const el=o.mount,enc=new TextEncoder(),dec=new TextDecoder(),ITER=310000;
   let pass=null,db=null,uid=null,items=[],note='',ready=false,armedDel=null;
@@ -2224,10 +2227,18 @@ function makeVault(o){
   const unb=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
   const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const keyFor=async(p,salt)=>crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},await crypto.subtle.importKey('raw',enc.encode(p),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  const pipe=async(u,t)=>new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(t)).arrayBuffer());
   async function seal(obj,p){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
-    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},await keyFor(p,salt),enc.encode(JSON.stringify(obj)));
-    return {enc:1,kdf:'PBKDF2-SHA256-'+ITER,salt:b64(salt),iv:b64(iv),ct:b64(new Uint8Array(ct))}}
-  async function unseal(rec,p){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb(rec.iv)},await keyFor(p,unb(rec.salt)),unb(rec.ct));return JSON.parse(dec.decode(pt))}
+    let pt=enc.encode(JSON.stringify(obj)),z=0;
+    if(window.CompressionStream){try{pt=await pipe(pt,new CompressionStream('gzip'));z=1}catch(e){pt=enc.encode(JSON.stringify(obj));z=0}}
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},await keyFor(p,salt),pt);
+    const rec={enc:1,kdf:'PBKDF2-SHA256-'+ITER,salt:b64(salt),iv:b64(iv),ct:b64(new Uint8Array(ct))};if(z)rec.z=1;return rec}
+  /* A wrong passphrase fails at the decrypt step. A squeezed copy in a browser that cannot unsqueeze fails after it,
+     with its own code, so that the reader is not told the passphrase is wrong. */
+  async function unseal(rec,p){let pt=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb(rec.iv)},await keyFor(p,unb(rec.salt)),unb(rec.ct)));
+    if(rec.z){if(!window.DecompressionStream)throw {code:'old_browser'};pt=await pipe(pt,new DecompressionStream('gzip'))}
+    return JSON.parse(dec.decode(pt))}
+  const tooOld=e=>e&&e.code==='old_browser'?'This browser is too old to open that copy. Open it in a current browser.':'';
   const col=()=>db.collection('data/users/'+uid);
   const online=()=>!!(db&&uid);
   const when=t=>{try{return new Date(t).toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}catch(e){return t}};
@@ -2253,7 +2264,7 @@ function makeVault(o){
     h+='<p class="note" role="status" style="margin:0"'+(note?'':' hidden')+'>'+esc(note)+'</p>';
     el.innerHTML=h;
     const f=document.getElementById(o.app+'VFile');if(f)f.onchange=ev=>{const file=ev.target.files[0];if(!file)return;const r=new FileReader();
-      r.onload=async()=>{try{const rec=JSON.parse(r.result);if(!rec||rec.app!==o.app||!rec.ct)throw 0;let st;try{st=await unseal(rec,pass)}catch(e){note='The passphrase doesn\'t open that file.';return draw()}o.setState(st);note='Opened the encrypted file.'}catch(e){note='That isn\'t an encrypted file from this tool.'}draw()};r.readAsText(file)};
+      r.onload=async()=>{try{const rec=JSON.parse(r.result);if(!rec||rec.app!==o.app||!rec.ct)throw 0;let st;try{st=await unseal(rec,pass)}catch(e){note=tooOld(e)||'The passphrase doesn\'t open that file.';return draw()}o.setState(st);note='Opened the encrypted file.'}catch(e){note='That isn\'t an encrypted file from this tool.'}draw()};r.readAsText(file)};
     const p1=document.getElementById(o.app+'VPass');if(p1)p1.onkeydown=ev=>{if(ev.key==='Enter')act('unlock')};
   }
   async function act(a,id){
@@ -2261,13 +2272,14 @@ function makeVault(o){
       if(a==='unlock'){const p=document.getElementById(o.app+'VPass').value,p2=document.getElementById(o.app+'VPass2');
         if(p.length<10){note='Use at least 10 characters. Four unrelated words work well.';return draw()}
         if(p2&&p2.value!==p){note='The two passphrases don\'t match.';return draw()}
-        if(items.length){try{await unseal(items[0],p)}catch(e){note='That passphrase doesn\'t open your saved copies.';return draw()}}
+        if(items.length){try{await unseal(items[0],p)}catch(e){note=tooOld(e)||'That passphrase doesn\'t open your saved copies.';return draw()}}
         pass=p;note='';return draw()}
       if(a==='lock'){pass=null;note='';return draw()}
       if(a==='save'){const nm=(document.getElementById(o.app+'VName').value||'').trim()||'Untitled';note='Saving…';draw();
         const rec=Object.assign(await seal(o.getState(),pass),{app:o.app,name:nm,at:new Date().toISOString()});
+        if(JSON.stringify(rec).length>250000){note='This copy is too large to keep online. Download an encrypted file instead: a file has no size limit.';return draw()}
         await col().doc('v'+Date.now()).set(rec);await refresh();note='Saved "'+nm+'" online, encrypted.';return draw()}
-      if(a==='load'){const d=items.find(x=>x.id===id);if(!d)return;let st;try{st=await unseal(d,pass)}catch(e){note='The passphrase doesn\'t open "'+(d.name||'Untitled')+'". It may have been saved with a different one.';return draw()}
+      if(a==='load'){const d=items.find(x=>x.id===id);if(!d)return;let st;try{st=await unseal(d,pass)}catch(e){note=tooOld(e)||'The passphrase doesn\'t open "'+(d.name||'Untitled')+'". It may have been saved with a different one.';return draw()}
         o.setState(st);note='Loaded "'+(d.name||'Untitled')+'".';return draw()}
       if(a==='del'){if(armedDel!==id){armedDel=id;return draw()}armedDel=null;await col().doc(id).delete();await refresh();note='Deleted that online copy.';return draw()}
       if(a==='file'){const rec=Object.assign(await seal(o.getState(),pass),{app:o.app,at:new Date().toISOString()});
