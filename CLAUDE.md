@@ -348,6 +348,35 @@ format as the other tools; no AI, no live data.
   - Offered and not built: a download of the record as a CSV; filling in the past from a per-company
     financial-history download or from the regulator's filings (needs a sample, or network access); own signs
     that Prism works out from two typed figures.
+- **Reading the filings: rivals and management (asked 2026-11-24; answered, nothing built).** He asked how hard
+  it would be to analyze 10-Ks "and such filings" for the companies that come through the filters and for their
+  main competitors: where each stands, what the competition thinks of it, and whether its management can "steer
+  the company towards greatness". Every good company should be included, "including banks etc.", but only those
+  that emerge from the filters. He then quoted Buffett's two tests of management: how well they run the business
+  (against what competitors have done, given the hand they were dealt, and how they have allocated capital over
+  time), and how well they treat their owners (read the proxy statement; compare how managers treat themselves
+  with how they treat shareholders). What he was told:
+  - **Half of it is arithmetic, and Prism could do it with no AI**, from the file he already loads: a company's
+    record beside its industry's typical company and its nearest rivals (return on capital, growth, margins, share
+    count, debt), and what it did with its cash (buybacks against new shares, dividends, debt, acquisitions seen
+    through goodwill, stock pay). Insider ownership is in the file too.
+  - **The other half is reading, which needs AI, and Prism's page has none by design.** It would be done by Claude
+    in a session, from the regulator's free filings (annual report, proxy statement, current reports, insider
+    filings), and come back into Prism as a brief per company that the page only displays. Every statement would
+    carry the quoted passage and a link, and a program would check that each quote really is in the filing.
+  - **Limits said plainly.** Filings mostly list rivals by name; candid views of a rival are in earnings calls,
+    which are not filings. Management can be shown as evidence and red flags, not as a verdict: no management
+    score (Buffett's own caveat: most managers sit in a murky middle). Foreign companies file less. An AI reading
+    can be wrong, so it stays "research, not advice".
+  - **Banks.** For good banks, insurers and property companies to emerge from the filters they need tests of their
+    own. The file has return on equity (now and over five years), book value per share, profit years and the share
+    count; it lacks capital strength, bad loans and the mix of deposits, which are in the filings.
+  - **Access.** On 2026-11-24 the regulator's hosts (`www.sec.gov`, `data.sec.gov`, `efts.sec.gov`) were outside
+    this session's network policy. Ask for them with the environment tools when he says go. The regulator asks
+    automated readers to give a contact address in each request: ask him what to send, and never send his email
+    address without his say-so.
+  - Recommended to him, in this order: the no-AI comparison with rivals and the use of cash, with tests for banks;
+    then a pilot of the reading on three companies he names, before any pipeline is built. Awaiting his choice.
 - **Fee businesses in financial industries.** In Credit Services, Asset Management, Capital Markets and Financial
   Conglomerates, a company is scored like any other when the file gives it EBITDA-based figures (a card network,
   a fund manager); a lender gets none and stays set aside. Banks and insurers are always set aside.
