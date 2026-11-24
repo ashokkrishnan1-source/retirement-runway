@@ -401,7 +401,15 @@ format as the other tools; no AI, no live data.
     never as a verdict or a score ("most managers sit in a murky middle"). A company that files a 20-F or 40-F has
     no parts to cut and no proxy statement of the American kind, so its brief is thinner. The passages are
     checked; the reader's summaries of them are not. It is research, not advice.
-  - The pilot (2026-11-24) read three companies he had been looking at, with four rivals each.
+  - The pilot (2026-11-24) read three companies he had been looking at, with four rivals each: 121 findings, none
+    thrown away by the check. The readers' own "what the filings cannot tell" lists showed where the fetch tool
+    fell short, and it was changed the same day: more of the risk factors and of the pay discussion, legal
+    proceedings and the report on controls cut out too, and a fuller name to search rivals' reports for. Still
+    open: a proxy statement whose pay section has a picture for its title gives the reader its summary pages
+    instead; the balance sheet, the notes and the auditor's report are not cut out; and a company that names no
+    rival leaves Prism with its size-based picks, which for a software company can be the wrong companies.
+  - A reader that is stopped by a usage limit keeps its work: resume it with a message when the limit resets,
+    and do not start a new one.
   - Offered and not built: reading the earlier year's report to say what changed in the risk factors; reading
     current reports and insider filings; a scheduled re-read when a new annual report is filed; the same
     ten-year figures as history for the signs; writing research into the claude.ai link's own store so that no
