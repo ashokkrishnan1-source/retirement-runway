@@ -428,6 +428,10 @@ format as the other tools; no AI, no live data.
     A company costs one annual report, one proxy statement, up to six rivals' reports and up to 25 searched
     reports to fetch (about 70 MB cached) and roughly 70,000 tokens, about 50,000 words, to read: a quarter of an
     hour for a reader.
+  - The online route was first used on 2026-11-24, the day it was built: the three briefs of the pilot were
+    written to his private space on the collection link (three documents and the index), so that Prism shows
+    them there without a file. A document the tool reads comes back as `{id, data, version, updatedAt}`;
+    `desk.js` takes it wrapped or bare.
   - **The reader** (his choice, 2026-11-24): the Agent tool's `model: "sonnet"` for now, because it costs about a
     quarter as much. He asked whether he can switch to the larger model later, should he "think we do better than
     Sonnet's deepdive". He can: the reader is chosen at each reading, and a company read again replaces its
