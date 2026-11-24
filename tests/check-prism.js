@@ -712,6 +712,101 @@ console.log('--- How well is it run, and how does it treat its owners ---');
   check('page: lists are compared only between files read under the same rules', /const RULES_V = \d+;/.test(ui) && /rv: RULES_V/.test(ui) && (ui.match(/H\.prev\.rv === RULES_V/g) || []).length >= 2, true);
 }
 
+console.log('--- Research from the filings ---');
+{ // The tools that fetch and check a research file (tools/research). Nothing here touches the network: the texts are invented.
+  const ED = require('../tools/research/edgar.js'), BR = require('../tools/research/brief.js'), os = require('os');
+  // a filing's HTML as plain text
+  check('text: tags go, entities are read, a table row keeps its cells apart',
+    ED.toText('<p>Item&nbsp;1.&#160;Business</p><table><tr><td>Sales</td><td>100</td></tr></table><div>We&rsquo;re &ldquo;big&rdquo; &#8212; really.</div><script>x()</script>'), 'Item 1. Business\nSales | 100\n\nWe\'re "big" - really.');
+  check('text: the hidden tagging block of a filing is dropped', ED.toText('<ix:header><p>hidden</p></ix:header><p>Shown</p>'), 'Shown');
+  // the parts of an annual report: the table of contents names each part once, with almost nothing after it
+  const A = 'We make widgets. '.repeat(30), B = 'Demand may fall. '.repeat(30), D = 'Sales rose this year. '.repeat(30);
+  const tenK = ['Table of Contents', 'Item 1. Business 3', 'Item 1A. Risk Factors 9', 'Item 7. Management\'s Discussion and Analysis 20', 'Item 8. Financial Statements 40', 'PART I',
+    'Item 1. Business', A, 'Item 1A. Risk Factors', B, 'Item 1B. Unresolved Staff Comments', 'None.', 'Item 2. Properties', 'Offices.', 'Item 7. Management\'s Discussion and Analysis', D, 'Item 7A. Quantitative Disclosures', 'None.', 'Item 8. Financial Statements', 'Numbers.'].join('\n');
+  const it = ED.items10K(tenK);
+  check('annual report: the business part holds the business and stops before the risks', [it['1'].includes(A.trim()), it['1'].includes('Demand may fall'), it['1'].includes('Sales rose')], [true, false, false]);
+  check('annual report: the risks stop before the next part', [it['1a'].includes(B.trim()), it['1a'].includes('We make widgets'), it['1a'].includes('Unresolved')], [true, false, false]);
+  check('annual report: the discussion of the year stops before the next part', [it['7'].includes(D.trim()), it['7'].includes('Quantitative'), it['7'].includes('Numbers.')], [true, false, false]);
+  check('annual report: a part that is not there comes back empty', ED.items10K('Nothing here.')['7'], '');
+  // a proxy statement: the heading in the table of contents is followed by dots and page numbers, the real one by text
+  const pay = 'The bonus depends on sales growth and on return on capital. '.repeat(20);
+  const proxy = ['Compensation Discussion and Analysis ........ 30', 'Summary Compensation Table ........ 45', 'Security Ownership of Certain Beneficial Owners ........ 60', '', 'Compensation Discussion and Analysis', pay,
+    'As described in the Compensation Discussion and Analysis above, and at much greater length than a heading would ever run to, the committee reviewed the programme, the peer group and the results for the year in full.',
+    'Summary Compensation Table', 'Name | Year | Total', 'Chief Executive | 2026 | 21,000,000', 'Security Ownership of Certain Beneficial Owners', 'All directors and officers as a group own 1.2%.'].join('\n');
+  const pp = ED.partsProxy(proxy);
+  check('proxy: the pay discussion starts at its real heading, not in the table of contents', [pp.pay.startsWith('Compensation Discussion and Analysis\nThe bonus depends'), pp.table.includes('21,000,000'), pp.owners.includes('own 1.2%')], [true, true, true]);
+  check('proxy: when the title is a picture, the headings that open the section are tried', ED.partsProxy('Advisory vote ........ 3\n\nExecutive Compensation Highlights\n' + pay).pay.startsWith('Executive Compensation Highlights'), true);
+  // ten years of reported figures: a company changed the tag for dividends in 2023; a quarter's figure and a 10-Q are left out
+  const yr = (y, v, form) => ({start: y + '-01-01', end: y + '-12-31', val: v, form: form || '10-K', filed: (y + 1) + '-02-15'}), bal = (y, v) => ({end: y + '-12-31', val: v, form: '10-K', filed: (y + 1) + '-02-15'});
+  const facts = {facts: {'us-gaap': {
+    Revenues: {units: {USD: [yr(2021, 100), yr(2022, 110), yr(2023, 120), yr(2024, 130), {start: '2024-10-01', end: '2024-12-31', val: 35, form: '10-K', filed: '2025-02-15'}, yr(2024, 999, '10-Q')]}},
+    NetCashProvidedByUsedInOperatingActivities: {units: {USD: [yr(2021, 20), yr(2022, 22), yr(2023, 24), yr(2024, 26)]}},
+    PaymentsOfDividendsCommonStock: {units: {USD: [yr(2021, 5), yr(2022, 6)]}}, PaymentsOfDividends: {units: {USD: [yr(2022, 77), yr(2023, 7), yr(2024, 8)]}},
+    PaymentsForRepurchaseOfCommonStock: {units: {USD: [yr(2021, 3), yr(2022, 3), yr(2024, 4)]}},
+    Goodwill: {units: {USD: [bal(2021, 50), bal(2022, 50), bal(2023, 60), bal(2024, 60)]}},
+    WeightedAverageNumberOfDilutedSharesOutstanding: {units: {shares: [yr(2021, 1000), yr(2022, 990), yr(2023, 980), yr(2024, 970)]}}}}};
+  const ty = ED.tenYears(facts);
+  check('ten years: the years on record', ty.years, ['2021', '2022', '2023', '2024']);
+  check('ten years: only a full year from an annual report counts', ty.rows.sales, [100, 110, 120, 130]);
+  check('ten years: a change of tag is followed, the older tag winning where both report a year', ty.rows.paid, [5, 6, 7, 8]);
+  check('ten years: a year with no figure is a gap, not a zero', ty.rows.back, [3, 3, null, 4]);
+  check('ten years: a year-end balance, and a count of shares', [ty.rows.goodwill, ty.rows.shares], [[50, 50, 60, 60], [1000, 990, 980, 970]]);
+  check('ten years: a line with no tag is left out, and two years are too few for a table', [ty.rows.kept, ED.tenYears({facts: {'us-gaap': {Revenues: {units: {USD: [yr(2023, 1), yr(2024, 2)]}}}}})], [undefined, null]);
+  check('the name a rival would use', ['Widget Holdings, Inc.', 'The Gadget Company', 'Acme plc', 'Bolt Corp.'].map(ED.shortName), ['Widget', 'Gadget', 'Acme', 'Bolt']);
+  check('mentions: whole words only, as paragraphs', ED.mentions('Our rivals include Acme and others, with whom we compete on price in every one of our markets.\nAcmeology is a different thing altogether and has nothing to do with it, in any market.\nShort Acme.', 'Acme', 5).length, 1);
+  // checking a passage against a filing
+  const T = BR.norm('We compete with Acme Corp. and  Bolt  Inc.\nOur “platform” grew 12% | in 2026 — a record.');
+  check('passage: found word for word', BR.found('We compete with Acme Corp. and Bolt Inc.', T), true);
+  check('passage: case, spacing, curly quotes, dashes and table bars do not matter', BR.found('our "platform"   GREW 12% in 2026 - a record', T), true);
+  check('passage: a changed word is not found', BR.found('We compete with Acme Corp. and Nut Inc.', T), false);
+  check('passage: two parts joined by dots must both be there, in order', [BR.found('We compete with Acme Corp. ... grew 12% in 2026', T), BR.found('grew 12% in 2026 ... We compete with Acme Corp.', T)], [true, false]);
+  check('passage: a scrap of a few letters proves nothing', [BR.found('Acme', T), BR.found('', T)], [false, false]);
+  // a whole brief against a folder
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'prism-research-')), w = (f, o) => fs.writeFileSync(path.join(dir, f), typeof o === 'string' ? o : JSON.stringify(o));
+  w('meta.json', {sym: 'WDG.X', cik: '0000000001', name: 'Widget Works Inc.', fetched: '2026-11-24', sources: [{id: 'k', form: '10-K', filed: '2026-02-01', period: '2025-12-31', url: 'https://www.sec.gov/Archives/k.htm'}, {id: 'p', form: 'DEF 14A', filed: '2026-03-01', url: 'https://www.sec.gov/Archives/p.htm'}]});
+  w('k.full.txt', 'We make widgets for factories. We compete with Bolt Inc. and Nut Corp. on price.\nWe paid $900 million for Gadget Co. in 2024.');
+  w('p.full.txt', 'The chief executive\'s total pay for 2025 was $21,000,000. The yearly bonus depends on sales growth.');
+  w('rivals.json', [{sym: 'BLT.X', name: 'Bolt Inc.', url: 'https://www.sec.gov/Archives/bolt.htm', filed: '2026-02-10', competition: 'Our main competitor is Widget Works, which is larger than we are.', mentions: []}]);
+  w('tenyears.json', ty);
+  w('brief.json', {v: 1, sym: 'WDG.X', read: '2026-11-24', business: 'It makes widgets for factories.', rivalSymbols: ['blt.x', 'WDG.X', 'not a symbol!'], cant: ['Whether customers are leaving.'],
+    sources: [{id: 'k', form: '10-K', url: 'https://example.com/changed'}, {id: 'r1', form: '10-K', who: 'Bolt Inc.', filed: '2026-02-10', url: 'https://www.sec.gov/Archives/bolt.htm'}, {id: 'r2', form: '10-K', who: 'Nobody', url: 'https://www.sec.gov/Archives/unknown.htm'}],
+    sections: {rivals: [{t: 'It names Bolt and Nut as rivals.', q: 'We compete with Bolt Inc. and Nut Corp. on price.', s: 'k', tone: 'shouting'}],
+      run: [{t: 'It paid $900 million for Gadget.', q: 'We paid $900 million for Gadget Co. in 2024.', s: 'k', tone: 'warn'}, {t: 'It paid $9 billion for Gadget.', q: 'We paid $9 billion for Gadget Co. in 2024.', s: 'k', tone: ''}],
+      owners: [{t: 'The chief executive was paid $21 million.', q: 'total pay for 2025 was $21,000,000', s: 'p', tone: ''}, {t: 'A passage placed in the wrong filing.', q: 'total pay for 2025 was $21,000,000', s: 'k', tone: ''}],
+      namedBy: [{t: 'Bolt calls it its main competitor.', q: 'Our main competitor is Widget Works, which is larger than we are.', s: 'r1', tone: ''}, {t: 'From a filing that is not in the folder.', q: 'Our main competitor is Widget Works', s: 'r2', tone: ''}]}});
+  const R = BR.check(dir, path.join(dir, 'brief.json')), O = R.out;
+  check('brief: findings whose passages are in the filing are kept, the rest thrown away', [O.kept, O.dropped], [4, 3]);
+  check('brief: kept where they belong', [O.sections.rivals.length, O.sections.run.length, O.sections.owners.length, O.sections.namedBy.length, O.sections.stands.length], [1, 1, 1, 1, 0]);
+  check('brief: a tone it does not know is no tone', [O.sections.rivals[0].tone, O.sections.run[0].tone], ['', 'warn']);
+  check('brief: the company\'s own sources come from the folder, whatever the reader wrote', O.sources.find(x => x.id === 'k').url, 'https://www.sec.gov/Archives/k.htm');
+  check('brief: a rival\'s report must be one the folder holds', [O.sources.map(x => x.id), R.problems.some(x => /source r2 is not a filing in the folder/.test(x))], [['k', 'p', 'r1'], true]);
+  check('brief: rivals\' symbols are tidied, itself and nonsense left out', O.rivalSymbols, ['BLT.X']);
+  check('brief: the ten-year table is added by the tool, not the reader', O.tenYears.rows.sales, [100, 110, 120, 130]);
+  check('brief: nothing reads like advice', R.advice, false);
+  w('advice.json', {v: 1, sym: 'WDG.X', business: 'A fine company. Investors should buy the shares.', sections: {}});
+  check('brief: one that says what to do with the shares is flagged', BR.check(dir, path.join(dir, 'advice.json')).advice, true);
+  BR.check(dir, path.join(dir, 'brief.json'));
+  const outFile = path.join(dir, 'research.json'); check('pack: one brief packed', BR.pack(outFile, [dir, path.join(dir, 'nothing-here')]), 1);
+  const packed = JSON.parse(fs.readFileSync(outFile, 'utf8')); check('pack: the file Prism loads', [packed.v, packed.app, Object.keys(packed.briefs), packed.briefs['WDG.X'].kept], [1, 'prism-research', ['WDG.X'], 4]);
+  fs.rmSync(dir, {recursive: true, force: true});
+  // the page: it shows the same sections, links only to the regulator, and cleans a research file both when it is loaded and when it is read back
+  const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));
+  const BSEC = new Function(ui.match(/const BSEC = \[[^\]]*\];/)[0] + '\nreturn BSEC;')();
+  check('page: it shows the sections a brief has', BSEC, BR.SECTIONS);
+  const page = new Function('day', 'esc', ui.match(/const BSEC = [\s\S]*?\nfunction cleanBrief\(b\) \{[\s\S]*?\n\}\n/)[0] + '\nreturn {cleanBrief, secUrl};')(x => x, x => x);
+  check('page: a link is made only to the regulator\'s own site', ['https://www.sec.gov/Archives/x.htm', 'http://www.sec.gov/x', 'https://www.sec.gov.evil.example/x', 'javascript:alert(1)', 'https://www.sec.gov/x" onclick="y'].map(page.secUrl), ['https://www.sec.gov/Archives/x.htm', null, null, null, null]);
+  const cb = page.cleanBrief(packed.briefs['WDG.X']);
+  check('page: a checked brief comes through whole', [cb.sym, cb.sections.run.length, cb.sources.length, cb.rivalSymbols, cb.tenYears.years.length, cb.cant.length], ['WDG.X', 1, 3, ['BLT.X'], 4, 1]);
+  const bad = page.cleanBrief({v: 1, sym: 'WDG.X', sections: {run: [{t: 'x', q: 'y', s: 'zz'}, {t: 5, q: 'y', s: 'k'}, {t: 'ok', q: 'passage', s: 'k', tone: '<b>'}], extra: [{t: 'x', q: 'y', s: 'k'}]}, sources: [{id: 'k', form: '10-K', url: 'javascript:alert(1)', filed: 'yesterday'}, {id: '<x>', url: 'https://www.sec.gov/x'}], rivalSymbols: ['<script>', 'OK.X'], cant: [7, 'fine'], tenYears: {years: ['x', 'y', 'z'], rows: {sales: [1, 2, 3]}}});
+  check('page: a careless or hostile file is cut down to what Prism knows', [bad.sections.run.map(p => [p.t, p.tone]), bad.sections.extra, bad.sources, bad.rivalSymbols, bad.cant, bad.tenYears], [[['ok', '']], undefined, [{id: 'k', form: '10-K', who: '', filed: null, period: null, url: null}], ['OK.X'], ['fine'], null]);
+  check('page: what is not a brief is refused', [page.cleanBrief(null), page.cleanBrief({v: 2, sym: 'A', sections: {}}), page.cleanBrief({v: 1, sym: 'a b', sections: {}}), page.cleanBrief({v: 1, sym: 'A'})], [null, null, null, null]);
+  check('page: a research file is cleaned when loaded and again when read back from the browser', (ui.match(/cleanBrief\(/g) || []).length >= 3, true);
+  check('page: links to filings open apart and tell the other site nothing', /target="_blank" rel="noopener noreferrer"/.test(ui), true);
+  check('page: it says the research is an AI reading, and not advice', /Read by an AI/.test(ui) && /Research, not advice/.test(ui), true);
+  check('repository: research files and the folder of filings are kept out of it', (() => { const g = fs.readFileSync(path.join(__dirname, '..', '.gitignore'), 'utf8'); return /^\.research\/$/m.test(g) && /^prism-research-\*\.json$/m.test(g) && /^prism-reading-list-\*\.json$/m.test(g); })(), true);
+  check('the fetch tool carries no contact of its own', /SEC_CONTACT/.test(fs.readFileSync(path.join(__dirname, '..', 'tools', 'research', 'edgar.js'), 'utf8')) && !/@(?!\S*example\.com)[a-z0-9-]+\.(com|net|org)/i.test(fs.readFileSync(path.join(__dirname, '..', 'tools', 'research', 'edgar.js'), 'utf8')), true);
+}
+
 console.log('--- The guide keeps step with the page ---');
 { // prism/guide/index.html is a page of lessons about Prism. It must not drift from it. Every name it sets as a label
   // (class "k") must be on the page, word for word. Every "Show me" link must name a real list, a real order and a real
@@ -733,7 +828,7 @@ console.log('--- The guide keeps step with the page ---');
   const sorts = Object.keys(new Function(ui.match(/const SORTS = \{[\s\S]*?\n\};/)[0] + '\nreturn SORTS;')());
   check('guide: the page has nine named lists', Object.keys(LI).length, 9);
   check('guide: the engine and the page agree on the named lists', Object.keys(LI).slice().sort(), E.LISTS.slice().sort());
-  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs', 'run', 'owners'];
+  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs', 'run', 'owners', 'stand'];
   const gos = all(/<a\b[^>]*\bdata-go='([^']+)'[^>]*>([\s\S]*?)<\/a>/g, guide).map(x => [JSON.parse(x[1]), plain(x[2])]);
   const bad = gos.filter(([g]) => (g.list !== undefined && !lists.includes(g.list)) || (g.sort !== undefined && !sorts.includes(g.sort)) || (g.open !== undefined && g.open !== 'first') ||
     (g.box !== undefined && g.box !== 'self') || !g.el || !(parts.includes(g.el) || html.includes('id="' + g.el + '"')) || (parts.includes(g.el) && g.open !== 'first'));

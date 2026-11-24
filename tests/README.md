@@ -42,7 +42,10 @@ Prism's engine on invented companies, and holds Prism's guide
 named list it mentions must be on Prism's page, word for word.
 It also works through the signs that a business is winning by hand: the figure a
 year before, the allowance, the record kept from report to report, a share split,
-and the reader's own signs.
+and the reader's own signs. It does the same for the tests of a bank, for a
+company's standing against its industry and for where a year's cash went, and
+it checks the research tools in `tools/research/` on invented filings, without
+touching the network.
 
 ## After the yearly update
 

@@ -11,8 +11,9 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `guide/index.html`, `prism/guide/index.html` | The companion guides to Runway and to Prism: pages of short lessons on how to use each tool (see "The guides" below). No engine and no data of their own. |
+| `tools/research/` | Prism's research from the filings: `edgar.js` fetches a company's filings from the regulator, `READING.md` tells the reader what to write, `brief.js` checks every quoted passage and packs the research file (see "Research from the filings" under Prism). Needs network access to the regulator and a contact given at run time. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page (442 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (484 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -137,7 +138,7 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
     Show example, which keeps them (see the section above).
   - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
     holding up or slipping), the entry ceiling, the put desk, the five questions, the nine named lists, moonshots,
-    whether the management is any good, why a company isn't listed; verdicts (and how to note a put), the signs
+    whether the management is any good, what its filings say, why a company isn't listed; verdicts (and how to note a put), the signs
     that a business is winning, what changed, the scorecard; options and settings,
     saving, a routine for each new file.
 - **It shows where things are and leaves the figures to the page.** No tax or benefit figure goes in Runway's guide,
@@ -157,8 +158,8 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   calculator and the id of a part of the page. Prism: `{"list", "sort", "open", "el", "box"}`: a list of the Show
   menu (`""` is the five-question list, `"near"` the near misses), an order, `"open":"first"` to open the first
   company, and a part of the page (`"detail"` and `"vform"` are the opened company's detail and its verdict form;
-  `"signs"`, `"run"` and `"owners"` are its boxes "Is the business winning?", "How well is it run?" and "How does
-  it treat its owners?";
+  `"signs"`, `"run"`, `"owners"` and `"stand"` are its boxes "Is the business winning?", "How well is it run?",
+  "How does it treat its owners?" and, when research is loaded, "Where does it stand?";
   `"box":"self"` outlines the part itself and not the panel around it). Any may be left out. On a tap the guide
   writes this as a note in `localStorage` key `ftol-show`, with the tool's name. The tool reads its own note once
   as it loads (`ftolShow`, while it is under a minute old), sets its view, and calls `ftolSpot`, which opens any
@@ -192,7 +193,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (442 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (484 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -349,35 +350,62 @@ format as the other tools; no AI, no live data.
   - Offered and not built: a download of the record as a CSV; filling in the past from a per-company
     financial-history download or from the regulator's filings (needs a sample, or network access); own signs
     that Prism works out from two typed figures.
-- **Reading the filings: rivals and management (asked 2026-11-24; answered, nothing built).** He asked how hard
-  it would be to analyze 10-Ks "and such filings" for the companies that come through the filters and for their
-  main competitors: where each stands, what the competition thinks of it, and whether its management can "steer
-  the company towards greatness". Every good company should be included, "including banks etc.", but only those
-  that emerge from the filters. He then quoted Buffett's two tests of management: how well they run the business
-  (against what competitors have done, given the hand they were dealt, and how they have allocated capital over
-  time), and how well they treat their owners (read the proxy statement; compare how managers treat themselves
-  with how they treat shareholders). What he was told:
-  - **Half of it is arithmetic, and Prism could do it with no AI**, from the file he already loads: a company's
-    record beside its industry's typical company and its nearest rivals (return on capital, growth, margins, share
-    count, debt), and what it did with its cash (buybacks against new shares, dividends, debt, acquisitions seen
-    through goodwill, stock pay). Insider ownership is in the file too.
-  - **The other half is reading, which needs AI, and Prism's page has none by design.** It would be done by Claude
-    in a session, from the regulator's free filings (annual report, proxy statement, current reports, insider
-    filings), and come back into Prism as a brief per company that the page only displays. Every statement would
-    carry the quoted passage and a link, and a program would check that each quote really is in the filing.
-  - **Limits said plainly.** Filings mostly list rivals by name; candid views of a rival are in earnings calls,
-    which are not filings. Management can be shown as evidence and red flags, not as a verdict: no management
-    score (Buffett's own caveat: most managers sit in a murky middle). Foreign companies file less. An AI reading
-    can be wrong, so it stays "research, not advice".
-  - **Banks.** For good banks, insurers and property companies to emerge from the filters they need tests of their
-    own. The file has return on equity (now and over five years), book value per share, profit years and the share
-    count; it lacks capital strength, bad loans and the mix of deposits, which are in the filings.
-  - **Access.** On 2026-11-24 the regulator's hosts (`www.sec.gov`, `data.sec.gov`, `efts.sec.gov`) were outside
-    this session's network policy. Ask for them with the environment tools when he says go. The regulator asks
-    automated readers to give a contact address in each request: ask him what to send, and never send his email
-    address without his say-so.
-  - Recommended to him, in this order: the no-AI comparison with rivals and the use of cash, with tests for banks;
-    then a pilot of the reading on three companies he names, before any pipeline is built. Awaiting his choice.
+- **Research from the filings (`tools/research/`; `RESEARCH`, `cleanBrief`, `standBox`).** On 2026-11-24 he asked
+  how hard it would be to analyze 10-Ks "and such filings" for the companies that come through the filters and for
+  their main competitors: where each stands, what the competition thinks of it, and whether its management can
+  "steer the company towards greatness", by Buffett's two tests (how well they run the business, and how well they
+  treat their owners). When told that the reading needs AI and that Prism's page has none, he answered: "Let us
+  firstly make it a solution that only I ... will use. That takes care of the AI problem for now. So yes go ahead
+  with the build. And I think you can build both halves."
+  - **The shape.** Prism's page still has no AI and works without research. The reading is done by Claude in a
+    session of his, and comes back as a research file that the page only displays. Three steps, each a tool:
+    1. `edgar.js fetch <reading list>` fetches from the regulator's EDGAR system the latest annual report and proxy
+       statement, cuts out the parts worth reading (business, risk factors, the year's discussion; pay, the pay
+       tables, who owns the shares, dealings with insiders), works out a ten-year table of where the cash went from
+       the company's own tagged figures, and collects what other companies' annual reports say of it (Prism's
+       rival picks in full where they speak of competition, plus whoever names it while speaking of competing,
+       found by the regulator's full-text search). No AI. Everything is cached under `RESEARCH_DIR`.
+    2. A reader (a Claude agent per company) follows `READING.md` and writes `brief.json`: eight sections of
+       findings, each with a passage copied word for word and the filing it is from.
+    3. `brief.js check` looks every passage up in the filing's text and throws away a finding whose passage is not
+       there; it takes sources only from the folder, and flags anything that reads like advice. `brief.js pack`
+       makes the research file. **Nothing a reader wrote reaches Prism without passing the check.**
+  - **In Prism.** "Research from the filings" (under "Your verdicts") has "Download the reading list" (the list on
+    show and the companies he follows: symbols, names, the regulator's numbers and Prism's rival picks; no figures)
+    and "Load a research file". A company that was read gets a third box, "Where does it stand?", and its two
+    management boxes gain "Ten years of cash, from its filings", "From its filings" and "From its proxy
+    statement". Rivals the company names itself replace Prism's size-based picks, unless he chose his own.
+    "A newer annual report is out" appears when the file's annual-report date is later than the one read, and
+    "What changed" says so for a followed company.
+  - **A research file is text from elsewhere.** `cleanBrief` keeps only the shapes it knows, when the file is
+    loaded and again when it is read back from the browser; every word is escaped; a link is made only to
+    `https://www.sec.gov/`. It is kept in IndexedDB beside the screener file (key `research`), not in
+    `prism-v1`, so it is not in the encrypted copy: he keeps the file.
+  - **How to run it for him** (a future session): he supplies a reading list from Prism. Ask him for the contact
+    to give the regulator (see below), then
+    `SEC_CONTACT="..." RESEARCH_DIR=<scratch> node tools/research/edgar.js fetch <list> [symbols]`, one reading
+    agent per company with the brief in `READING.md` (give it the folder and the output path, and have it run
+    `brief.js check` until nothing is thrown away), then `brief.js pack`, and send him the file. A company costs
+    one annual report, one proxy statement, up to six rivals' reports and up to 25 searched reports to fetch
+    (about 70 MB cached) and roughly 70,000 words to read.
+  - **Never commit** a reading list, a research file or the fetched filings (`.gitignore` blocks them, and a check
+    holds the three lines): they show which companies he is looking at. Briefs go to him as a file.
+  - **The regulator asks every automated reader to say who it is**, in each request. He gave a name and an email
+    address for this on 2026-11-24, to be shared "as minimum as must": they go in `SEC_CONTACT` at run time and
+    nowhere else. They are not in this repository, and must never be: ask him again in a new session, or let him
+    put `SEC_CONTACT` in the environment's settings himself. Send nothing else about him.
+  - **Access.** A personal cloud environment named `retirement-runway`, made on 2026-11-24 with his approval,
+    allows `www.sec.gov`, `data.sec.gov` and `efts.sec.gov`. The Default environment does not.
+  - **Limits, said to him and on the page.** Filings mostly list rivals by name; frank views of a rival are in
+    earnings calls, which are not filings. Management is shown as evidence, clear strengths and clear warnings,
+    never as a verdict or a score ("most managers sit in a murky middle"). A company that files a 20-F or 40-F has
+    no parts to cut and no proxy statement of the American kind, so its brief is thinner. The passages are
+    checked; the reader's summaries of them are not. It is research, not advice.
+  - The pilot (2026-11-24) read three companies he had been looking at, with four rivals each.
+  - Offered and not built: reading the earlier year's report to say what changed in the risk factors; reading
+    current reports and insider filings; a scheduled re-read when a new annual report is filed; the same
+    ten-year figures as history for the signs; writing research into the claude.ai link's own store so that no
+    file needs to be carried.
 - **Banks and insurers on the A-list (`gradeLender`, `L_TESTS`).** He said on 2026-11-24 that every good company
   should come through the filters, "including banks etc.". A lender cannot take the usual six tests (debt is its raw
   material, and its cash flow says little), so it has six of its own, price left out: return on the owners' money

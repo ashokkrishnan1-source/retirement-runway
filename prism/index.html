@@ -160,6 +160,11 @@ details.fold>summary .hlp{vertical-align:2px}
 .fold ul.plain b{color:var(--fg);font-weight:600}
 .fold .rv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--fg2)}
 .fold .rv input[type=text]{max-width:230px}
+/* what a reader found in the filings: each finding with the passage it rests on and where the passage is */
+.fold ul.find{margin:0;padding-left:18px;font-size:13.5px;color:var(--fg);display:flex;flex-direction:column;gap:8px;max-width:86ch}
+.fold ul.find .bq{display:block;margin-top:2px;padding-left:10px;border-left:2px solid var(--line);font-size:12.5px;color:var(--fg2)}
+.fold ul.find a,.fold .srcs a{color:var(--accent)}
+.fold .srcs{font-size:12.5px;color:var(--fg2);max-width:86ch}
 /* a note the reader must not miss: the stored copy of the file is older than what Prism can read now */
 .older{background:var(--warn-bg);color:var(--fg);border-radius:8px;padding:9px 12px;font-size:14px;max-width:none}
 @media (max-width:760px){
@@ -257,6 +262,16 @@ details.fold>summary .hlp{vertical-align:2px}
     <div class="row">
       <button type="button" class="btn sm" id="dlNotes">Download case notes</button>
       <label class="btn sm" for="upNotes">Load case notes</label><input type="file" id="upNotes" accept=".tsv,.csv,.txt" hidden>
+    </div>
+  </section>
+
+  <section id="resSec">
+    <h2>Research from the filings<button type="button" class="hlp" data-h="research" aria-label="About research from the filings">?</button></h2>
+    <p class="note" id="resNote"></p>
+    <div class="row">
+      <button type="button" class="btn sm" id="dlReading">Download the reading list</button>
+      <label class="btn sm" for="upResearch">Load a research file</label><input type="file" id="upResearch" accept=".json,application/json" hidden>
+      <button type="button" class="btn sm" id="resForget" hidden>Forget the research</button>
     </div>
   </section>
 
@@ -1442,6 +1457,10 @@ const CTL = [['gate', 'Sector rank needed for a yes (0 to 100)', 1], ['q_roic', 
 const blank = () => ({v: 2, controls: {}, noMining: false, leaveOut: '', verdicts: {}, hist: null, mine: {}, tierB: false, card: null, track: {}, kind: {}, own: {}, rivals: {}, ui: {pool: 'main', need: GK.slice(), slack: 0, list: 'sale', hideWarn: true, showRej: false, sort: 'auto', page: 0}});
 let S = blank(), DATA = null, RES = null, BY = {}, NEW = new Set(), OPEN = null, FIND = '', C = CONTROLS;
 let PEERS = {};        /* the companies of each industry, for "How well is it run?" (the engine's peerGroups) */
+/* What a reader found in companies' filings: {made, briefs: {symbol: brief}}, from a research file. Prism has no AI
+   and reads no filing itself; it shows this file, and works without it. Kept in this browser beside the screener file. */
+let RESEARCH = null;
+const briefOf = r => (RESEARCH && RESEARCH.briefs && RESEARCH.briefs[r.sym]) || null;
 /* Raised whenever a change to the rules moves companies on or off the A-list by itself (2: banks and insurers are
    graded). The lists of two files are compared only when both were made under the same rules, so that a rule change
    is not reported as companies joining. */
@@ -1455,9 +1474,9 @@ function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch 
 
 /* the last file is kept in this browser so the page reopens where you left off */
 function idb() { return new Promise((res, rej) => { try { const q = indexedDB.open('prism', 1); q.onupgradeneeded = () => q.result.createObjectStore('kv'); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); } catch (e) { rej(e); } }); }
-async function cachePut(v) { try { const d = await idb(); await new Promise((res, rej) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, 'data'); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
-async function cacheGet() { try { const d = await idb(); return await new Promise((res, rej) => { const q = d.transaction('kv').objectStore('kv').get('data'); q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); }); } catch (e) { return null; } }
-async function cacheDel() { try { const d = await idb(); await new Promise((res, rej) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').delete('data'); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
+async function cachePut(v, key) { try { const d = await idb(); await new Promise((res, rej) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, key || 'data'); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
+async function cacheGet(key) { try { const d = await idb(); return await new Promise((res, rej) => { const q = d.transaction('kv').objectStore('kv').get(key || 'data'); q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); }); } catch (e) { return null; } }
+async function cacheDel(key) { try { const d = await idb(); await new Promise((res, rej) => { const t = d.transaction('kv', 'readwrite'); t.objectStore('kv').delete(key || 'data'); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
 function pack(rows) { const keys = FIELDS.map(f => f[0]).filter(k => rows.some(r => r[k] != null)); return {keys, rows: rows.map(r => keys.map(k => r[k] == null ? null : r[k]))}; }
 function unpack(p) { return p.rows.map(a => { const r = {}; p.keys.forEach((k, i) => { r[k] = a[i]; }); return r; }); }
 
@@ -1691,6 +1710,13 @@ const HELP = {
     '<p>The table sets the company beside the typical company of its industry in your file, and beside its nearest rivals. "Ahead" means it does better than two thirds of the others on that measure, "Behind" better than a third or fewer.</p>' +
     '<p>The typical company is the hand everyone in the industry was dealt. A company far ahead of it in a hard industry has done more than one a little ahead in an easy one.</p>' +
     '<p>Prism picks the ' + C.rivals_n + ' companies nearest in size as rivals. Type other symbols to choose your own. Industry labels are the data provider\'s and can be rough.</p><p>These are one year\'s figures and five-year averages. They are facts to weigh, not a score.</p>',
+  research: () => '<p><b>Research from the filings.</b> Some questions cannot be answered from a download: who a company\'s rivals are and what they say of it, what its managers did with its cash over ten years, how they pay themselves.</p>' +
+    '<p>The answers are in the annual report and the proxy statement, which companies file with the regulator. Reading them takes a reader, and Prism has no AI. So the reading is done outside this page, by Claude, and comes back as a research file that Prism shows.</p>' +
+    '<p><b>Download the reading list</b> names the companies on the list you are looking at and the ones you follow. Have their filings read, then <b>Load a research file</b>. Open a company to see what was found.</p>' +
+    '<p>Every finding carries the passage it rests on, copied from the filing, with a link. A program checked each passage against the filing; a finding whose passage was not there was thrown away. It is still an AI reading: check what matters to you. It is research, not advice.</p>',
+  stand: () => '<p><b>Where does it stand?</b> What a reader found in the company\'s own annual report, and in its rivals\' reports: what it does, where it says it stands, who it names as rivals, who names it, and what worries it.</p>' +
+    '<p>Each finding is followed by the passage it rests on and a link to the filing. Companies write these reports with their lawyers: they say little that is frank about a rival, and nothing about what happens next.</p>' +
+    '<p>It is evidence to weigh, with the clear strengths and the clear warnings picked out. It is not a verdict on the company or its managers.</p>',
   owners: () => '<p><b>How does it treat its owners?</b> The second way to judge a management: set what the owners got beside what the managers took.</p>' +
     '<p>The file shows how much of the company its directors and officers own, whether your slice grew or shrank, what came back as dividends and buybacks, and what was paid to staff in new shares.</p>' +
     '<p>How the managers pay themselves, and what their pay is tied to, is in the company\'s proxy statement. No download carries that.</p>',
@@ -1841,7 +1867,7 @@ function render() {
   if (S.ui.showRej) hint.push('rejected companies shown');
   $('askHint').textContent = hint.length ? ' · ' + hint.join(' · ') : '';
   drawTable(rows);
-  drawWatch(); drawCard(); drawAside(base5); drawLook(); drawHow();
+  drawWatch(); drawResearch(); drawCard(); drawAside(base5); drawLook(); drawHow();
   ['pool', 'sort'].forEach(id => { $(id).value = String(S.ui[id]); }); $('hideWarn').checked = S.ui.hideWarn; $('showRej').checked = S.ui.showRej; $('tierB').checked = !!S.tierB;
 }
 /* The column headings of the loaded file, as plain text: which ones Prism reads and as what, then the ones it does not use.
@@ -2104,7 +2130,7 @@ function ownAdd(sym, name, up) {
 const runNum = (m, v) => sgNum({unit: m.unit}, v);
 const RUNW = {ahead: ['good', 'Ahead'], middle: ['mute', 'Middle'], behind: ['warn', 'Behind']};
 /* the rivals to set a company beside: the reader's own choice first */
-const picksFor = r => (S.rivals[r.sym] && S.rivals[r.sym].length ? S.rivals[r.sym] : null);
+const picksFor = r => { const b = briefOf(r); return S.rivals[r.sym] && S.rivals[r.sym].length ? S.rivals[r.sym] : b && b.rivalSymbols.some(x => BY[x]) ? b.rivalSymbols : null; };
 /* a dollar amount for each $100 of cash the business brought in */
 const per100 = (v, made) => '$' + Math.round(100 * Math.abs(v) / made);
 function cashLines(r) {
@@ -2136,9 +2162,11 @@ function runBox(r) {
       (m.word ? '<span class="pill ' + RUNW[m.word][0] + '">' + RUNW[m.word][1] + '</span> <span style="color:var(--fg3)">better than ' + Math.round(m.beats) + ' of ' + (m.n - 1) + '</span>' : '<span style="color:var(--fg3)">' + (m.v == null ? 'no figure in the file' : 'too few to rank') + '</span>') + '</div>' +
     '<div class="f me">' + runNum(m, m.v) + '</div><div class="f">' + runNum(m, m.median) + '</div>' + rv.map(o => '<div class="f">' + runNum(m, runFig(o, m.k)) + '</div>').join(''); });
   h += '</div></div>';
-  h += '<div class="rv"><span>' + (x.picked ? 'Set beside the companies you chose.' : rv.length ? 'Set beside the ' + rv.length + ' nearest in size in its industry: ' + rv.map(o => esc(o.name || o.sym)).join(', ') + '.' : 'No other company of its industry is in the file.') + '</span>' +
+  h += '<div class="rv"><span>' + (x.picked && !(S.rivals[r.sym] || []).length ? 'Set beside the rivals it names in its own annual report: ' + rv.map(o => esc(o.name || o.sym)).join(', ') + '.' : x.picked ? 'Set beside the companies you chose.' : rv.length ? 'Set beside the ' + rv.length + ' nearest in size in its industry: ' + rv.map(o => esc(o.name || o.sym)).join(', ') + '.' : 'No other company of its industry is in the file.') + '</span>' +
     '<input type="text" data-rv="' + sym + '" value="' + esc((S.rivals[r.sym] || []).join(' ')) + '" placeholder="Compare with: type symbols" aria-label="Compare with: symbols of the rivals you choose" autocomplete="off"></div>';
   h += cashLines(r);
+  const b = briefOf(r);
+  if (b) h += tenYearTable(b) + (b.sections.run.length ? '<h5>From its filings</h5>' + findings(b, 'run') : '') + briefFoot(b, r);
   h += '<p class="note">One file gives one year and some five-year averages. They are facts to weigh, not a score, and they play no part in any list.</p>';
   return h + '</details>';
 }
@@ -2154,11 +2182,95 @@ function ownBox(r) {
   else if (o.handed != null && o.handed > 0) a.push('It handed its owners <b>' + money(o.handed) + '</b> over the past year' + (o.paid > 0 && o.back > 0 ? ' (' + money(o.paid) + ' in dividends, ' + money(o.back) + ' buying back shares)' : o.paid > 0 ? ' in dividends' : ' by buying back shares') + (o.handedShare != null ? ', which is ' + p0(o.handedShare) + ' of ' + what : '') + '.');
   else if (o.handed === 0) a.push('It paid no dividend and bought back no shares over the past year.');
   if (o.stock != null && o.stock > 0) a.push('It paid staff <b>' + money(o.stock) + '</b> in new shares' + (o.stockShare != null ? ', equal to ' + p0(o.stockShare) + ' of its spare cash' : '') + '. The owners bear that cost: it is why a share count can rise while a company buys back shares.');
-  if (!a.length) return '';
+  const b = briefOf(r), proxy = b && b.sections.owners.length;
+  if (!a.length && !proxy) return '';
   let h = '<details class="dbox fold" data-own-box="' + sym + '" data-keep="' + esc(key) + '"' + keepOpen(key, false) + '><summary>How does it treat its owners?' + hb('owners') + '<span style="margin-left:6px;font:400 13px var(--body);color:var(--fg2)">' + esc(capFirst(g.join(' · '))) + '</span></summary>';
-  h += '<ul class="plain">' + a.map(x => '<li>' + x + '</li>').join('') + '</ul>';
-  h += '<p class="note">How the managers pay themselves, and what that pay is tied to, is in the company\'s proxy statement. No download carries it.</p>';
+  if (a.length) h += '<ul class="plain">' + a.map(x => '<li>' + x + '</li>').join('') + '</ul>';
+  h += proxy ? '<h5>From its proxy statement</h5>' + findings(b, 'owners') + briefFoot(b, r)
+    : '<p class="note">How the managers pay themselves, and what that pay is tied to, is in the company\'s proxy statement. No download carries it. ' + (b ? 'The research file found nothing on it for this company.' : 'A research file can: see "Research from the filings", lower on the page.') + '</p>';
   return h + '</details>';
+}
+/* ---------- research from the filings ---------- */
+/* A research file is made outside this page (tools/research in the repository): filings fetched from the regulator,
+   read by an AI, every passage checked against the filing by a program. The page treats it as text from elsewhere:
+   cleanBrief keeps only the shapes it knows, every word is escaped before it is shown, and a link is made only to
+   the regulator's own site. */
+const BSEC = ['stands', 'rivals', 'namedBy', 'worries', 'run', 'owners', 'strengths', 'warnings'];
+const TEN = [['sales', 'Sales'], ['profit', 'Profit'], ['made', 'Cash the business brought in'], ['kept', 'Put back into the business'], ['bought', 'Acquisitions'], ['paid', 'Dividends'], ['back', 'Buying back shares'], ['stock', 'Paid to staff in shares'], ['shares', 'Share count'], ['debt', 'Long-term debt'], ['goodwill', 'Goodwill'], ['equity', 'Owners\' money']];
+const isDay = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+const secUrl = u => typeof u === 'string' && /^https:\/\/www\.sec\.gov\/[^\s"'<>]*$/.test(u) ? u : null;
+function cleanBrief(b) {
+  if (!b || b.v !== 1 || typeof b.sym !== 'string' || !/^[A-Z0-9.\-]{1,10}$/.test(b.sym) || !b.sections || typeof b.sections !== 'object') return null;
+  const str = (x, n) => typeof x === 'string' ? x.slice(0, n) : '';
+  const o = {v: 1, sym: b.sym, name: str(b.name, 120), read: isDay(b.read) ? b.read : null, business: str(b.business, 700), sources: [], sections: {}, rivalSymbols: [], cant: [], dropped: +b.dropped > 0 ? Math.round(+b.dropped) : 0, tenYears: null};
+  (Array.isArray(b.sources) ? b.sources : []).slice(0, 30).forEach(x => { if (x && typeof x.id === 'string' && /^[a-z]\d{0,3}$/.test(x.id)) o.sources.push({id: x.id, form: str(x.form, 12), who: str(x.who, 120), filed: isDay(x.filed) ? x.filed : null, period: isDay(x.period) ? x.period : null, url: secUrl(x.url)}); });
+  const ids = {}; o.sources.forEach(x => { ids[x.id] = 1; });
+  BSEC.forEach(k => { o.sections[k] = (Array.isArray(b.sections[k]) ? b.sections[k] : []).slice(0, 8).filter(p => p && typeof p.t === 'string' && typeof p.q === 'string' && ids[p.s]).map(p => ({t: p.t.slice(0, 600), q: p.q.slice(0, 600), s: p.s, tone: p.tone === 'good' || p.tone === 'warn' ? p.tone : ''})); });
+  o.rivalSymbols = (Array.isArray(b.rivalSymbols) ? b.rivalSymbols : []).filter(x => typeof x === 'string' && /^[A-Z0-9.\-]{1,10}$/.test(x)).slice(0, 8);
+  o.cant = (Array.isArray(b.cant) ? b.cant : []).filter(x => typeof x === 'string').map(x => x.slice(0, 300)).slice(0, 8);
+  const t = b.tenYears;
+  if (t && Array.isArray(t.years) && t.years.length >= 3 && t.years.length <= 12 && t.years.every(y => /^\d{4}$/.test(String(y))) && t.rows && typeof t.rows === 'object') { const rows = {};
+    TEN.forEach(([k]) => { const a = t.rows[k]; if (Array.isArray(a) && a.length === t.years.length) rows[k] = a.map(v => typeof v === 'number' && isFinite(v) ? v : null); });
+    if (Object.keys(rows).length) o.tenYears = {years: t.years.map(String), rows}; }
+  return o;
+}
+/* what a filing is called, and where it is */
+const FORM = {'10-K': 'annual report', '10-K/A': 'annual report', '20-F': 'annual report', '40-F': 'annual report', 'DEF 14A': 'proxy statement'};
+function srcLink(b, id) {
+  const x = b.sources.find(q => q.id === id); if (!x) return '';
+  const what = (x.who ? x.who + ', ' : '') + (FORM[x.form] || x.form || 'filing') + (x.filed ? ' filed ' + day(x.filed) : '');
+  return x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">' + esc(what) + '</a>' : esc(what);
+}
+const findings = (b, k) => '<ul class="find">' + b.sections[k].map(p => '<li>' + (p.tone === 'good' ? '<span class="pill good">In its favour</span> ' : p.tone === 'warn' ? '<span class="pill warn">A worry</span> ' : '') + esc(p.t) +
+  '<span class="bq">“' + esc(p.q) + '” ' + srcLink(b, p.s) + '</span></li>').join('') + '</ul>';
+/* the annual report the research read, and whether the file knows of a newer one */
+const briefK = b => (b && b.sources.find(x => x.id === 'k')) || null;
+const briefStale = (b, r) => { const k = briefK(b); return !!(k && k.filed && r && r.tenk && r.tenk > k.filed); };
+const briefFoot = (b, r) => '<p class="note">' + (briefStale(b, r) ? '<span class="pill warn">A newer annual report is out</span> ' : '') + 'Read by an AI' + (b.read ? ' on ' + day(b.read) : '') + ' from the company\'s filings. A program checked every passage against the filing' + (b.dropped ? ' and threw away ' + b.dropped + (b.dropped === 1 ? ' finding whose passage was not there' : ' findings whose passages were not there') : '') + '. Research, not advice.</p>';
+/* ten years of the company's own reported figures: what its managers did with the cash, year by year and in all */
+function tenYearTable(b) {
+  const t = b.tenYears; if (!t) return '';
+  const fmt = (k, v) => v == null ? '–' : k === 'shares' ? sgBig(v) : money(v), sum = k => t.rows[k] ? t.rows[k].reduce((a, v) => a + (v || 0), 0) : null, first = a => a.find(v => v != null), last = a => a.slice().reverse().find(v => v != null);
+  let h = '<h5>Ten years of cash, from its filings</h5>';
+  const made = sum('made'), parts = [];
+  if (made > 0) { [['kept', 'went back into the business'], ['bought', 'on acquisitions'], ['paid', 'to dividends'], ['back', 'to buying back shares']].forEach(([k, w]) => { const v = sum(k); if (v > 0) parts.push(money(v) + ' ' + w); });
+    h += '<p class="note">From ' + esc(t.years[0]) + ' to ' + esc(t.years[t.years.length - 1]) + ' the business brought in <b>' + money(made) + '</b> in cash.' + (parts.length ? ' ' + capFirst(parts.join(', ')) + '.' : '') +
+      (t.rows.shares && first(t.rows.shares) > 0 && last(t.rows.shares) > 0 ? ' The share count went from ' + sgBig(first(t.rows.shares)) + ' to ' + sgBig(last(t.rows.shares)) + '.' : '') + '</p>'; }
+  h += '<div class="sgqw"><div class="sgq" style="grid-template-columns:auto repeat(' + t.years.length + ',minmax(64px,auto))"><div class="h n">Year</div>' + t.years.map(y => '<div class="h f">' + esc(y) + '</div>').join('');
+  TEN.forEach(([k, name]) => { if (t.rows[k]) h += '<div class="n">' + name + '</div>' + t.rows[k].map(v => '<div class="f">' + fmt(k, v) + '</div>').join(''); });
+  return h + '</div></div><p class="note">The company\'s own reported figures, by financial year. A dash is a year it did not report that line.</p>';
+}
+/* the third box: where the company stands, by its own account and its rivals' */
+function standBox(r) {
+  const b = briefOf(r); if (!b) return '';
+  const sym = esc(r.sym), key = 'stand:' + r.sym, k = briefK(b), S2 = b.sections, sec = (title, id) => S2[id].length ? '<h5>' + title + '</h5>' + findings(b, id) : '';
+  const n = S2.warnings.length, g = S2.strengths.length;
+  let h = '<details class="dbox fold" data-stand="' + sym + '" data-keep="' + esc(key) + '"' + keepOpen(key, false) + '><summary>Where does it stand?' + hb('stand') + '<span style="margin-left:6px">' +
+    (briefStale(b, r) ? '<span class="pill warn">A newer annual report is out</span> ' : '') + (n ? '<span class="pill warn">' + n + (n === 1 ? ' warning' : ' warnings') + '</span> ' : '') + (g ? '<span class="pill good">' + g + (g === 1 ? ' strength' : ' strengths') + '</span> ' : '') +
+    '<span style="font:400 13px var(--body);color:var(--fg2)">' + (k && k.filed ? 'From its annual report of ' + esc(day(k.filed)) : 'From its filings') + '</span></span></summary>';
+  if (b.business) h += '<p style="font-size:14px;max-width:80ch">' + esc(b.business) + '</p>';
+  h += sec('Clear warnings', 'warnings') + sec('Clear strengths', 'strengths') + sec('Where it says it stands', 'stands') + sec('Who it names as rivals', 'rivals') + sec('What other companies\' reports say of it', 'namedBy') + sec('What worries it', 'worries');
+  if (b.cant.length) h += '<h5>What the filings cannot tell</h5><ul class="plain">' + b.cant.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
+  const own = b.sources.filter(x => /^[kp]$/.test(x.id));
+  if (own.length) h += '<p class="srcs">Read from: ' + own.map(x => srcLink(b, x.id)).join(' and ') + '. How it is run and how it treats its owners are in the two boxes above.</p>';
+  return h + briefFoot(b, r) + '</details>';
+}
+/* The reading list: the companies on the list on show and the ones the reader follows, with what a reader needs to
+   find their filings (the regulator's number for each) and the rivals Prism would set them beside. Names and numbers
+   only, no figures from the file. */
+function readingList() {
+  const seen = {}, out = [];
+  const add = r => { if (!r || seen[r.sym] || !r.cik) return; seen[r.sym] = 1; const x = runRead(r, PEERS, C, (S.rivals[r.sym] || []).length ? S.rivals[r.sym] : null, BY), b = briefOf(r), k = briefK(b);
+    out.push({sym: r.sym, name: r.name || '', cik: r.cik, industry: r.industry || '', kind: kindFor(r), tenk: r.tenk || null, have: k && k.filed ? k.filed : null, rivals: (x ? x.rivals : []).filter(o => o.cik).map(o => ({sym: o.sym, name: o.name || '', cik: o.cik}))}); };
+  Object.keys(S.verdicts).filter(followed).sort().forEach(s => add(BY[s]));
+  sorted(viewRows(baseFor(viewNow()), viewNow())).slice(0, 60).forEach(add);
+  return {v: 1, app: 'prism-reading-list', made: today(), fileDate: DATA.meta.date, list: viewNow(), companies: out};
+}
+function drawResearch() {
+  const b = RESEARCH && RESEARCH.briefs ? Object.keys(RESEARCH.briefs).sort() : [], latest = b.map(s => RESEARCH.briefs[s].read).filter(Boolean).sort().pop();
+  $('resNote').textContent = b.length ? 'Research on ' + b.length + (b.length === 1 ? ' company is loaded: ' : ' companies is loaded: ') + b.slice(0, 30).join(', ') + (b.length > 30 ? ' and ' + (b.length - 30) + ' more' : '') + '.' + (latest ? ' Last read ' + day(latest) + '.' : '') + ' Open a company to see it.'
+    : 'Who a company\'s rivals are, what its managers did with its cash over ten years and how they pay themselves are in its filings, not in a download. Prism cannot read them: it has no AI. A reader can, and Prism shows what comes back.';
+  $('resForget').hidden = !b.length;
 }
 /* The A-list box in a row's detail: the six tests with the company's own figures, the reader's own choice, whether the
    price is low, the dividend, and the facts a put seller looks at. */
@@ -2250,9 +2362,9 @@ function gateBox(r, k) {
 function detailHTML(r) {
   const v = S.verdicts[r.sym] || {};
   let h = '<div style="display:flex;flex-direction:column;gap:10px"><div><b>' + esc(r.sym) + '</b> · ' + esc(r.name || '') + ' · ' + esc(r.sector || '') + (r.industry ? ', ' + esc(r.industry) : '') + ' · ' + money(r.cap) + ' market value · ' + price(r.price) + ' a share</div>';
-  if (!r.scored) h += '<div class="dbox"><h4><span class="pill mute">Set aside</span>' + ASIDE[r.aside] + '</h4><p class="note">' + ASIDE_WHY[r.aside] + '</p></div>' + aBox(r) + signBox(r) + runBox(r) + ownBox(r);
+  if (!r.scored) h += '<div class="dbox"><h4><span class="pill mute">Set aside</span>' + ASIDE[r.aside] + '</h4><p class="note">' + ASIDE_WHY[r.aside] + '</p></div>' + aBox(r) + signBox(r) + runBox(r) + ownBox(r) + standBox(r);
   else {
-    h += aBox(r) + signBox(r) + runBox(r) + ownBox(r);
+    h += aBox(r) + signBox(r) + runBox(r) + ownBox(r) + standBox(r);
     if (r.blocks.length) { const B = {lev: 'debt is more than ' + C.blk_lev + ' times EBITDA', dil: 'the share count grew more than ' + pct(C.blk_dil) + ' in a year', shrink: 'sales fell more than ' + pct(C.blk_shrink), burn: 'free cash flow is negative'};
       h += '<div class="dbox"><h4><span class="pill bad">Not now</span>Kept off the five-question lists</h4><p class="note">Reason: ' + r.blocks.map(b => B[b]).join('; ') + '. This is re-tested with every file, so it means "not now", not "never".</p></div>'; }
     h += '<div class="dgrid">' + GK.map(k => gateBox(r, k)).join('');
@@ -2332,6 +2444,7 @@ function drawDigest() {
       const sg = signsOf(r), tl = sgTally(sg, false);
       if (sg.fresh) a.push('new results, for the period to ' + day(sg.period) + (tl ? ': signs ' + tl.replace(/ · /g, ', ') : ''));
       else if (sg.todo) a.push(sg.todo + (sg.todo === 1 ? ' of your own signs needs a figure' : ' of your own signs need figures') + ' for the report to ' + sgPer(sg.period));
+      if (briefStale(briefOf(r), r)) a.push('a newer annual report is out than the one your research file read');
     }
     if (a.length) notes.push('<b>' + esc(x) + '</b> (' + esc(v.v) + '): ' + esc(a.join('; ')) + '.'); });
   const groups = !two ? [] : [['sale', canA], ['put', canA], ['A', canA], ['moon', H.prev.can && H.prev.can.moon], ['all', true]].filter(g => g[1] && ch[g[0]] && (ch[g[0]].in.length || ch[g[0]].out.length)).map(g => g[0]);
@@ -2393,6 +2506,7 @@ function drawHow() {
     '<div><b>Signs that a business is winning.</b> A company\'s detail has a box, "Is the business winning?", with four or five figures chosen to fit its kind of business: ' + Object.keys(KINDS).length + ' kinds, picked from the industry in your file, and you can choose another. Each figure is set against what it was a year before and marked better, worse or the same; a change inside a small allowance counts as the same. ' +
       'On the first day the figure a year before is worked out from the file\'s own growth columns. After that Prism keeps the figures of each report: ' + C.sign_keep + ' reports for a company you follow or have given a sign of your own, ' + C.sign_keep_other + ' for the rest of the A-list. You can add signs from the company\'s own report, which no download carries, and type their figures in. ' +
       'The figures are the file\'s trailing-twelve-month ones, so they move slowly, and sales growth is as reported, with acquisitions and currency in it. Prism does not add the signs up or forecast from them, and they play no part in any test, list or order.</div>' +
+    '<div><b>Research from the filings.</b> Prism reads no filing and has no AI. A research file, made outside this page by a reader working from the annual report and the proxy statement that a company files with the regulator, adds what a download cannot: who its rivals are and what their reports say of it, what its managers did with its cash over ten years, and how they pay themselves. Each finding carries the passage it rests on and a link to the filing, and a program threw away any finding whose passage was not in the filing. The ten-year figures are the company\'s own reported ones. Prism works the same without a research file. With one, it is still a reading by an AI of documents written by the company: evidence to weigh, not a verdict, and not advice.</div>' +
     '<div><b>Rising or falling.</b> "Falling" means the price is below its 50-day average and lower than a month ago. "Rising" means it is above its 50-day average. A cheap share that is still falling often gets cheaper.</div>' +
     '<div><b>Moonshots.</b> Companies worth up to ' + money(C.moon_max) + ' with sales of at least ' + money(C.moon_rev) + ', growing ' + pct(C.moon_growth) + ' or more (' + pct(C.moon_growth3) + ' over three years and expected next year, where the file says), a gross margin of at least ' + pct(C.moon_gm) + ', more cash than debt, at least ' + C.moon_runway + ' years of cash at today\'s spending, and a share count growing no more than ' + pct(C.moon_dil) + ' a year. Cyclical industries are left out. Most companies like these disappoint: the tests check that a company can survive, not that its story is true.</div>' +
     '<div><b>Scorecard.</b> With each newer file, Prism notes the companies that have joined each list and their price that day, and how far the typical large company (the middle one) moved since the file before. Later it shows how each list has done against that typical company over the same days. Nothing here has been tested against the past, so this is how the lists earn or lose your trust.</div>' +
@@ -2469,6 +2583,15 @@ $('dlNotes').onclick = () => { const syms = Object.keys(S.verdicts).sort();
   /* A CSV, because claude.ai lets a page save only certain kinds of file and .tsv is not one of them. The leading mark
      makes Excel read accented letters correctly; "Load case notes" ignores it and still reads tab-separated files. */
   offer('prism-case-notes-' + today() + '.csv', '\uFEFF' + [NOTE_HEAD].concat(syms.map(s => NOTE_KEYS.map((k, i) => i ? S.verdicts[s][k] || '' : s))).map(a => a.map(csvCell).join(',')).join('\n') + '\n'); };
+$('dlReading').onclick = () => { const l = readingList(); if (!l.companies.length) { say('No company on this list has a regulator\'s number in the file, so there is nothing to read.'); return; } offer('prism-reading-list-' + (DATA.meta.date || today()) + '.json', JSON.stringify(l, null, 1)); };
+$('upResearch').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const o = JSON.parse(await f.text()); if (!o || o.app !== 'prism-research' || !o.briefs || typeof o.briefs !== 'object') throw 0;
+    const have = (RESEARCH && RESEARCH.briefs) || {}, next = Object.assign({}, have); let n = 0;
+    Object.keys(o.briefs).slice(0, 400).forEach(k => { const b = cleanBrief(o.briefs[k]); if (!b) return; if (!next[b.sym] || !next[b.sym].read || (b.read && b.read >= next[b.sym].read)) { next[b.sym] = b; n++; } });
+    if (!n) throw 0;
+    RESEARCH = {made: isDay(o.made) ? o.made : today(), briefs: next}; cachePut(RESEARCH, 'research'); render(); say('Loaded research on ' + n + (n === 1 ? ' company.' : ' companies.') + ' Open one to see it.'); }
+  catch (x) { say('That file isn\'t a research file for Prism.'); } };
+$('resForget').onclick = e => { const t = e.currentTarget; if (t.dataset.armed) { RESEARCH = null; cacheDel('research'); delete t.dataset.armed; t.textContent = 'Forget the research'; render(); say('The research was removed from this browser.'); } else { t.dataset.armed = '1'; t.textContent = 'Press again to remove the research'; } };
 $('upNotes').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
   try { const rows = parseCSV(await f.text()), H = rows[0].map(normHeader), col = k => H.findIndex(h => h.indexOf(k) === 0), ix = {sym: col('symbol'), date: col('date'), v: col('verdict'), by: col('surfaced'), thesis: col('thesis'), why: col('why'), trigger: col('trigger'), entry: col('entry'), review: col('review'), notes: col('notes')};
     if (ix.sym < 0 || ix.v < 0) throw 0; let n = 0;
@@ -2613,7 +2736,7 @@ if (SHOW) { const v = SHOW.list;
   save(); }
 function showFromGuide(go) {
   /* a box inside an opened company: the part's name, the mark that finds it, and the key that keeps it open */
-  const BOX = {signs: ['[data-signs]', 'sg:'], run: ['[data-run]', 'run:'], owners: ['[data-own-box]', 'own:']}[go.el];
+  const BOX = {signs: ['[data-signs]', 'sg:'], run: ['[data-run]', 'run:'], owners: ['[data-own-box]', 'own:'], stand: ['[data-stand]', 'stand:']}[go.el];
   if (go.open === 'first') { const tr = document.querySelector('#tbl tr.main'); if (tr) { OPEN = tr.dataset.sym; if (BOX) KEEP[BOX[1] + OPEN] = true; render(); } }
   const part = go.el === 'detail' ? document.querySelector('#tbl tr.detail > td') : go.el === 'vform' ? document.querySelector('#tbl tr.detail [data-vform]') : BOX ? document.querySelector('#tbl tr.detail ' + BOX[0]) : null;
   const el = part || (typeof go.el === 'string' ? $(go.el) : null);
@@ -2623,6 +2746,9 @@ function showFromGuide(go) {
 (async () => {
   let c = null; try { c = await Promise.race([cacheGet(), new Promise(r => setTimeout(() => r(null), 3000))]); } catch (e) {}
   if (c && c.packed && c.meta) DATA = {rows: unpack(c.packed), meta: c.meta}; else DATA = exampleData();
+  /* the research file kept in this browser, cleaned again as it is read back */
+  try { const rs = await Promise.race([cacheGet('research'), new Promise(r => setTimeout(() => r(null), 3000))]);
+    if (rs && rs.briefs) { const b = {}; Object.keys(rs.briefs).forEach(k => { const x = cleanBrief(rs.briefs[k]); if (x) b[x.sym] = x; }); if (Object.keys(b).length) RESEARCH = {made: rs.made, briefs: b}; } } catch (e) {}
   compute();
   if (SHOW) showFromGuide(SHOW);
 })();

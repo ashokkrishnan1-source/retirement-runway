@@ -134,6 +134,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
                 <li>The list: its title, <span class="k s">Show</span>, <span class="k s">Order</span>, <span class="k s">More options</span> and the rows</li>
                 <li><span class="k s">Look up any stock</span></li>
                 <li><span class="k s">Your verdicts</span></li>
+                <li><span class="k">Research from the filings</span></li>
                 <li><span class="k">Scorecard: how the lists have done</span></li>
                 <li><span class="k s">Set aside</span></li>
                 <li><span class="k s">Settings</span></li>
@@ -339,8 +340,32 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li>A bank or an insurer is set beside other banks and insurers, on measures that fit them.</li>
           </ul>
           <p class="tip"><b>Good to know.</b> One file gives one year and some five-year averages. These are facts to weigh, not a score, and they play no part in any list.</p>
-          <p class="tip"><b>Good to know.</b> How the managers pay themselves is in the company's proxy statement. No download carries it.</p>
+          <p class="tip"><b>Good to know.</b> How the managers pay themselves is in the company's proxy statement. No download carries it. The next lesson shows how to have it read.</p>
           <div class="go"><a class="btn" data-go='{"list":"A","open":"first","el":"run"}' href="#">Show me how it is run →</a><a class="btn" data-go='{"list":"A","open":"first","el":"owners"}' href="#">Show me the owners →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="filings">
+        <summary><span class="t"><span class="q">What do its filings say?</span><span class="where">Research from the filings · Where does it stand?</span></span></summary>
+        <div class="body">
+          <p>Some answers are in no download: who a company's rivals are and what they say of it, what its managers did with its cash over ten years, how they pay themselves. They are in the annual report and the proxy statement that a company files with the regulator.</p>
+          <p>Reading those takes a reader, and Prism has no AI. So the reading is done outside this page, by Claude, and Prism shows what comes back. Prism works the same without it.</p>
+          <ol class="steps">
+            <li><span>Under <b class="k s">Show</b>, choose the list you want read. Go down to <b class="k">Research from the filings</b> and press <b class="k">Download the reading list</b>. It names the companies on that list and the ones you follow.</span></li>
+            <li><span>Give that file to Claude and ask for the filings to be read. A research file comes back.</span></li>
+            <li><span>Press <b class="k s">Load a research file</b> and choose it.</span></li>
+            <li><span>Open a company that was read. A new box, <b class="k s">Where does it stand?</b>, says what the company does, then gives <b class="k s">Clear warnings</b>, <b class="k s">Clear strengths</b>, <b class="k s">Who it names as rivals</b>, what other companies' reports say of it, and <b class="k s">What worries it</b>.</span></li>
+            <li><span><b class="k s">How well is it run?</b> now sets the company beside the rivals it names itself, and adds <b class="k">Ten years of cash, from its filings</b> and <b class="k s">From its filings</b>.</span></li>
+            <li><span><b class="k">How does it treat its owners?</b> adds <b class="k s">From its proxy statement</b>: what the chief executive was paid, and what the pay depends on.</span></li>
+          </ol>
+          <ul class="points">
+            <li>Under every finding is the passage it rests on, copied from the filing, with a link to the filing. A program checked each passage. A finding whose passage was not in the filing was thrown away.</li>
+            <li><b class="k">A newer annual report is out</b> means the company has filed one since the research was done. Have it read again.</li>
+            <li>The research stays in this browser, like your screener file. <b class="k s">Forget the research</b> removes it.</li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> A company writes these reports with its lawyers. They say little that is frank about a rival, and nothing about what happens next. Most managements sit in a murky middle that is hard to rank: the research shows the evidence, and leaves the judgment to you.</p>
+          <p class="tip warn"><b>It is an AI's reading.</b> The passages are checked, the summaries are not. Read the passage, and follow the link when it matters. It is research, not investment advice.</p>
+          <div class="go"><a class="btn" data-go='{"el":"resSec"}' href="#">Show me the research section →</a></div>
         </div>
       </details>
 
@@ -488,7 +513,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>If you sell puts, look at the <b class="k s">Put desk</b>.</span></li>
             <li><span>Record a verdict on what you read, with a review date.</span></li>
             <li><span>When a company you follow has reported, open it, read <b class="k">Is the business winning?</b> and type in your own signs from its report.</span></li>
-            <li><span>Now and then, open the scorecard.</span></li>
+            <li><span>Now and then, open the scorecard, and have the filings of the companies you care about read again.</span></li>
           </ol>
           <div class="go"><a class="btn" data-go='{"list":"sale","el":"loadCard"}' href="#">Show me in Prism →</a></div>
         </div>
@@ -517,6 +542,8 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <div><dt>Ex-dividend date</dt><dd>The date from which a buyer of the share no longer gets the next dividend. Whoever owns the share the day before does. Prism shows the date once the company has declared it, and does not guess before then.</dd></div>
             <div><dt>Cash-secured put</dt><dd>A promise to buy shares at a set price, the strike, up to a set date, the expiry, in return for a payment now. You keep the cash to pay for them set aside. If the price ends below the strike, the shares are assigned to you.</dd></div>
             <div><dt>Verdict</dt><dd>Your own decision about a company, kept from file to file.</dd></div>
+            <div><dt>Annual report</dt><dd>The account of its year that a company must file with the regulator. In it the company says what it does, who it competes with and what worries it.</dd></div>
+            <div><dt>Proxy statement</dt><dd>What a company sends its owners before the yearly meeting. It says what the managers were paid, what the pay depends on, and how much of the company they own.</dd></div>
             <div><dt>Sign</dt><dd>A figure that shows whether a business is getting better, read again after each report. Which signs fit depends on the kind of business.</dd></div>
             <div><dt>Report</dt><dd>The results a company publishes, most often every three months. Prism files a company's figures under the date its latest reported period ended.</dd></div>
           </dl>
