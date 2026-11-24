@@ -13,6 +13,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `guide/index.html`, `prism/guide/index.html` | The companion guides to Runway and to Prism: pages of short lessons on how to use each tool (see "The guides" below). No engine and no data of their own. |
 | `tools/research/` | Prism's research from the filings: `edgar.js` fetches a company's filings from the regulator, `READING.md` tells the reader what to write, `brief.js` checks every quoted passage and packs the research file, `desk.js` shapes the queue that comes out of the claude.ai link's store and the briefs that go back into it (see "Research from the filings" under Prism). Needs network access to the regulator and a contact given at run time. |
 | `tools/cheatsheet.js`, `tools/cheatsheet.css` | Builds Prism's two-page cheat sheet as a PDF (see "The cheat sheet" under Prism). Not part of the checks or the workflow. |
+| `tools/guide-pdf.js`, `tools/guide-print.css` | Prints a guide as a PDF, from the guide's own lessons (see "A guide on paper" under "The guides"). Not part of the checks or the workflow. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
 | `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (507 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
@@ -186,7 +187,18 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   `VAULT` snippet, only for the link back to the home page and the note that lets a refresh return to the page
   that was open. It has nothing to save.
 - Write a guide the way the rest is written: as you would say it to a friend, one step per line, naming exactly
-  what to tap. Not built, and offered to the owner: a copy of a guide to print.
+  what to tap.
+- **A guide on paper (`tools/guide-pdf.js`, `tools/guide-print.css`).** The owner asked for Prism's guide "as PDF" on
+  2026-11-24, after its line-by-line part was added. `node tools/guide-pdf.js prism <out.pdf>` (or `runway`) prints
+  the guide itself: every lesson, opened, in the guide's order and words, numbered from 1, with a first page that
+  lists the lessons and their page numbers. Nothing is written in the tool that the guide does not say, so a printed
+  copy cannot say something else. Left out: the "Show me" links and the notes about them, which need the page.
+  - It needs Playwright. The page numbers on the first page need `pdftotext`: the guide is printed once, each
+    lesson's label ("Lesson 12") is looked up in the result, and it is printed again with the numbers filled in.
+  - Prism's came to 20 US Letter pages and Runway's to 11. Only Prism's was asked for and sent.
+  - The PDF is never committed. **He keeps the copy he was sent: after a change to the guide that matters to a
+    reader, print it again and send him the new one.** A lesson written with paper in mind reads better on screen
+    too: a run of five measures in one paragraph was hard to read in print, and became one measure to a line.
 
 ## Tool 2: Prism (`prism/index.html`)
 

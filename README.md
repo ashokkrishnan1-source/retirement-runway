@@ -42,6 +42,7 @@ Each of these two tools has a guide that walks through its page in short lessons
 | `tests/check-prism.js` | Prism's engine checks, on invented companies, and that its guide names only what is on the page. Run with `node tests/check-prism.js`. |
 | `tools/research/` | Prism's optional research from company filings: fetching a company's annual report and proxy statement from the SEC, the instructions for reading them, the check that every quoted passage is in the filing, and the shaping of the queue of companies to read. The research itself is never stored here. |
 | `tools/cheatsheet.js` | Builds a two-page cheat sheet for Prism as a PDF, from the names and settings on Prism's own page. |
+| `tools/guide-pdf.js` | Prints a guide as a PDF, from the guide's own lessons. |
 | `tests/README.md` | How to run the checks and what to update each year. |
 | `tools/build-pages.js` | Builds the standalone website into `_site/`. |
 | `.github/workflows/pages.yml` | Runs the checks, then publishes to GitHub Pages on every push to `main`. |
