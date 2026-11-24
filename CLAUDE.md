@@ -277,8 +277,11 @@ format as the other tools; no AI, no live data.
   rows, dividends in the scorecard (the typical yield is about the same on both sides, so leaving them out distorts
   little).
 - **A stored file from before a column was added.** The file kept in the browser holds only the columns Prism read
-  when it was loaded. When Prism has learned more since, the file card says to load the file again (`older` in
-  `render`), and until then the new facts are simply absent.
+  when it was loaded, so after Prism learns new columns their facts are missing until the file is loaded again. The
+  owner looked for the new dividend line in three companies on 2026-11-24 and found nothing: the only word about it
+  was a grey sentence in the file card. So now (`OLDER`, `#olderNote`) an amber note in the file card says "Load your
+  file again" and names what is missing, and a company's detail says the same in the place where the dividend line
+  would be. **Whenever a column is added, say so where the reader will look for its result, not only in small print.**
 - **Several users, one file (the owner's direction, 2026-11-24; not built).** He wants the screener file loaded once,
   by him as admin, and used by several people, each at their own level. The data provider's terms decide the shape.
   The clause he pasted forbids republishing the provider's content in full without explicit permission, and allows

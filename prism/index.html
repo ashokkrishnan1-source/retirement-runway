@@ -128,6 +128,8 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
 .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .how{display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--fg2);max-width:80ch}
 .drop{outline:2px dashed var(--accent);outline-offset:4px}
+/* a note the reader must not miss: the stored copy of the file is older than what Prism can read now */
+.older{background:var(--warn-bg);color:var(--fg);border-radius:8px;padding:9px 12px;font-size:14px;max-width:none}
 @media (max-width:760px){
   #tbl,#tbl tbody,#tbl tr,#tbl td{display:block}
   #tbl tr.hd{display:none}
@@ -158,6 +160,7 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
         <button type="button" class="btn" id="exBtn">Show example</button>
       </div>
     </div>
+    <p class="older" id="olderNote" role="status" hidden></p>
     <p class="note" id="loadNote"></p>
     <p class="note" id="msg" role="status" hidden></p>
     <details id="fieldsBox"><summary>Columns found in the file</summary><div id="fields" class="how" style="margin-top:10px"></div></details>
@@ -955,6 +958,7 @@ const CTL = [['gate', 'Sector rank needed for a yes (0 to 100)', 1], ['q_roic', 
 /* mine: the reader's own A-list choices, {symbol: 'in' or 'out'}. card: the scorecard. v: 2 since the A-list became the opening view. */
 const blank = () => ({v: 2, controls: {}, noMining: false, leaveOut: '', verdicts: {}, hist: null, mine: {}, tierB: false, card: null, ui: {pool: 'main', need: GK.slice(), slack: 0, list: 'sale', hideWarn: true, showRej: false, sort: 'auto', page: 0}});
 let S = blank(), DATA = null, RES = null, BY = {}, NEW = new Set(), OPEN = null, FIND = '', C = CONTROLS;
+let OLDER = false;     /* the file on show was stored in this browser before Prism could read some of today's columns */
 function load() { try { const o = JSON.parse(localStorage.getItem(STORE)); if (o && o.ui) { S = Object.assign(blank(), o); S.ui = Object.assign(blank().ui, o.ui);
   /* a browser that last saved before the A-list existed opens on it once; after that the reader's own choice is kept */
   if (!(o.v >= 2)) { S.v = 2; S.ui.list = 'sale'; S.ui.slack = 0; } } } catch (e) {} }
@@ -1188,9 +1192,15 @@ function render() {
     return '<button type="button" class="gate" data-g="' + k + '" aria-pressed="' + on + '"><span class="q">' + GQ[k][0] + '</span><span class="d">' + GQ[k][1] + '</span><span class="c">' + yes.toLocaleString('en-US') + ' yes' + (unk ? ' · ' + unk + ' unknown' : '') + '</span><span class="st">' + (on ? 'Required' : 'Not required') + '</span></button>'; }).join('');
   const need = S.ui.need, k = need.length; if (S.ui.slack && k < 2) S.ui.slack = 0;
   drawTally(base5);
-  /* a file kept in this browser from before Prism learned to read some columns has none of their figures */
-  const older = !m.example && m.report && FIELDS.some(f => !(f[0] in m.report.found) && !m.report.missing.includes(f[0]));
-  $('loadNote').textContent = m.example ? 'To use Prism, download the whole-market screener from your data provider with every column you can get, and load the file here. CSV is fastest; Excel also works. You can drop the file anywhere on this page. It is read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.' : (older ? 'Prism reads more columns now than when this file was loaded. Load the file again to use them. ' : '') + 'Read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.';
+  /* A file kept in this browser from before Prism learned to read some columns has none of their figures. The owner
+     looked for the new dividend line in three companies on 2026-11-24 and found nothing, because the only word about
+     it was a grey sentence here. So the file card now says it in a note that stands out and names what is missing,
+     and a company's detail says it again in the place where the missing line would be. */
+  const fresh = m.example || !m.report ? [] : FIELDS.filter(f => !(f[0] in m.report.found) && !m.report.missing.includes(f[0])).map(f => FLABEL[f[0]] || f[0]);
+  OLDER = fresh.length > 0;
+  $('olderNote').hidden = !OLDER;
+  if (OLDER) $('olderNote').innerHTML = '<b>Load your file again.</b> Prism reads ' + fresh.length + ' more ' + (fresh.length === 1 ? 'column' : 'columns') + ' now than when this copy was stored, such as ' + esc(fresh[0].toLowerCase()) + '. Until you do, what ' + (fresh.length === 1 ? 'it adds' : 'they add') + ' is missing from every company.';
+  $('loadNote').textContent = m.example ? 'To use Prism, download the whole-market screener from your data provider with every column you can get, and load the file here. CSV is fastest; Excel also works. You can drop the file anywhere on this page. It is read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.' : 'Read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.';
   const canA = RES.can.grade || RES.rows.some(r => r.alist), cnt = v => n(viewRows(baseFor(v), v).length);
   $('show').innerHTML =
     '<optgroup label="Businesses worth owning">' + (canA ? '<option value="sale">A-list on sale (' + cnt('sale') + ')</option><option value="put">Put desk (' + cnt('put') + ')</option><option value="A">The whole A-list (' + cnt('A') + ')</option>' : '<option value="x" disabled>The A-list needs columns this file lacks</option>') + '</optgroup>' +
@@ -1368,7 +1378,9 @@ const inDays = n => n === 0 ? 'today' : 'in ' + n + (n === 1 ? ' day' : ' days')
    when the company has declared it, and otherwise the last one, with no guess at the next. */
 const DIV_EVERY = {monthly: 'every month', quarterly: 'every three months', semiannual: 'twice a year', annual: 'once a year'};
 function dividendLine(r) {
-  const d = r.dividend; if (!d || !RES.can.div) return '';
+  const d = r.dividend; if (!d) return '';
+  /* no dividend columns to read: say why, in the place where the reader looks for the line */
+  if (!RES.can.div) return '<p class="note"><b>Dividend:</b> ' + (OLDER ? '<span class="pill warn">Load your file again</span> The copy of your file that this browser kept is from before Prism read dividends.' : 'this file has no dividend columns.') + '</p>';
   if (!d.pays) return '<p class="note"><b>Dividend:</b> the file shows none.</p>';
   const a = ['pays ' + (d.amount != null ? price(d.amount) + ' a share a year' : 'a dividend') + (d.yld != null ? ', ' + pct(d.yld) + ' of today\'s price' : '') + '.'];
   if (d.years) a.push('Paid for ' + d.years + (d.years === 1 ? ' year' : ' years') + ' running' + (d.raised === 1 ? ', and raised in the last year' : d.raised ? ', and raised in each of the last ' + d.raised : '') + '.');
