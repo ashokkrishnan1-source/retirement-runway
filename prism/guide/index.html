@@ -346,26 +346,28 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
       </details>
 
       <details class="lesson" id="filings">
-        <summary><span class="t"><span class="q">What do its filings say?</span><span class="where">Research from the filings · Where does it stand?</span></span></summary>
+        <summary><span class="t"><span class="q">What do its filings say?</span><span class="where">Deeper dive · Research from the filings · Where does it stand?</span></span></summary>
         <div class="body">
           <p>Some answers are in no download: who a company's rivals are and what they say of it, what its managers did with its cash over ten years, how they pay themselves. They are in the annual report and the proxy statement that a company files with the regulator.</p>
           <p>Reading those takes a reader, and Prism has no AI. So the reading is done outside this page, by Claude, and Prism shows what comes back. Prism works the same without it.</p>
           <ol class="steps">
-            <li><span>Under <b class="k s">Show</b>, choose the list you want read. Go down to <b class="k">Research from the filings</b> and press <b class="k">Download the reading list</b>. It names the companies on that list and the ones you follow.</span></li>
-            <li><span>Give that file to Claude and ask for the filings to be read. A research file comes back.</span></li>
-            <li><span>Press <b class="k s">Load a research file</b> and choose it.</span></li>
+            <li><span>Open a company you want to know more about. At the top, press <b class="k s">Deeper dive</b>. The button turns into <b class="k s">In the queue</b>. Do the same for each company you want read.</span></li>
+            <li><span>Go down to <b class="k">Research from the filings</b>. Your queue is listed there. The × beside a symbol takes it out again.</span></li>
+            <li><span>On your claude.ai link, the queue is kept online, in a part only you can read. In a Claude Code session for these tools, say "read my queue". The research arrives on this page by itself, and the company leaves the queue.</span></li>
+            <li><span>Anywhere else, press <b class="k s">Download the queue</b> and give the file to Claude in such a session. A research file comes back: press <b class="k s">Load a research file</b> and choose it.</span></li>
             <li><span>Open a company that was read. A new box, <b class="k s">Where does it stand?</b>, says what the company does, then gives <b class="k s">Clear warnings</b>, <b class="k s">Clear strengths</b>, <b class="k s">Who it names as rivals</b>, what other companies' reports say of it, and <b class="k s">What worries it</b>.</span></li>
             <li><span><b class="k s">How well is it run?</b> now sets the company beside the rivals it names itself, and adds <b class="k">Ten years of cash, from its filings</b> and <b class="k s">From its filings</b>.</span></li>
             <li><span><b class="k">How does it treat its owners?</b> adds <b class="k s">From its proxy statement</b>: what the chief executive was paid, and what the pay depends on.</span></li>
           </ol>
           <ul class="points">
             <li>Under every finding is the passage it rests on, copied from the filing, with a link to the filing. A program checked each passage. A finding whose passage was not in the filing was thrown away.</li>
-            <li><b class="k">A newer annual report is out</b> means the company has filed one since the research was done. Have it read again.</li>
-            <li>The research stays in this browser, like your screener file. <b class="k s">Forget the research</b> removes it.</li>
+            <li>A reading takes about a quarter of an hour a company and uses your Claude plan. Queue the few companies you are close to acting on, not a whole list.</li>
+            <li><b class="k">A newer annual report is out</b> means the company has filed one since the research was done. Open the company and press <b class="k s">Read again</b>.</li>
+            <li>The research stays in this browser, like your screener file. On your claude.ai link it is also kept in the part only you can read. <b class="k s">Forget the research</b> removes it from both.</li>
           </ul>
           <p class="tip"><b>Good to know.</b> A company writes these reports with its lawyers. They say little that is frank about a rival, and nothing about what happens next. Most managements sit in a murky middle that is hard to rank: the research shows the evidence, and leaves the judgment to you.</p>
           <p class="tip warn"><b>It is an AI's reading.</b> The passages are checked, the summaries are not. Read the passage, and follow the link when it matters. It is research, not investment advice.</p>
-          <div class="go"><a class="btn" data-go='{"el":"resSec"}' href="#">Show me the research section →</a></div>
+          <div class="go"><a class="btn" data-go='{"list":"sale","open":"first","el":"detail"}' href="#">Show me the button →</a><a class="btn" data-go='{"el":"resSec"}' href="#">Show me the queue →</a></div>
         </div>
       </details>
 

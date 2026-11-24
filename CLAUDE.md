@@ -11,9 +11,10 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/build-pages.js` | Builds the collection: wraps each page in a full HTML document, writing `_site/` (GitHub Pages) and `_artifact/` (tool pages for the claude.ai collection link). Both are git-ignored. |
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `guide/index.html`, `prism/guide/index.html` | The companion guides to Runway and to Prism: pages of short lessons on how to use each tool (see "The guides" below). No engine and no data of their own. |
-| `tools/research/` | Prism's research from the filings: `edgar.js` fetches a company's filings from the regulator, `READING.md` tells the reader what to write, `brief.js` checks every quoted passage and packs the research file (see "Research from the filings" under Prism). Needs network access to the regulator and a contact given at run time. |
+| `tools/research/` | Prism's research from the filings: `edgar.js` fetches a company's filings from the regulator, `READING.md` tells the reader what to write, `brief.js` checks every quoted passage and packs the research file, `desk.js` shapes the queue that comes out of the claude.ai link's store and the briefs that go back into it (see "Research from the filings" under Prism). Needs network access to the regulator and a contact given at run time. |
+| `tools/cheatsheet.js`, `tools/cheatsheet.css` | Builds Prism's two-page cheat sheet as a PDF (see "The cheat sheet" under Prism). Not part of the checks or the workflow. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (487 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (498 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -193,7 +194,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (487 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (498 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -370,24 +371,68 @@ format as the other tools; no AI, no live data.
     3. `brief.js check` looks every passage up in the filing's text and throws away a finding whose passage is not
        there; it takes sources only from the folder, and flags anything that reads like advice. `brief.js pack`
        makes the research file. **Nothing a reader wrote reaches Prism without passing the check.**
-  - **In Prism.** "Research from the filings" (under "Your verdicts") has "Download the reading list" (the list on
-    show and the companies he follows: symbols, names, the regulator's numbers and Prism's rival picks; no figures)
-    and "Load a research file". A company that was read gets a third box, "Where does it stand?", and its two
-    management boxes gain "Ten years of cash, from its filings", "From its filings" and "From its proxy
-    statement". Rivals the company names itself replace Prism's size-based picks, unless he chose his own.
-    "A newer annual report is out" appears when the file's annual-report date is later than the one read, and
-    "What changed" says so for a followed company.
+  - **In Prism.** A company that was read gets a third box, "Where does it stand?", and its two management boxes
+    gain "Ten years of cash, from its filings", "From its filings" and "From its proxy statement". Rivals the
+    company names itself replace Prism's size-based picks, unless he chose his own. "A newer annual report is out"
+    appears when the file's annual-report date is later than the one read, and "What changed" says so for a
+    followed company. Under each brief: "Read by an AI", what did the reading when the brief says, and the date.
+  - **The queue ("Deeper dive"; `S.queue`, `queueSet`, `diveLine`, `readingList`).** On 2026-11-24 he assumed
+    "something like 'Deeper dive' next to a company", or a queue, and the same day gave the go-ahead for "the
+    queue and the online route". At the top of an opened company (not in the rows, which stay tight on a phone)
+    is **Deeper dive**. Pressed, it reads "In the queue", with "Take it out". A company that was read shows
+    "Read" with the date, and **Read again**. "Research from the filings" (under "Your verdicts") lists the queue,
+    each symbol with a × that takes it out, and has "Download the queue", "Load a research file" and "Forget the
+    research". The queue is the reading list: symbols, names, the regulator's numbers, Prism's rival picks and
+    when each was asked; no figures. A made-up company cannot be queued, nor one whose row has no regulator's
+    number. The earlier "Download the reading list" (the whole list on show and every followed company) is gone:
+    a reading costs him money, so he chooses each company.
+  - **Two ways the queue gets read.**
+    1. *Online, on the claude.ai link* (`DESK`, `deskStart`, `deskPush`, `deskAdopt`, `deskRead`). The page keeps
+       the reading list in his private part of the link's store, `data/users/<id>/prism-queue`, and listens to
+       `data/users/<id>/prism-read`, the index that a session writes: `{v, at, done: {SYMBOL: {at, read, by, k,
+       n}}}`. For each entry it does not hold yet (`RESEARCH.at[symbol]` is not that `at`) it fetches
+       `data/users/<id>/prism-read/briefs/<SYMBOL>` (`{v, sym, at, by, brief}`), cleans the brief like any research
+       file and keeps it in IndexedDB. A company whose index entry is later than the moment it was queued leaves
+       the queue. Nobody else can read that part of the store, the link's owner included. Rules, each of which was
+       a bug waiting to happen: the queue is written whole, one write at a time; a change that did not reach the
+       store (`S.qd`) wins on the next visit, otherwise the stored queue does, because it may come from his other
+       device; a form being typed in is not redrawn when research arrives; "Forget the research" deletes the
+       briefs and the index online before it forgets them here, or they would all come back. The encrypted-copies
+       panel lists the same collection and ignores these documents (they carry no `ct`).
+    2. *A file*, on the standalone site and as the fallback: "Download the queue", then "Load a research file".
   - **A research file is text from elsewhere.** `cleanBrief` keeps only the shapes it knows, when the file is
     loaded and again when it is read back from the browser; every word is escaped; a link is made only to
     `https://www.sec.gov/`. It is kept in IndexedDB beside the screener file (key `research`), not in
     `prism-v1`, so it is not in the encrypted copy: he keeps the file.
-  - **How to run it for him** (a future session): he supplies a reading list from Prism. Ask him for the contact
-    to give the regulator (see below), then
-    `SEC_CONTACT="..." RESEARCH_DIR=<scratch> node tools/research/edgar.js fetch <list> [symbols]`, one reading
-    agent per company with the brief in `READING.md` (give it the folder and the output path, and have it run
-    `brief.js check` until nothing is thrown away), then `brief.js pack`, and send him the file. A company costs
-    one annual report, one proxy statement, up to six rivals' reports and up to 25 searched reports to fetch
-    (about 70 MB cached) and roughly 70,000 words to read.
+  - **How to run it for him: "read my queue"** (a future session). Everything goes in a scratch folder, never in
+    the repository.
+    1. *Get the queue.* Online: `ArtifactData` `get` on the collection link, with `collection: "data/users/me"`,
+       `doc_id: "prism-queue"` and an `out_dir`; then `node tools/research/desk.js list <that file>
+       <reading-list.json>`. (`me` is him: the session's tool acts as the owner.) By file: he sends the downloaded
+       queue, which is already a reading list.
+    2. Tell him how many companies it holds. **If it holds more than eight, give him the rough cost and ask before
+       reading.**
+    3. Ask him for the contact to give the regulator (see below), then
+       `SEC_CONTACT="..." RESEARCH_DIR=<scratch> node tools/research/edgar.js fetch <reading-list.json>`.
+    4. One reading agent per company (see "The reader" below), with the brief in `READING.md`, the company's
+       folder and the output path. Have it run `node tools/research/brief.js check <folder> <brief.json> <reader>`
+       until nothing is thrown away. `<reader>` is one word for what did the reading; Prism prints it under the
+       brief.
+    5. *Hand it back.* Online: `ArtifactData` `list` on `data/users/me/prism-read/briefs` and `get` on
+       `data/users/me` / `prism-read`, for the versions (a write to a document that exists must be pinned to the
+       version read). Then `node tools/research/desk.js docs <out> <reader> <company folders...> --index <the index
+       as read>`, and one `batch`: `set` each `<out>/briefs/<SYMBOL>.json` at `data/users/me/prism-read/briefs` /
+       `<SYMBOL>`, and last `<out>/prism-read.json` at `data/users/me` / `prism-read`. When he opens Prism on the
+       link, the research arrives and the companies leave the queue by themselves. By file: `brief.js pack`, and
+       send him the file.
+    A company costs one annual report, one proxy statement, up to six rivals' reports and up to 25 searched
+    reports to fetch (about 70 MB cached) and roughly 70,000 tokens, about 50,000 words, to read: a quarter of an
+    hour for a reader.
+  - **The reader** (his choice, 2026-11-24): the Agent tool's `model: "sonnet"` for now, because it costs about a
+    quarter as much. He asked whether he can switch to the larger model later, should he "think we do better than
+    Sonnet's deepdive". He can: the reader is chosen at each reading, and a company read again replaces its
+    earlier brief. That is why each brief says what read it, and why **Read again** exists. Do not change the
+    reader without his word.
   - **Never commit** a reading list, a research file or the fetched filings (`.gitignore` blocks them, and a check
     holds the three lines): they show which companies he is looking at. Briefs go to him as a file.
   - **The regulator asks every automated reader to say who it is**, in each request. He gave a name and an email
@@ -410,10 +455,11 @@ format as the other tools; no AI, no live data.
     rival leaves Prism with its size-based picks, which for a software company can be the wrong companies.
   - A reader that is stopped by a usage limit keeps its work: resume it with a message when the limit resets,
     and do not start a new one.
-  - Offered and not built: reading the earlier year's report to say what changed in the risk factors; reading
-    current reports and insider filings; a scheduled re-read when a new annual report is filed; the same
-    ten-year figures as history for the signs; writing research into the claude.ai link's own store so that no
-    file needs to be carried.
+  - Offered and not built: a nightly run that reads the queue unattended (he was told it would come only after a
+    few real readings have shown what a company costs him, and then with a cap such as five companies a night);
+    one button that queues a whole list; reading the earlier year's report to say what changed in the risk
+    factors; reading current reports and insider filings; a scheduled re-read when a new annual report is filed;
+    the same ten-year figures as history for the signs.
 - **Banks and insurers on the A-list (`gradeLender`, `L_TESTS`).** He said on 2026-11-24 that every good company
   should come through the filters, "including banks etc.". A lender cannot take the usual six tests (debt is its raw
   material, and its cash flow says little), so it has six of its own, price left out: return on the owners' money
@@ -488,10 +534,10 @@ format as the other tools; no AI, no live data.
 - "Columns found in the file" has a list of every column heading in the loaded file (`colText`), to copy or save.
   It holds headings only, never figures, so the owner can send it when asking for more columns to be read.
 - State: `localStorage` key `prism-v1` (settings, verdicts, A-list choices, the scorecard, last two list
-  memberships, the three parts of the signs: `track`, `kind`, `own`, and `rivals`, his own choice of companies to
-  set a company beside; `v: 2` marks state saved since the A-list
-  became the opening view); IndexedDB `prism` keeps the last file in that browser only; `ftol-summary-prism` feeds
-  the home page. The vault copy holds the same things except the file: the scorecard carries entry prices and the
+  memberships, the three parts of the signs: `track`, `kind`, `own`, `rivals`, his own choice of companies to
+  set a company beside, and `queue` with `qd`, the companies waiting to be read; `v: 2` marks state saved since the A-list
+  became the opening view); IndexedDB `prism` keeps the last file in that browser only, and the research with the
+  mark of each brief that came from the store (`RESEARCH.at`); `ftol-summary-prism` feeds the home page. The vault copy holds the same things except the file: the scorecard carries entry prices and the
   last prices of the large companies, and the record of signs a few figures per report for the A-list and the
   followed companies. On the owner's file the saved state is about 90 KB on the first day (the scorecard is two
   thirds of it) and the record of signs grows to about 50 KB.
@@ -503,6 +549,19 @@ format as the other tools; no AI, no live data.
 - **The guide** (`prism/guide/index.html`, asked for on 2026-11-20) has a lesson for each list and each thing the
   owner asked about along the way: the entry ceiling, the order, how to note a put, what the columns list is for.
   When a name on this page changes, the guide changes in the same commit (see "The guides").
+- **The cheat sheet (`tools/cheatsheet.js`, `tools/cheatsheet.css`).** He asked on 2026-11-24 for "a simple cheat
+  sheet for me to download", to refresh his memory "on the 'show' and 'order' and whatever else you are doing":
+  "a moron's guide to Prism". It is a two-page US Letter PDF. Page 1 is the lists: what to do with each new file,
+  Show, Order, what counts, the tags. Page 2 is one company: a row, the boxes inside, verdicts and how to note a
+  put, further down the page, research, saving, three things to remember.
+  - `node tools/cheatsheet.js <out.pdf>` builds it, with Playwright. It stops if a name on the sheet is not on
+    Prism's page, if a list, an order or a verdict has no line on the sheet, or if the text no longer fits two
+    pages. The pass marks come from the page's `CONTROLS`. The row it pictures is a made-up company of the example.
+  - The PDF is never committed (`*.pdf` is ignored): send it to him as a file. It is not part of the checks or of
+    the workflow, so nothing fails when the page moves on.
+  - **He keeps the copy he was sent. When a name, a list, an order or the way research is asked for changes,
+    build it again and send him the new one.**
+  - Keep it to two pages: when a line goes in, another comes out. The guide teaches; the sheet only reminds.
 - Not built yet (ask the owner): scoring property companies (the figure they are judged on, funds from
   operations, is an empty column in the download), asking banks the five questions, ten-year divergence, adjusting for
   share splits (the scorecard drops a split company instead), the owner's industry and override maps, a "copy a

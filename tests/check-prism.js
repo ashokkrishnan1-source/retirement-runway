@@ -792,6 +792,20 @@ console.log('--- Research from the filings ---');
   BR.check(dir, path.join(dir, 'brief.json'));
   const outFile = path.join(dir, 'research.json'); check('pack: one brief packed', BR.pack(outFile, [dir, path.join(dir, 'nothing-here')]), 1);
   const packed = JSON.parse(fs.readFileSync(outFile, 'utf8')); check('pack: the file Prism loads', [packed.v, packed.app, Object.keys(packed.briefs), packed.briefs['WDG.X'].kept], [1, 'prism-research', ['WDG.X'], 4]);
+  // the online route: the queue comes out of the store, the briefs go back into it (tools/research/desk.js)
+  const DK = require('../tools/research/desk.js');
+  const qdoc = {v: 1, app: 'prism-reading-list', made: '2026-11-24', at: '2026-11-24T10:00:00.000Z', fileDate: '2026-11-20', companies: [
+    {sym: 'WDG.X', name: 'Widget Works Inc.', cik: '1', industry: 'Tools', kind: 'maker', tenk: '2026-02-01', have: null, asked: '2026-11-24T09:00:00.000Z', price: 12.5, rivals: [{sym: 'BLT.X', name: 'Bolt Inc.', cik: '2'}, {sym: 'bad sym', cik: '3'}, {sym: 'NUT.X', name: 'Nut Corp.'}]},
+    {sym: 'NOC.X', name: 'No number'}, {sym: 'WDG.X', name: 'Twice', cik: '1'}, {sym: '<b>', cik: '4'}]};
+  const rl = DK.list({version: 3, data: qdoc});
+  check('queue: the reading list holds each company once, with its regulator\'s number, and nothing but names and numbers', [rl.app, rl.companies.map(c => c.sym), Object.keys(rl.companies[0]).sort(), rl.companies[0].rivals],
+    ['prism-reading-list', ['WDG.X'], ['asked', 'cik', 'have', 'industry', 'kind', 'name', 'rivals', 'sym', 'tenk'], [{sym: 'BLT.X', name: 'Bolt Inc.', cik: '2'}]]);
+  check('queue: what is not a queue is refused', (() => { try { DK.list({app: 'something-else', companies: []}); return 'taken'; } catch (e) { return 'refused'; } })(), 'refused');
+  BR.check(dir, path.join(dir, 'brief.json'), 'Reader <b>One</b>');
+  const dk = DK.docs(path.join(dir, 'out'), 'Another reader', [dir, path.join(dir, 'nothing-here')], {data: {v: 1, done: {'OLD.X': {at: '2026-11-01T00:00:00.000Z', read: '2026-11-01', by: 'Earlier', k: '2026-02-02', n: 9}, 'bad key': {at: 'x'}}}}, '2026-11-24T12:00:00.000Z');
+  const bdoc = JSON.parse(fs.readFileSync(path.join(dir, 'out', 'briefs', 'WDG.X.json'), 'utf8')), idoc = JSON.parse(fs.readFileSync(path.join(dir, 'out', 'prism-read.json'), 'utf8'));
+  check('store: one document for each checked brief, saying what read it and when', [dk.wrote, dk.skipped, bdoc.sym, bdoc.at, bdoc.brief.kept, bdoc.brief.by], [['WDG.X'], ['nothing-here'], 'WDG.X', '2026-11-24T12:00:00.000Z', 4, 'Reader bOneb']);
+  check('store: the index keeps what was there and adds the new reading', [Object.keys(idoc.done).sort(), idoc.done['WDG.X'], idoc.done['OLD.X'].n], [['OLD.X', 'WDG.X'], {at: '2026-11-24T12:00:00.000Z', read: '2026-11-24', by: 'Reader bOneb', k: '2026-02-01', n: 4}, 9]);
   fs.rmSync(dir, {recursive: true, force: true});
   // the page: it shows the same sections, links only to the regulator, and cleans a research file both when it is loaded and when it is read back
   const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));
@@ -805,6 +819,16 @@ console.log('--- Research from the filings ---');
   check('page: a careless or hostile file is cut down to what Prism knows', [bad.sections.run.map(p => [p.t, p.tone]), bad.sections.extra, bad.sources, bad.rivalSymbols, bad.cant, bad.tenYears], [[['ok', '']], undefined, [{id: 'k', form: '10-K', who: '', filed: null, period: null, url: null}], ['OK.X'], ['fine'], null]);
   check('page: what is not a brief is refused', [page.cleanBrief(null), page.cleanBrief({v: 2, sym: 'A', sections: {}}), page.cleanBrief({v: 1, sym: 'a b', sections: {}}), page.cleanBrief({v: 1, sym: 'A'})], [null, null, null, null]);
   check('page: a research file is cleaned when loaded and again when read back from the browser', (ui.match(/cleanBrief\(/g) || []).length >= 3, true);
+  // the queue ("Deeper dive"), and the reader's private part of the store on the claude.ai link
+  const pq = new Function('isDay', ui.match(/const SYMOK = [^\n]*\n/)[0] + ui.match(/function cleanEntry\(c\) \{[\s\S]*?\n\}\n/)[0] + '\nreturn {cleanEntry};')(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d));
+  check('page: a queue entry from the store is cut down to names and numbers', [pq.cleanEntry(qdoc.companies[0]), pq.cleanEntry({sym: '..', cik: '1'}), pq.cleanEntry({sym: 'OK.X'})],
+    [{sym: 'WDG.X', name: 'Widget Works Inc.', cik: '1', industry: 'Tools', kind: 'maker', tenk: '2026-02-01', have: null, rivals: [{sym: 'BLT.X', name: 'Bolt Inc.', cik: '2'}]}, null, null]);
+  check('page: the brief a session writes is the brief the page cleans, with what read it', page.cleanBrief(bdoc.brief).by, 'Reader bOneb');
+  check('page: a brief that arrives from the store is cleaned like a research file', /cleanBrief\(x\.brief\)/.test(ui) && (ui.match(/cleanBrief\(/g) || []).length >= 4, true);
+  check('page: the queue and the research are kept only in the reader\'s private part of the store', [...ui.slice(0, ui.indexOf('/* VAULT:START')).matchAll(/\.(?:doc|collection)\('([^']*)'/g)].map(m => m[1]).filter(x => x !== 'briefs' && x !== 'data/users/'), []);
+  check('page: made-up companies cannot be queued, and a company needs a regulator\'s number', /if \(DATA\.meta\.example \|\| !canRead\(r\)\) return;/.test(ui), true);
+  check('page: a queue entry carries no figure from the file', ui.match(/const queueEntry = [\s\S]*?\};\n/)[0].match(/\b(price|cap|pe|roic|fcf|rev|ni|ocf)\b/g) || [], []);
+  check('page: the button, the queue and the way to have it read are named', ['Deeper dive', 'In the queue', 'Read again', 'Download the queue', 'read my queue'].filter(n => !html.includes(n)), []);
   check('page: links to filings open apart and tell the other site nothing', /target="_blank" rel="noopener noreferrer"/.test(ui), true);
   check('page: it says the research is an AI reading, and not advice', /Read by an AI/.test(ui) && /Research, not advice/.test(ui), true);
   check('repository: research files and the folder of filings are kept out of it', (() => { const g = fs.readFileSync(path.join(__dirname, '..', '.gitignore'), 'utf8'); return /^\.research\/$/m.test(g) && /^prism-research-\*\.json$/m.test(g) && /^prism-reading-list-\*\.json$/m.test(g); })(), true);

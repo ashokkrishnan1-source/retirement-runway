@@ -2,12 +2,13 @@
 'use strict';
 /* Prism research, step 3: check and pack. No AI here.
 
-     node tools/research/brief.js check <company folder> <brief.json>     checks one brief against the filings
+     node tools/research/brief.js check <company folder> <brief.json> [reader]    checks one brief against the filings
      node tools/research/brief.js pack <out.json> <company folder> ...    packs the checked briefs for Prism
 
    A brief is written by a reader (READING.md). Every point in it carries a passage said to be copied from a filing.
    `check` looks each passage up in the text of the filing it names. A point whose passage is not there is thrown
-   away, and the brief says how many were. Nothing a reader wrote reaches Prism without passing this.
+   away, and the brief says how many were. Nothing a reader wrote reaches Prism without passing this. [reader] names
+   what did the reading, for the line Prism prints under the brief.
    `pack` puts the checked briefs into one research file, with each company's ten-year table of reported figures,
    for the "Load a research file" button on Prism's page. */
 const fs = require('fs'), path = require('path');
@@ -27,7 +28,7 @@ const read = f => { try { return fs.readFileSync(f, 'utf8'); } catch (e) { retur
 const jread = f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } };
 const isSec = u => /^https:\/\/www\.sec\.gov\//.test(String(u || ''));
 
-function check(dir, file) {
+function check(dir, file, by) {
   const b = jread(file), meta = jread(path.join(dir, 'meta.json')); if (!b || !meta) throw new Error('Cannot read the brief or the folder\'s meta.json');
   const problems = [];
   if (b.v !== 1 || !b.sym || b.sym !== meta.sym) problems.push('the brief is not for ' + meta.sym);
@@ -49,6 +50,7 @@ function check(dir, file) {
   out.sources = Object.keys(src).filter(id => used[id] || own[id] != null).map(id => src[id]);
   out.rivalSymbols = (Array.isArray(b.rivalSymbols) ? b.rivalSymbols : []).map(s => String(s).toUpperCase().trim()).filter(s => /^[A-Z][A-Z0-9.\-]{0,7}$/.test(s) && s !== meta.sym).slice(0, 8);
   out.cant = (Array.isArray(b.cant) ? b.cant : []).map(s => String(s).slice(0, 300)).filter(Boolean).slice(0, 8);
+  if (by) out.by = String(by).replace(/[^\w .\-]/g, '').slice(0, 40);
   const ty = jread(path.join(dir, 'tenyears.json')); if (ty) out.tenYears = ty;
   /* the brief must not say what to do with the shares: the rule is Prism's, and a reader can slip */
   const all = [out.business].concat(SECTIONS.map(k => out.sections[k].map(p => p.t).join(' ')), out.cant).join(' ');
@@ -68,7 +70,7 @@ function pack(outFile, dirs, skipped) {
 module.exports = {norm, found, check, pack, SECTIONS};
 if (require.main === module) {
   const [cmd, a, ...rest] = process.argv.slice(2);
-  if (cmd === 'check' && a && rest[0]) { const r = check(a, rest[0]); console.log(r.out.sym + ': ' + r.out.kept + ' points kept, ' + r.out.dropped + ' thrown away'); r.problems.forEach(p => console.log('   ' + p)); process.exitCode = r.advice ? 2 : 0; }
+  if (cmd === 'check' && a && rest[0]) { const r = check(a, rest[0], rest[1]); console.log(r.out.sym + ': ' + r.out.kept + ' points kept, ' + r.out.dropped + ' thrown away'); r.problems.forEach(p => console.log('   ' + p)); process.exitCode = r.advice ? 2 : 0; }
   else if (cmd === 'pack' && a && rest.length) { const skipped = [], n = pack(a, rest, skipped); console.log('Packed ' + n + ' briefs into ' + a + (skipped.length ? '. No checked brief, left out: ' + skipped.join(', ') : '')); }
-  else { console.log('usage: node tools/research/brief.js check <company folder> <brief.json> | pack <out.json> <company folder> ...'); process.exitCode = 1; }
+  else { console.log('usage: node tools/research/brief.js check <company folder> <brief.json> [reader] | pack <out.json> <company folder> ...'); process.exitCode = 1; }
 }

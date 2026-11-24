@@ -45,7 +45,9 @@ year before, the allowance, the record kept from report to report, a share split
 and the reader's own signs. It does the same for the tests of a bank, for a
 company's standing against its industry and for where a year's cash went, and
 it checks the research tools in `tools/research/` on invented filings, without
-touching the network.
+touching the network. That includes the queue of companies waiting to be read: the
+reading list holds names and the regulator's numbers only, and what comes back
+from the online store is cleaned like any research file.
 
 ## After the yearly update
 
