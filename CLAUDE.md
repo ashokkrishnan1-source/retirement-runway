@@ -279,6 +279,36 @@ format as the other tools; no AI, no live data.
 - **A stored file from before a column was added.** The file kept in the browser holds only the columns Prism read
   when it was loaded. When Prism has learned more since, the file card says to load the file again (`older` in
   `render`), and until then the new facts are simply absent.
+- **Several users, one file (the owner's direction, 2026-11-24; not built).** He wants the screener file loaded once,
+  by him as admin, and used by several people, each at their own level. The data provider's terms decide the shape.
+  The clause he pasted forbids republishing the provider's content in full without explicit permission, and allows
+  snippets that are unchanged and name the source. He then proposed that Prism be the only window, with no access to
+  the full file at any time. That is the right shape, on one condition that the platform imposes:
+  - **There is no server.** A claude.ai page runs in each person's browser, and whatever a shared store holds can be
+    read out by anyone the page is shared with. So the full download must never go into a shared store, not even
+    hidden behind the page. The file is read only in the admin's browser, and his Prism publishes only what the
+    others may see.
+  - **How wide the window can be** (sized on his file): the lists and what each row says are about 0.2% of the
+    file's cells, clearly a snippet. The lists plus the full detail of every listed company (about 400 companies in
+    5,600) are under 2%, small but systematic and daily, so get the provider's yes first. "Look up any stock" for
+    the whole market cannot be offered to others: it needs every company's figures in the shared store.
+  - The page others see must name the data source, and quote the provider's figures unchanged.
+  - Paying customers, or anything fuller, need the provider's written permission or a data licence.
+  - Where it would live: an owner-only shared store on the claude.ai link (`db` rules, with each person's verdicts,
+    A-list choices and signs under `data/users/<id>/`). The standalone site has no store, so it stays "bring your
+    own file". The provider's site is outside this session's network policy: rely on what the owner pastes.
+- **Signs that a company is winning (proposed 2026-11-24; not built, awaiting his go-ahead).** He would track a few
+  indicators each quarter for the companies he follows (his example had six: organic revenue growth, revenue per
+  employee, gross margin, managed services bookings, outcome-based contracts, free cash flow per share). On his
+  file: reported revenue growth (not organic), `Rev / Employee`, `Gross Margin` and `FCF / Share` are there, as
+  trailing-twelve-month figures; bookings and contract mix are in no download and would be typed in. `Last Report
+  Date` (the period the figures cover) and `Last Earnings` (the day they came out) let Prism file one record per
+  company per quarter, so daily files are not needed for this. Proposed: keep the file-fed signs for every followed
+  company and the A-list, let him add named signs of his own per company, show a small quarter-by-quarter table in
+  the detail, and say under "What changed" when a followed company has reported. Plain better-or-worse
+  comparisons; no forecast and no combined score. History starts with the first file after it is built; a
+  per-company financial-history download could fill in the past (needs a sample). Keep the history apart from
+  personal notes, so that it can move to a shared store later.
 - **Fee businesses in financial industries.** In Credit Services, Asset Management, Capital Markets and Financial
   Conglomerates, a company is scored like any other when the file gives it EBITDA-based figures (a card network,
   a fund manager); a lender gets none and stays set aside. Banks and insurers are always set aside.
