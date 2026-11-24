@@ -2236,9 +2236,11 @@ function tenYearTable(b) {
   if (made > 0) { [['kept', 'went back into the business'], ['bought', 'on acquisitions'], ['paid', 'to dividends'], ['back', 'to buying back shares']].forEach(([k, w]) => { const v = sum(k); if (v > 0) parts.push(money(v) + ' ' + w); });
     h += '<p class="note">From ' + esc(t.years[0]) + ' to ' + esc(t.years[t.years.length - 1]) + ' the business brought in <b>' + money(made) + '</b> in cash.' + (parts.length ? ' ' + capFirst(parts.join(', ')) + '.' : '') +
       (t.rows.shares && first(t.rows.shares) > 0 && last(t.rows.shares) > 0 ? ' The share count went from ' + sgBig(first(t.rows.shares)) + ' to ' + sgBig(last(t.rows.shares)) + '.' : '') + '</p>'; }
-  h += '<div class="sgqw"><div class="sgq" style="grid-template-columns:auto repeat(' + t.years.length + ',minmax(64px,auto))"><div class="h n">Year</div>' + t.years.map(y => '<div class="h f">' + esc(y) + '</div>').join('');
-  TEN.forEach(([k, name]) => { if (t.rows[k]) h += '<div class="n">' + name + '</div>' + t.rows[k].map(v => '<div class="f">' + fmt(k, v) + '</div>').join(''); });
-  return h + '</div></div><p class="note">The company\'s own reported figures, by financial year. A dash is a year it did not report that line.</p>';
+  /* the newest year first, as in "Report by report": on a phone the first columns are the ones on screen */
+  const rev = a => a.slice().reverse();
+  h += '<div class="sgqw"><div class="sgq" style="grid-template-columns:auto repeat(' + t.years.length + ',minmax(64px,auto))"><div class="h n">Year</div>' + rev(t.years).map(y => '<div class="h f">' + esc(y) + '</div>').join('');
+  TEN.forEach(([k, name]) => { if (t.rows[k]) h += '<div class="n">' + name + '</div>' + rev(t.rows[k]).map(v => '<div class="f">' + fmt(k, v) + '</div>').join(''); });
+  return h + '</div></div><p class="note">The company\'s own reported figures, by financial year, the newest first. A dash is a year it did not report that line.</p>';
 }
 /* the third box: where the company stands, by its own account and its rivals' */
 function standBox(r) {
