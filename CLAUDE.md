@@ -12,7 +12,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `guide/index.html`, `prism/guide/index.html` | The companion guides to Runway and to Prism: pages of short lessons on how to use each tool (see "The guides" below). No engine and no data of their own. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page (383 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page (442 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -137,8 +137,8 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
     Show example, which keeps them (see the section above).
   - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
     holding up or slipping), the entry ceiling, the put desk, the five questions, the nine named lists, moonshots,
-    why a company isn't listed; verdicts (and how to note a put), the signs that a business is winning, what
-    changed, the scorecard; options and settings,
+    whether the management is any good, why a company isn't listed; verdicts (and how to note a put), the signs
+    that a business is winning, what changed, the scorecard; options and settings,
     saving, a routine for each new file.
 - **It shows where things are and leaves the figures to the page.** No tax or benefit figure goes in Runway's guide,
   and no pass mark or price in Prism's (each check scans its guide), so nothing in a guide needs the yearly update
@@ -156,8 +156,9 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
 - **"Show me" links.** Each carries `data-go` with what to show. Runway: `{"lens", "wi", "el"}`, a view, a what-if
   calculator and the id of a part of the page. Prism: `{"list", "sort", "open", "el", "box"}`: a list of the Show
   menu (`""` is the five-question list, `"near"` the near misses), an order, `"open":"first"` to open the first
-  company, and a part of the page (`"detail"`, `"vform"` and `"signs"` are the opened company's detail, its
-  verdict form and its "Is the business winning?" box;
+  company, and a part of the page (`"detail"` and `"vform"` are the opened company's detail and its verdict form;
+  `"signs"`, `"run"` and `"owners"` are its boxes "Is the business winning?", "How well is it run?" and "How does
+  it treat its owners?";
   `"box":"self"` outlines the part itself and not the panel around it). Any may be left out. On a tap the guide
   writes this as a note in `localStorage` key `ftol-show`, with the tool's name. The tool reads its own note once
   as it loads (`ftolShow`, while it is under a minute old), sets its view, and calls `ftolSpot`, which opens any
@@ -191,7 +192,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (383 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (442 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -377,9 +378,46 @@ format as the other tools; no AI, no live data.
     address without his say-so.
   - Recommended to him, in this order: the no-AI comparison with rivals and the use of cash, with tests for banks;
     then a pilot of the reading on three companies he names, before any pipeline is built. Awaiting his choice.
+- **Banks and insurers on the A-list (`gradeLender`, `L_TESTS`).** He said on 2026-11-24 that every good company
+  should come through the filters, "including banks etc.". A lender cannot take the usual six tests (debt is its raw
+  material, and its cash flow says little), so it has six of its own, price left out: return on the owners' money
+  over five years and now (`a_roe5`, `a_roe`), years of profit, sales growth, return on assets (`a_roa`), share
+  count, and the owners' money as a share of assets (`a_equity`). Everything else follows the A-list: on sale (with
+  what the price implies read from earnings alone), slipping (on the return on the owners' money and profit per
+  share), the put desk, pins, the next tier. It has no entry ceiling, and is still not asked the five questions.
+  - On his file 39 of the 253 large lenders pass, so the A-list went from 132 to 171 and the on-sale list from 27
+    to 34. The pass marks are starting points like every other: none is tested.
+  - The file cannot show bad loans, the mix of deposits or reserves. The page says so, and the reading of the
+    filings is where those belong.
+  - Property companies stay set aside: the download's funds-from-operations column is empty.
+  - `RULES_V` (now 2) is stored with each file's lists. Two files are compared ("What changed", the New tag) only
+    when both were read under the same rules, so that this change did not show up as 39 companies "joining".
+    **Raise it whenever a rule change moves companies on or off the A-list by itself.**
+- **How well is it run? How does it treat its owners? (`runRead`, `cashUse`, `ownersRead`; `runBox`, `ownBox`).**
+  On 2026-11-24 he quoted Buffett's two tests of a management: compare what they have accomplished with what
+  their competitors have done, consider the hand they were dealt, and look at how they have allocated capital; and
+  read the proxy to compare how managers treat themselves with how they treat shareholders. The figures half of
+  both is in two boxes in a company's detail, closed until tapped, with the gist in the heading.
+  - **How well is it run?** Six measures (`RUN_MEASURES`; a lender has its own six) for the company, for the
+    typical company of its industry in the file (the median: "the hand the whole industry was dealt") and for its
+    rivals. Under each measure: Ahead (better than two thirds of the others), Middle or Behind, and how many of the
+    others it beats. An industry with fewer than `peer_min` companies is not ranked. Ordinary companies are set
+    beside ordinary companies and lenders beside lenders (`peerKey`).
+  - **Rivals.** Prism picks the `rivals_n` nearest in market value in the industry. The provider's labels are
+    rough (a computer reseller is filed with the consultancies), so he can type his own symbols (`S.rivals`), and
+    the research file can supply the rivals a company names itself.
+  - **Where a year's cash went.** For every $100 of cash from operations: back into the business, acquisitions
+    and other investments, dividends, buybacks (or new shares sold), debt repaid (or borrowed), with stock pay
+    noted as the cost the cash figures hide. Not shown for a lender.
+  - **How does it treat its owners?** What insiders own (beside the industry's typical figure), the change in the
+    share count, what was handed back as a share of spare cash (of profit, for a lender), and stock pay.
+  - One file gives one year and some five-year averages; the boxes say so. No score, no flag thresholds, no part
+    in any test, list or order (a check asserts it for ordinary companies).
 - **Fee businesses in financial industries.** In Credit Services, Asset Management, Capital Markets and Financial
   Conglomerates, a company is scored like any other when the file gives it EBITDA-based figures (a card network,
-  a fund manager); a lender gets none and stays set aside. Banks and insurers are always set aside.
+  a fund manager); a lender gets none and stays set aside from the five questions. Banks and insurers are never asked the five
+  questions; since 2026-11-24 they are graded for the A-list on tests of their own (see the bullet just above on
+  banks and insurers).
 - **Unknown is never a pass.** Missing data gives "unknown", which fails a required question.
 - **Verdicts and the owner's put selling.** He mostly gets in by selling cash-secured puts, and sells a near call
   if he is assigned and doesn't want to hold. The record for that: Act while a put is open (strike and expiry
@@ -388,9 +426,10 @@ format as the other tools; no AI, no live data.
   five verdict names come from his case-notes headings: don't add trade types as verdicts. Separate strike and
   expiry boxes, with each file showing the distance from the strike, were offered and are not built.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
-- `FIELDS`: the first spelling of each of the 85 columns was checked against the owner's real downloads (a
-  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 85 headings.
-  The last nineteen were added on 2026-11-24: eight dividend columns, then eleven for the signs.
+- `FIELDS`: the first spelling of each of the 93 columns was checked against the owner's real downloads (a
+  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 93 headings.
+  The last twenty-seven were added on 2026-11-24: eight dividend columns, eleven for the signs, and eight for the
+  banks' tests, the record against rivals and the use of cash.
   Later spellings are guesses for other files, and a match on one is reported on the page as "matched by name
   only". What the full file taught us, so nobody has to find it twice:
   - Statement figures are already in US dollars, whatever currency the company reports in.
@@ -413,7 +452,8 @@ format as the other tools; no AI, no live data.
 - "Columns found in the file" has a list of every column heading in the loaded file (`colText`), to copy or save.
   It holds headings only, never figures, so the owner can send it when asking for more columns to be read.
 - State: `localStorage` key `prism-v1` (settings, verdicts, A-list choices, the scorecard, last two list
-  memberships, and the three parts of the signs: `track`, `kind`, `own`; `v: 2` marks state saved since the A-list
+  memberships, the three parts of the signs: `track`, `kind`, `own`, and `rivals`, his own choice of companies to
+  set a company beside; `v: 2` marks state saved since the A-list
   became the opening view); IndexedDB `prism` keeps the last file in that browser only; `ftol-summary-prism` feeds
   the home page. The vault copy holds the same things except the file: the scorecard carries entry prices and the
   last prices of the large companies, and the record of signs a few figures per report for the A-list and the
@@ -427,7 +467,8 @@ format as the other tools; no AI, no live data.
 - **The guide** (`prism/guide/index.html`, asked for on 2026-11-20) has a lesson for each list and each thing the
   owner asked about along the way: the entry ceiling, the order, how to note a put, what the columns list is for.
   When a name on this page changes, the guide changes in the same commit (see "The guides").
-- Not built yet (ask the owner): scoring banks and property (needs P/B, ROE), ten-year divergence, adjusting for
+- Not built yet (ask the owner): scoring property companies (the figure they are judged on, funds from
+  operations, is an empty column in the download), asking banks the five questions, ten-year divergence, adjusting for
   share splits (the scorecard drops a split company instead), the owner's industry and override maps, a "copy a
   research brief" button. Offered on 2026-11-20 and not chosen then: put arithmetic (he types strike, expiry and
   premium; Prism works out the return on cash, the breakeven and what it assumes), a one-line market thermometer

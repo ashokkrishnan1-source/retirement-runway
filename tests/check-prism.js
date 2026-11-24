@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'prism', 'index.html'), 'utf8');
 const eng = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
-const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes,dividendOf,SIGNS,KINDS,KIND_OF,kindOf,signNow,signAgo,signsFor,signKeys,monthsBack,trackStep,signSeries,signCompare,readSign,signFromFile,readOwn,ownYearKey,signTally,signsRead};')();
+const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes,dividendOf,SIGNS,KINDS,KIND_OF,kindOf,signNow,signAgo,signsFor,signKeys,monthsBack,trackStep,signSeries,signCompare,readSign,signFromFile,readOwn,ownYearKey,signTally,signsRead,A_TESTS,L_TESTS,gradeLender,RUN_MEASURES,runFig,debtFig,peerKey,peerGroups,standing,rivalsOf,runRead,cashUse,paidOut,ownersRead};')();
 let pass = 0, fail = 0;
 const check = (name, actual, expected, tol) => {
   const ok = typeof expected === 'number' ? Math.abs(actual - expected) <= (tol == null ? 1e-6 : tol) : JSON.stringify(actual) === JSON.stringify(expected);
@@ -54,7 +54,7 @@ check('date: text date', E.toDate('2026-11-04'), '2026-11-04');
 }
 
 console.log('--- The provider\'s full download ---');
-// The headings of the 85 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
+// The headings of the 93 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
 // them. Headings only: the values below are invented.
 { const FULL = ['Symbol', 'Company Name', 'Sector', 'Industry', 'Stock Price', 'Market Cap', 'Avg. Volume', 'Revenue', 'PE Ratio', 'EV/EBITDA',
     'Debt / EBITDA', 'Total Cash', 'Total Debt', 'Net Cash', 'FCF Yield', 'ROIC', 'Rev. Growth', 'FCF Growth', 'Shares Ch. (YoY)', 'Return 1Y',
@@ -64,11 +64,13 @@ console.log('--- The provider\'s full download ---');
     'Profit Years', 'Rev. Growth 10Y', 'Operating CF', 'Net Income', 'ND / EBITDA', 'PE (5Y)', 'PE (10Y)', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR',
     'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Rev. Growth (Q)', 'OpInc Growth', 'EPS Growth (Q)',
     'Div. Yield', 'Dividend', 'Div. Years', 'Div. Gr. Years', 'FCF Payout', 'Div. Growth', 'Ex-Div Date', 'Payout Freq.',
-    'Rev / Employee', 'Empl. Growth', 'FCF / Share', 'GP Growth', 'Asset Turnover', 'Inv. Turnover', 'BV / Share', 'EPS', 'ROE (5Y)', 'Last Report Date', 'Last Earnings'];
+    'Rev / Employee', 'Empl. Growth', 'FCF / Share', 'GP Growth', 'Asset Turnover', 'Inv. Turnover', 'BV / Share', 'EPS', 'ROE (5Y)', 'Last Report Date', 'Last Earnings',
+    'ROA', 'Equity', 'Assets', 'CapEx', 'Investing CF', 'Debt Growth (YoY)', 'Goodwill', '10K Date'];
   // look-alike headings that are also in the download and must not be mistaken for the ones above
   const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth (Q)', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date',
     'Div. Growth 3Y', 'Div. Growth 5Y', 'Div. Growth 10Y', 'Payout Ratio', 'Payment Date', 'Last Div.', 'Shareh. Yield',
-    'Prof / Employee', 'Empl. Change', 'Employees', 'FCF Growth (Q)', 'GP Growth 3Y', 'GP Growth (Q)', 'WC Turnover', 'TBV / Share', 'EPS Growth (Qtrs)', 'Est. EPS', 'ROA (5Y)', 'Earnings Time', '10K Date'];
+    'Prof / Employee', 'Empl. Change', 'Employees', 'FCF Growth (Q)', 'GP Growth 3Y', 'GP Growth (Q)', 'WC Turnover', 'TBV / Share', 'EPS Growth (Qtrs)', 'Est. EPS', 'ROA (5Y)', 'Earnings Time',
+    'Debt Growth (QoQ)', 'Debt Growth (3Y)', 'Financing CF', 'LT Assets', 'Curr. Assets', 'Debt / Equity', 'ROCE', 'TBV'];
   const row = FULL.map(() => ''), set = (h, v) => { row[FULL.indexOf(h)] = v; };
   set('Symbol', 'zzz.x'); set('Stock Price', '40'); set('Market Cap', '2000000000'); set('FCF Yield', '9.00%'); set('FCF', '100000000'); set('ROIC', '12.50%');
   set('Shares Ch. (YoY)', '-0.21%'); set('CIK Code', '0000123456'); set('Price Date', '2026-11-19'); set('Ent. Value', '2500000000'); set('Int. Cov.', '-4.5');
@@ -76,6 +78,7 @@ console.log('--- The provider\'s full download ---');
   set('Profit Years', '35'); set('50MA Chg %', '-4.18%'); set('Options', 'Yes'); set('Next Earnings', '2027-01-27'); set('ND / EBITDA', '-0.0356');
   set('Div. Yield', '2.50%'); set('Dividend', '1'); set('Div. Years', '12'); set('Div. Gr. Years', '5'); set('FCF Payout', '40.00%'); set('Div. Growth', '-11.80%'); set('Ex-Div Date', '2026-12-01'); set('Payout Freq.', 'Semi-Annual');
   set('Rev / Employee', '250000'); set('Empl. Growth', '2.00%'); set('FCF / Share', '4.125'); set('GP Growth', '-3.50%'); set('Asset Turnover', '0.85'); set('Inv. Turnover', '6.2'); set('BV / Share', '18.75'); set('EPS', '-1.2'); set('ROE (5Y)', '14.00%'); set('Last Report Date', '2026-09-30'); set('Last Earnings', '2026-11-05');
+  set('ROA', '1.25%'); set('Equity', '900'); set('Assets', '10000'); set('CapEx', '-200'); set('Investing CF', '-500'); set('Debt Growth (YoY)', '10.00%'); set('Goodwill', '300'); set('10K Date', '2026-02-13');
   const m = E.mapTable(FULL.concat(DECOYS), [row.concat(DECOYS.map(() => '99'))]), r = m.rows[0];
   check('full download: every column Prism reads is found', Object.keys(m.report.found).length, E.FIELDS.length);
   check('full download: none missing', m.report.missing, []);
@@ -91,12 +94,15 @@ console.log('--- The provider\'s full download ---');
   check('full download: percentages carry a % sign, so no whole-number conversion', m.report.percentUnits, false);
   check('full download: the dividend columns', [r.dy, r.div, r.dyrs, r.dgyrs, r.fpay, Math.round(r.dg1 * 1e6) / 1e6, r.exdiv, r.dfreq], [0.025, 1, 12, 5, 0.4, -0.118, '2026-12-01', 'Semi-Annual']);
   check('full download: the columns behind the signs', [r.rpe, r.emplg, r.fcfps, Math.round(r.gpg * 1e6) / 1e6, r.ato, r.invt, r.bvps, r.eps, Math.round(r.roe5 * 1e6) / 1e6, r.lastrep, r.lastearn], [250000, 0.02, 4.125, -0.035, 0.85, 6.2, 18.75, -1.2, 0.14, '2026-09-30', '2026-11-05']);
-  check('the engine reads 85 columns', E.FIELDS.length, 85);
+  check('full download: the columns behind a bank\'s tests and the use of cash', [r.roa, r.equity, r.assets, r.capex, r.invcf, Math.round(r.debtg * 1e6) / 1e6, r.goodwill, r.tenk], [0.0125, 900, 10000, -200, -500, 0.1, 300, '2026-02-13']);
+  check('the engine reads 93 columns', E.FIELDS.length, 93);
   // a spelling that is only a guess is reported as one: "Ticker" and "Enterprise Value" are not the provider's headings
   check('a guessed spelling is reported', E.mapTable(['Ticker', 'Enterprise Value'], [['x', '5']]).report.guessed, ['sym', 'ev']);
   // The yield is free cash flow over the whole company's market value: 100m / 2,000m = 5%, though the file's column says 9%
   E.derive(r); check('yield: company cash flow over company value', r.fcfy, 0.05); check('yield: the file\'s own figure is kept', r.fcfy_file, 0.09);
   E.derive(r); check('yield: unchanged when worked out again', [r.fcfy, r.fcfy_file], [0.05, 0.09]);
+  // the owners' money as a share of everything held: 900 / 10,000
+  check('owners\' money over assets is 9%', r.eqa, 0.09);
   // with no free-cash-flow column the file's yield is used: 8% of 1,000 is 80
   const y = {fcfy: 0.08, cap: 1000}; E.derive(y); check('yield only: kept', y.fcfy, 0.08); check('yield only: cash flow is yield x value', y.fcf, 80, 1e-9);
   // with no yield column: 30 / 600 = 5%
@@ -598,6 +604,114 @@ console.log('--- Signs that a business is winning ---');
   check('page: it never calls a company winning or losing itself', /is winning\.|is losing|a winner\b|Prism thinks/i.test(ui.replace(/Is the business winning\?/g, '').replace(/Signs that a business is winning\./g, '').replace(/show a business is winning/g, '').replace(/Whether the company is winning is your call/g, '')), false);
 }
 
+console.log('--- Banks and insurers on the A-list ---');
+{ // A lender has six tests of its own. Worked by hand; the companies are invented.
+  const C = E.CONTROLS, bank = o => Object.assign({roe5: 0.14, roe: 0.12, py: 15, revg5: 0.06, revg10: 0.05, roa: 0.012, sh: 0.01, eqa: 0.09}, o || {});
+  let g = E.gradeLender(bank(), C);
+  check('lender: a sound bank passes all six', [g.yes, g.no, g.unk, g.lender], [6, [], [], true]);
+  check('lender: the six tests, by name', E.L_TESTS, ['returns', 'profitable', 'grows', 'assets', 'shares', 'cushion']);
+  check('lender: 11% on the owners\' money over five years is not enough', E.gradeLender(bank({roe5: 0.11}), C).no, ['returns']);
+  check('lender: nor is 9% now', E.gradeLender(bank({roe: 0.09}), C).no, ['returns']);
+  check('lender: exactly 12% and 10% pass', E.gradeLender(bank({roe5: 0.12, roe: 0.10}), C).t.returns, true);
+  check('lender: 0.9% on its assets fails', E.gradeLender(bank({roa: 0.009}), C).no, ['assets']);
+  check('lender: owners\' money under 7% of assets fails', E.gradeLender(bank({eqa: 0.069}), C).no, ['cushion']);
+  check('lender: nine years of profit, slow sales and a rising share count each fail', [E.gradeLender(bank({py: 9}), C).no, E.gradeLender(bank({revg5: 0.03}), C).no, E.gradeLender(bank({revg10: 0.03}), C).no, E.gradeLender(bank({sh: 0.03}), C).no], [['profitable'], ['grows'], ['grows'], ['shares']]);
+  g = E.gradeLender(bank({roa: null, eqa: null}), C);
+  check('lender: a test the file can\'t answer is not a pass', [g.yes, g.unk], [4, ['assets', 'cushion']]);
+  // in a whole file: banks sit beside ordinary companies
+  const fin = (sym, o) => mk(sym, Object.assign({sector: 'Financials', industry: 'Banks - Regional', lev: null, ev_ebitda: null, pe: 10, pe10: 14, roe5: 0.14, roe: 0.12, py: 15, revg5: 0.06, roa: 0.012, sh: 0.01, equity: 9e8, assets: 1e10, dd: -0.30, epsgq: 0.05}, o || {}));
+  const u = universe().concat([fin('GOODB'), fin('THINB', {equity: 6e8}), fin('WEAKB', {roe5: 0.07, roe: 0.06, roa: 0.006}), fin('TINYB', {cap: 1e8}), fin('SLIPB', {roe: 0.08, revgq: -0.05, epsgq: -0.20, oig: 0.50})]);
+  const res = E.run(u, {}, {today: '2026-11-19'}), by = {}; res.rows.forEach(r => { by[r.sym] = r; });
+  check('bank: set aside from the five questions, and still graded', [by.GOODB.aside, by.GOODB.scored, by.GOODB.g, by.GOODB.a.lender, by.GOODB.grade, by.GOODB.alist], ['financial', false, null, true, 'A', true]);
+  check('bank: thin capital is one test short', [by.THINB.a.yes, by.THINB.a.no, by.THINB.grade, by.THINB.alist], [5, ['cushion'], 'B', false]);
+  check('bank: the next tier lets it on', E.run(u.map(r => Object.assign({}, r)), {}, {today: '2026-11-19', tierB: true}).rows.find(r => r.sym === 'THINB').alist, true);
+  check('bank: a weak one is nowhere near', [by.WEAKB.a.yes, by.WEAKB.alist], [4, false]);
+  check('bank: one too small to score is not graded', [by.TINYB.a, by.TINYB.alist], [null, false]);
+  check('bank: the reader\'s own choice still wins', E.run(u.map(r => Object.assign({}, r)), {}, {today: '2026-11-19', pins: {GOODB: 'out', WEAKB: 'in'}}).rows.filter(r => /B$/.test(r.sym) && r.alist).map(r => r.sym), ['WEAKB']);
+  // what its price implies comes from earnings alone (a P/E of 10 is a 10% earnings yield); a bank's cash-flow yield is left out of it
+  check('bank: the price is read from earnings alone', [by.GOODB.impg, by.GOODB.impg_e, by.GOODB.ceiling], [E.impliedGrowth(0.10, res.C), E.impliedGrowth(0.10, res.C), null]);
+  // on sale: P/E 10 against its own 14 is 71%, under 75%; and 30% off its high. Two signs.
+  check('bank: on sale is judged as for any company', [by.GOODB.sale.own, by.GOODB.sale.high, by.GOODB.onSale], [true, true, true]);
+  check('bank: on the A-list and on-sale lists, not on the five-question ones', (() => { const m = E.memberships(res.rows, ['Q', 'V', 'S', 'P', 'T']); return [m.A.includes('GOODB'), m.sale.includes('GOODB'), m.all.includes('GOODB')]; })(), [true, true, false]);
+  // slipping: the return on its owners' money is 8% against 14% over five years (under 80% of it); profit per share fell 20% in the quarter.
+  // A rising "operating profit" figure does not rescue a lender: that figure means little for a bank.
+  check('bank: slipping is read on the owners\' money and on profit per share', [by.SLIPB.slip.s.returns, by.SLIPB.slip.s.profit, by.SLIPB.slipping], [true, true, 'slipping']);
+  check('bank: a steady one is not slipping', [by.GOODB.slip.s.returns, by.GOODB.slip.s.profit], [false, false]);
+  check('ordinary companies are graded exactly as before', universe().length === 0 ? null : res.rows.filter(r => r.scored).every(r => r.a && !r.a.lender), true);
+  // the new columns change nothing for an ordinary company
+  const plain = E.run(universe(), {}, {today: '2026-11-19'}), rich = E.run(universe().map((r, i) => Object.assign(r, {roa: 0.5, equity: 1, assets: 2, capex: -9e9, invcf: -9e9, debtg: i % 2 ? 5 : -0.5, goodwill: 9e9, tenk: '2026-02-01', insider: 0.9})), {}, {today: '2026-11-19'});
+  const key = r => [r.sym, r.Q, r.V, r.P, r.T, r.g, r.n5, r.lists, r.grade, r.alist, r.onSale, r.put, r.moon, r.slipping, r.ceiling, r.blocks];
+  check('the columns for the two tests of management move no ordinary company', rich.rows.map(key), plain.rows.map(key));
+  check('the file is known to carry what a bank is graded on, or not', [res.can.lender, plain.can.lender, rich.can.cash, plain.can.cash], [true, false, false, false]);
+}
+
+console.log('--- How well is it run, and how does it treat its owners ---');
+{ const C = E.CONTROLS, co = (sym, o) => Object.assign({sym, industry: 'Widgets', lane: 'standard', primary: true, pool: 'main', cap: 1e9}, o || {});
+  // where a company stands among five with a figure: 30%, 20%, 15%, 10%, 5%, and one with none
+  const G = [co('A1', {roic5: 0.30}), co('A2', {roic5: 0.20}), co('A3', {roic5: 0.15}), co('A4', {roic5: 0.10}), co('A5', {roic5: 0.05}), co('A6', {})];
+  let st = E.standing(G[0], G, 'roic5', true, 5);
+  check('standing: the best of five beats all four others', [st.v, st.n, st.beats, st.share, st.median, st.word], [0.30, 5, 4, 1, 0.15, 'ahead']);
+  st = E.standing(G[2], G, 'roic5', true, 5); check('standing: the middle one beats two of four', [st.beats, st.share, st.word], [2, 0.5, 'middle']);
+  st = E.standing(G[4], G, 'roic5', true, 5); check('standing: the worst beats none', [st.beats, st.word], [0, 'behind']);
+  st = E.standing(G[5], G, 'roic5', true, 5); check('standing: no figure, no standing', [st.v, st.n, st.beats, st.word, st.median], [null, 5, null, null, 0.15]);
+  check('standing: four companies are too few to rank', E.standing(G[0], G.slice(0, 4), 'roic5', true, 5).word, null);
+  // when lower is better: share counts of -3%, 0%, 2%, 5%, 10%
+  const H = [-0.03, 0, 0.02, 0.05, 0.10].map((v, i) => co('S' + i, {sh: v}));
+  check('standing: the fastest-shrinking share count is ahead', [E.standing(H[0], H, 'sh', false, 5).beats, E.standing(H[0], H, 'sh', false, 5).word, E.standing(H[4], H, 'sh', false, 5).word], [4, 'ahead', 'behind']);
+  // a tie counts as half: 10%, 10%, 5%, 5%, 1% -> the first beats three and ties one
+  const T = [0.10, 0.10, 0.05, 0.05, 0.01].map((v, i) => co('T' + i, {om: v}));
+  check('standing: a tie counts as half', E.standing(T[0], T, 'om', true, 5).beats, 3.5);
+  // two thirds of the others is ahead, one third is behind: four companies, min 4
+  const Q = [0.4, 0.3, 0.2, 0.1].map((v, i) => co('Q' + i, {om: v}));
+  check('standing: beating two of three is ahead, one of three is behind', [E.standing(Q[1], Q, 'om', true, 4).word, E.standing(Q[2], Q, 'om', true, 4).word], ['ahead', 'behind']);
+  // debt: a company with net debt and a negative multiple has no figure
+  check('debt figure: 1.5, net cash, and a loss', [E.debtFig({ndlev: 1.5, netcash: -5}), E.debtFig({ndlev: -0.4, netcash: 5}), E.debtFig({ndlev: -2, netcash: -5}), E.debtFig({})], [1.5, -0.4, null, null]);
+  // who is measured against whom
+  check('peers: an ordinary company, a lender, and those with no group', [E.peerKey(co('x')), E.peerKey(co('x', {lane: 'financial'})), E.peerKey(co('x', {lane: 'property'})), E.peerKey(co('x', {pool: 'micro'})), E.peerKey(co('x', {primary: false})), E.peerKey(co('x', {industry: null}))], ['s|Widgets', 'f|Widgets', null, null, null, null]);
+  const sized = [100, 80, 50, 40, 30, 20, 10].map(v => co('C' + v, {cap: v * 1e9})), pg = E.peerGroups(sized.concat([co('L1', {lane: 'financial', cap: 5e9}), co('P1', {lane: 'property'})]));
+  check('peers: grouped by industry and sort, largest first', [Object.keys(pg).sort(), pg['s|Widgets'].map(r => r.sym)], [['f|Widgets', 's|Widgets'], ['C100', 'C80', 'C50', 'C40', 'C30', 'C20', 'C10']]);
+  // the four nearest in size to the 40: 50 and 30, then 80 and 20, which are equally far (twice and half); listed largest first
+  const by = {}; sized.forEach(r => { by[r.sym] = r; });
+  check('rivals: the four nearest in size', E.rivalsOf(by.C40, sized, 4, null, by).map(r => r.sym), ['C80', 'C50', 'C30', 'C20']);
+  check('rivals: the largest company looks down', E.rivalsOf(by.C100, sized, 2, null, by).map(r => r.sym), ['C80', 'C50']);
+  check('rivals: the reader\'s own choice, in the reader\'s order, without itself or strangers', E.rivalsOf(by.C40, sized, 4, ['C10', 'ZZZ', 'C40', 'C100'], by).map(r => r.sym), ['C10', 'C100']);
+  check('rivals: a choice with nobody from the file falls back on size', E.rivalsOf(by.C40, sized, 2, ['ZZZ'], by).map(r => r.sym), ['C50', 'C30']);
+  // the whole reading for one company among six
+  const W = [0.30, 0.20, 0.15, 0.10, 0.05, 0.02].map((v, i) => co('W' + i, {cap: (6 - i) * 1e9, roic5: v, roic: v, revg5: 0.10 - i * 0.01, om: v, sh: -0.02 + i * 0.01, ndlev: i * 0.5, netcash: -1}));
+  let R = E.runRead(W[0], E.peerGroups(W), C, null, null);
+  check('run: an ordinary company, set beside six, ahead on all six measures', [R.kind, R.of, R.ahead, R.middle, R.behind, R.measures.map(m => m.k)], ['std', 6, 6, 0, 0, ['roic5', 'roic', 'revg5', 'om', 'sh', 'debt']]);
+  check('run: its four nearest rivals', R.rivals.map(r => r.sym), ['W1', 'W2', 'W3', 'W4']);
+  R = E.runRead(W[5], E.peerGroups(W), C, ['W0'], (() => { const b = {}; W.forEach(r => { b[r.sym] = r; }); return b; })());
+  check('run: the weakest is behind on all six, beside the rival the reader chose', [R.behind, R.rivals.map(r => r.sym), R.picked], [6, ['W0'], true]);
+  check('run: a lender is read on a lender\'s measures', E.runRead(co('L', {lane: 'financial'}), {}, C, null, null).measures.map(m => m.k), ['roe5', 'roe', 'revg5', 'roa', 'sh', 'eqa']);
+  check('run: a property company has no group, so no reading', E.runRead(co('P', {lane: 'property'}), {}, C, null, null), null);
+  check('run: each measure has a name, a direction and a unit', Object.keys(E.RUN_MEASURES).every(k => E.RUN_MEASURES[k].length === 6 && E.RUN_MEASURES[k].every(m => typeof m[1] === 'string' && typeof m[2] === 'boolean' && /^(pct|x)$/.test(m[3]))), true);
+  // where a year's cash went. The business brought in 1,000. Capital spending 200. Investing took 500 in all, so 300 went on
+  // acquisitions and other investments. Dividends: 2 a share on 100 shares = 200. Buybacks: 3% of a 5,000 market value = 150.
+  // Debt is 1,100 after growing 10%, so it was 1,000: it borrowed 100. Stock pay 50.
+  const Z = {lane: 'standard', ocf: 1000, capex: -200, invcf: -500, div: 2, shares: 100, buyback: 0.03, cap: 5000, debt: 1100, debtg: 0.10, sbc: 50, fcf: 800, ni: 500, insider: 0.05, sh: -0.02};
+  const r9 = o => { const x = {}; Object.keys(o).forEach(k => { x[k] = typeof o[k] === 'number' ? Math.round(o[k] * 1e9) / 1e9 : o[k]; }); return x; };
+  check('cash: where the 1,000 went', r9(E.cashUse(Z)), {made: 1000, kept: 200, bought: 300, paid: 200, back: 150, debt: -100, stock: 50});
+  check('cash: debt down from 1,000 to 800 is 200 repaid', r9(E.cashUse(Object.assign({}, Z, {debt: 800, debtg: -0.2}))).debt, 200);
+  check('cash: selling more than it bought shows as money in', E.cashUse(Object.assign({}, Z, {invcf: 100})).bought, -300);
+  check('cash: new shares sold show as money in', r9(E.cashUse(Object.assign({}, Z, {buyback: -0.01}))).back, -50);
+  check('cash: without capital spending, two lines are unknown', [E.cashUse(Object.assign({}, Z, {capex: null})).kept, E.cashUse(Object.assign({}, Z, {capex: null})).bought], [null, null]);
+  check('cash: none for a bank, and none when the business brought in no cash', [E.cashUse(Object.assign({}, Z, {lane: 'financial'})), E.cashUse(Object.assign({}, Z, {ocf: -5})), E.cashUse(Object.assign({}, Z, {ocf: null}))], [null, null, null]);
+  check('dividends in dollars: per share, or from the yield, or none, or unknown', [E.paidOut({div: 2, shares: 100}), E.paidOut({dy: 0.02, cap: 5000}), E.paidOut({div: 0}), E.paidOut({})], [200, 100, 0, null]);
+  // owners: 200 of dividends and 150 of buybacks is 350, which is 43.75% of 800 of spare cash; stock pay of 50 is 6.25% of it
+  let O = E.ownersRead(Z);
+  check('owners: what they got, against spare cash', [O.insider, O.shares, O.paid, r9({v: O.back}).v, r9({v: O.handed}).v, O.of, O.base, r9({v: O.handedShare}).v, O.stock, O.stockShare], [0.05, -0.02, 200, 150, 350, 'cash', 800, 0.4375, 50, 0.0625]);
+  O = E.ownersRead(Object.assign({}, Z, {lane: 'financial'}));
+  check('owners: for a bank, against profit, and no stock-pay line', [O.of, O.base, r9({v: O.handedShare}).v, O.stock, O.stockShare], ['profit', 500, 0.7, null, null]);
+  O = E.ownersRead({lane: 'standard'}); check('owners: an empty file says nothing', [O.insider, O.shares, O.paid, O.back, O.handed, O.handedShare, O.stock], [null, null, null, null, null, null, null]);
+  O = E.ownersRead(Object.assign({}, Z, {fcf: -10})); check('owners: with no spare cash there is nothing to take a share of', [O.handedShare, O.stockShare], [null, null]);
+  // the page: a name for every test, and a rules number that keeps a rule change from being reported as news
+  const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));
+  const AT = new Function(ui.match(/const AT = \{[^\n]*\};/)[0] + '\nreturn AT;')();
+  check('page: every test of a business or a bank has a name', E.A_TESTS.concat(E.L_TESTS).filter(k => !AT[k]), []);
+  check('page: lists are compared only between files read under the same rules', /const RULES_V = \d+;/.test(ui) && /rv: RULES_V/.test(ui) && (ui.match(/H\.prev\.rv === RULES_V/g) || []).length >= 2, true);
+}
+
 console.log('--- The guide keeps step with the page ---');
 { // prism/guide/index.html is a page of lessons about Prism. It must not drift from it. Every name it sets as a label
   // (class "k") must be on the page, word for word. Every "Show me" link must name a real list, a real order and a real
@@ -619,7 +733,7 @@ console.log('--- The guide keeps step with the page ---');
   const sorts = Object.keys(new Function(ui.match(/const SORTS = \{[\s\S]*?\n\};/)[0] + '\nreturn SORTS;')());
   check('guide: the page has nine named lists', Object.keys(LI).length, 9);
   check('guide: the engine and the page agree on the named lists', Object.keys(LI).slice().sort(), E.LISTS.slice().sort());
-  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs'];
+  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs', 'run', 'owners'];
   const gos = all(/<a\b[^>]*\bdata-go='([^']+)'[^>]*>([\s\S]*?)<\/a>/g, guide).map(x => [JSON.parse(x[1]), plain(x[2])]);
   const bad = gos.filter(([g]) => (g.list !== undefined && !lists.includes(g.list)) || (g.sort !== undefined && !sorts.includes(g.sort)) || (g.open !== undefined && g.open !== 'first') ||
     (g.box !== undefined && g.box !== 'self') || !g.el || !(parts.includes(g.el) || html.includes('id="' + g.el + '"')) || (parts.includes(g.el) && g.open !== 'first'));

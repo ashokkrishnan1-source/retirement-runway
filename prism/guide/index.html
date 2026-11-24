@@ -173,7 +173,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span><b class="k s">Entry ceiling</b></span><span>The most to pay. The line under it gives today's price and how far that is under or over the ceiling. A later lesson explains it.</span></li>
             <li><span><b class="k s">Verdict</b></span><span>Your own decision about the company. Prism never sets one.</span></li>
           </ul>
-          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the dividend, the signs that the business is winning, the five questions and a place for your verdict.</p>
+          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the dividend, the signs that the business is winning, two boxes on its management, the five questions and a place for your verdict.</p>
           <div class="go"><a class="btn" data-go='{"list":"sale","el":"tblBox","box":"self"}' href="#">Show me the rows →</a><a class="btn" data-go='{"list":"sale","open":"first","el":"detail"}' href="#">Show me a row opened →</a></div>
         </div>
       </details>
@@ -202,6 +202,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>Lower down, one line gives the dividend: what it pays a year, how many years it has been paid and raised, and how much of the company's spare cash it takes.</span></li>
             <li><span>Disagree with a grade? Under <b class="k s">My A-list</b>, choose <b class="k s">Always on my A-list</b> or <b class="k s">Never on my A-list</b>. Your choice wins.</span></li>
           </ol>
+          <p class="tip"><b>Good to know.</b> A bank or an insurer has six tests of its own, because debt is its raw material. Its row carries the tag <b class="k s">Bank or insurer</b>: tap it for the tests.</p>
           <p class="tip"><b>Good to know.</b> A test the file can't answer does not count as a pass. To include companies that miss exactly one test, open <b class="k s">More options</b> and tick <b class="k">Put companies that miss just one of the six tests on the A-list too</b>.</p>
           <p class="tip"><b>Good to know.</b> Each test's pass mark is shown beside it in the row. The pass marks are starting points. None has been tested against later returns.</p>
           <div class="go"><a class="btn" data-go='{"list":"A","el":"tblTitle"}' href="#">Show me the A-list →</a><a class="btn" data-go='{"list":"A","open":"first","el":"detail"}' href="#">Show me the six tests →</a></div>
@@ -321,15 +322,37 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
         </div>
       </details>
 
+      <details class="lesson" id="management">
+        <summary><span class="t"><span class="q">Is the management any good?</span><span class="where">How well is it run · How does it treat its owners</span></span></summary>
+        <div class="body">
+          <p>Two old tests of a management: how well do they run the business, and how well do they treat its owners. Prism puts figures to both, from the file you loaded.</p>
+          <ol class="steps">
+            <li><span>Open a company's row. Under the signs are two boxes, <b class="k s">How well is it run?</b> and <b class="k">How does it treat its owners?</b>. Each heading gives the gist. Tap one to open it.</span></li>
+            <li><span><b class="k s">How well is it run?</b> sets the company beside the <b class="k s">Typical</b> company of its industry in your file, and beside its nearest rivals. Under each measure is <b class="k s">Ahead</b>, <b class="k s">Middle</b> or <b class="k s">Behind</b>, and how many of the others it beats.</span></li>
+            <li><span>To choose the rivals yourself, type their symbols in the field that says <b class="k">Compare with: type symbols</b>.</span></li>
+            <li><span><b class="k s">Where a year's cash went</b> takes every hundred dollars the business brought in and says how much went back into the business, on acquisitions, to the owners and to lenders.</span></li>
+            <li><span><b class="k">How does it treat its owners?</b> says how much of the company its directors and officers own, whether the share count rose or fell, what came back as dividends and buybacks, and what was paid to staff in new shares.</span></li>
+          </ol>
+          <ul class="points">
+            <li>The typical company is the hand the whole industry was dealt. A company far ahead of it in a hard industry has done more than one a little ahead in an easy one.</li>
+            <li>Prism picks the rivals nearest in size. The industry labels are the data provider's, and they can be rough: choose your own rivals when they are.</li>
+            <li>A bank or an insurer is set beside other banks and insurers, on measures that fit them.</li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> One file gives one year and some five-year averages. These are facts to weigh, not a score, and they play no part in any list.</p>
+          <p class="tip"><b>Good to know.</b> How the managers pay themselves is in the company's proxy statement. No download carries it.</p>
+          <div class="go"><a class="btn" data-go='{"list":"A","open":"first","el":"run"}' href="#">Show me how it is run →</a><a class="btn" data-go='{"list":"A","open":"first","el":"owners"}' href="#">Show me the owners →</a></div>
+        </div>
+      </details>
+
       <details class="lesson" id="missing">
         <summary><span class="t"><span class="q">Why isn't a company on the list?</span><span class="where">Look up any stock · Set aside</span></span></summary>
         <div class="body">
           <ol class="steps">
             <li><span>Under <b class="k s">Look up any stock</b>, type the symbol. Prism shows how the company answered each question, or why it was set aside.</span></li>
-            <li><span><b class="k s">Set aside</b> counts the companies that are in the file but are not scored: banks, insurers and lenders, property companies, shell companies, and companies too small to score.</span></li>
+            <li><span><b class="k s">Set aside</b> counts the companies that are in the file but are not asked the five questions: banks, insurers and lenders, property companies, shell companies, and companies too small to score.</span></li>
             <li><span>A scored company can also be kept off the five-question lists for now, for example while its cash flow is negative. Prism tests it again with every file.</span></li>
           </ol>
-          <p class="tip"><b>Good to know.</b> Banks, insurers and property companies need different measures, so Prism leaves them out and does not guess.</p>
+          <p class="tip"><b>Good to know.</b> Banks and insurers are not asked the five questions, but they can be on the A-list: Prism grades them on six tests of their own. Property companies need a figure the download does not carry, so Prism leaves them out and does not guess.</p>
           <div class="go"><a class="btn" data-go='{"el":"look"}' href="#">Show me the look-up →</a><a class="btn" data-go='{"el":"aside"}' href="#">Show me what is set aside →</a></div>
         </div>
       </details>
