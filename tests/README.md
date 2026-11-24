@@ -47,7 +47,8 @@ company's standing against its industry and for where a year's cash went, and
 it checks the research tools in `tools/research/` on invented filings, without
 touching the network. That includes the queue of companies waiting to be read: the
 reading list holds names and the regulator's numbers only, and what comes back
-from the online store is cleaned like any research file.
+from the online store is cleaned like any research file. And it checks that every
+test, sign and measure in a company's detail has a note that explains it.
 
 ## After the yearly update
 

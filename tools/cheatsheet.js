@@ -173,7 +173,7 @@ const boxes = [
   [k('Your verdict'), 'Your decision and your notes.']
 ];
 const inside = '<ol class="boxes">' + boxes.map(b => '<li><span class="bh">' + b[0] + '</span> ' + b[1] + '</li>').join('') + '</ol>' +
-  '<p class="fine">A ' + k('?') + ' beside anything opens a plain note on it. The longer lessons: ' + k('Guide: how to use this page') + ', at the top.</p>';
+  '<p class="fine">Tap an underlined name, or a ' + k('?') + ', for a plain note on that line. The longer lessons: ' + k('Guide: how to use this page') + ', at the top.</p>';
 const verdicts =
   '<div class="vd">' + VERDICTS.map(v => '<div><span class="pill ' + VERDICT_SAYS[v][0] + '">' + esc(v) + '</span><span>' + VERDICT_SAYS[v][1] + '</span></div>').join('') + '</div>' +
   '<p class="fine">Watch, Act and Own are the companies you follow. Prism flags a review that is due, new results, earnings within ' + C.alert_earn + ' days and a sharp fall.</p>' +

@@ -14,7 +14,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/research/` | Prism's research from the filings: `edgar.js` fetches a company's filings from the regulator, `READING.md` tells the reader what to write, `brief.js` checks every quoted passage and packs the research file, `desk.js` shapes the queue that comes out of the claude.ai link's store and the briefs that go back into it (see "Research from the filings" under Prism). Needs network access to the regulator and a contact given at run time. |
 | `tools/cheatsheet.js`, `tools/cheatsheet.css` | Builds Prism's two-page cheat sheet as a PDF (see "The cheat sheet" under Prism). Not part of the checks or the workflow. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (498 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (507 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -139,12 +139,16 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
     Show example, which keeps them (see the section above).
   - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
     holding up or slipping), the entry ceiling, the put desk, the five questions, the nine named lists, moonshots,
-    whether the management is any good, what its filings say, why a company isn't listed; verdicts (and how to note a put), the signs
-    that a business is winning, what changed, the scorecard; options and settings,
-    saving, a routine for each new file.
+    whether the management is any good, what its filings say, why a company isn't listed; then "A company's page,
+    line by line" (what each of the six tests asks, the lines of "Is the price low?" and "Is the business
+    slipping?", the figures behind the five questions), which the owner asked for on 2026-11-24 as "a more detailed
+    guide"; verdicts (and how to note a put), the signs that a business is winning, what changed, the scorecard;
+    options and settings, saving, a routine for each new file.
 - **It shows where things are and leaves the figures to the page.** No tax or benefit figure goes in Runway's guide,
   and no pass mark or price in Prism's (each check scans its guide), so nothing in a guide needs the yearly update
-  or changes with a setting. For a figure, the guide sends the reader to the page's own "?" notes.
+  or changes with a setting. For a figure, the guide sends the reader to the page's own "?" notes. The detailed
+  lessons keep to this: they say what a line asks and why, in words ("every hundred dollars"), and send the reader
+  to the line's own note for the company's figures and the pass mark.
 - **Names must match the page word for word.** Every button, heading, tag, menu choice or field a guide names is set
   as `<b class="k">` (`class="k s"` for a short name, which then never breaks across lines; long ones wrap). The
   checks read those names and fail if one is not on the tool's page. They also fail if a view or what-if calculator
@@ -194,7 +198,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (498 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (507 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -223,6 +227,28 @@ format as the other tools; no AI, no live data.
   own figures, what it means at today's price, and no multiples or terms such as hurdle, yield or fair value. A
   bare dash or a bare percentage is not an answer either: say the reason ("None: cyclical") or the plain
   comparison ("3.1× ceiling"). The ceiling figure in each row opens such a note (`t_ceil`).
+- **A note for every line of a company's detail (`tipFor`, `TERM`; the `a_`, `p_`, `s_` and `m_` notes, `rank`).** On
+  2026-11-24 the owner quoted a line from a company's A-list box, "More cash than debt: at most 3, covered 5", asked
+  what it meant, and said "we should write a more detailed guide". The line was at fault: the two pass marks for a
+  company in debt were printed beside one that had none, and nothing said what they were. **A line that needs a
+  guide is not finished.** So:
+  - Each line of the A-list box (the six tests, a bank's six, the three signs of a low price, the four signs of
+    slipping) starts with an underlined name that opens a note written for that company: what the line asks, the
+    company's own figures, the pass mark, whether it passes, and why it matters. The box says "Tap a name for what
+    it means."
+  - Each measure in the five-question boxes and in "How well is it run?" does the same, and so does "sector rank".
+    `TERM` is the one list of what each measure is, in three parts (name, what it is, how to read it); the note
+    adds the company's figure and its rank. A check holds that every test, sign and measure has its note.
+  - What stands beside a line is in words: "needs 10 years", "needs 3 times or less, covered 5 times", "passes
+    outright" for a company with more cash than debt. EBITDA is used in the line and spelled out in the note
+    ("what the business earns in a year before interest, tax and the wearing out of its equipment").
+  - A sign says "sign" or "no sign", and "fine" or "weak", where it used to show a tick: a tick meant "present" in
+    one list and "absent" in the next. The six tests keep their ticks: there a tick can only mean a pass.
+  - Where the file has no figure the line says "no figure in the file". Interest cover near its pass mark is shown
+    to one decimal: 4.5 was shown as "5 times" beside a pass mark of 5, with a cross.
+  - On a phone the pass mark goes under its line (`.kv.w`), so that the line keeps the width.
+  - The guide gained a part to match (see "The guides"), and its "Words explained" gained the terms these lines use.
+  When a line is added to a company's detail, give it its note, and a term its place in `TERM`.
 - **The A-list (`gradeOf`, `judge`).** Six tests of the business, price ignored, all absolute rather than ranked
   within a sector: return on capital (five-year and latest), years of profit in a row, sales growth (five and ten
   years), cash from operations against profit, share-count growth, and debt (net cash, or net debt over EBITDA

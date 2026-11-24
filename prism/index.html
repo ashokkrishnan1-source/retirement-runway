@@ -105,7 +105,7 @@ td .also{font-size:12.5px;color:var(--fg2)}
 .hlp{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg2);font:600 11px/1 var(--body);cursor:pointer;vertical-align:1px;letter-spacing:0;text-transform:none;flex:none}
 .hlp:hover{border-color:var(--fg3);color:var(--fg)}
 button.pill{border:0;cursor:pointer;line-height:inherit}
-button.lnk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline dotted var(--fg3);text-underline-offset:3px}
+button.lnk{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left;text-decoration:underline dotted var(--fg3);text-underline-offset:3px}
 button.pill:hover{filter:brightness(.96)}
 #helpPop{position:absolute;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.16);font-size:13px;line-height:1.5;color:var(--fg2);text-transform:none;letter-spacing:0;font-weight:400}
 #helpPop b{color:var(--fg)}
@@ -124,6 +124,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:now
 .dbox .kv{display:grid;grid-template-columns:1fr auto auto;gap:2px 10px;font-size:12.5px;color:var(--fg2)}
 .dbox .kv b{font:500 12.5px var(--mono);color:var(--fg);text-align:right}
 .dbox .kv i{font-style:normal;font-family:var(--mono);color:var(--fg3);text-align:right}
+@media (max-width:560px){.dbox .kv.w{grid-template-columns:1fr auto}.dbox .kv.w i{grid-column:1/-1;text-align:left;margin:-1px 0 5px}}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .stat .v{font:600 20px var(--display)}.stat .k{font-size:12.5px;color:var(--fg2)}
@@ -1682,6 +1683,8 @@ function sorted(rows) {
    stays true when a setting is changed. A note that is a function is handed the button that was pressed, to find the
    company it belongs to. Notes open on a tap as well as a click: a hover note is no use on a phone. */
 const hb = k => '<button type="button" class="hlp" data-h="' + k + '" aria-label="More about this">?</button>';
+/* a name in a company's detail that opens its own note, written for that company */
+const tipFor = (r, k, name) => '<button type="button" class="lnk tip" data-h="' + k + '" data-sym="' + esc(r.sym) + '">' + esc(name) + '</button>';
 const rowOf = b => BY[b.dataset.sym] || null;
 const HELP = {
   show: () => '<p><b>Which list to read.</b></p><p><b>A-list on sale</b>: the best businesses whose price is low today. Start here.</p><p><b>Put desk</b>: A-list companies that are on sale or fell hard this week, with listed options.</p><p><b>The whole A-list</b>: every A-class business, whatever its price.</p>' +
@@ -1795,6 +1798,133 @@ Object.keys(SIGNS).forEach(k => { HELP['sg_' + k] = b => { const def = SIGNS[k],
     (x && x.now != null && x.year != null ? '<p>' + esc(r.sym) + ': ' + sgNum(def, x.now) + ' now, against ' + sgNum(def, x.year) + ' ' + sgVs(x) + '. ' + (x.vsYear === 'same' ? 'The gap is inside the allowance, so it counts as the same.' : 'That is ' + x.vsYear + '.') + '</p>' : '') +
     '<p>A change of less than ' + allow + ' counts as the same: smaller moves are mostly rounding.</p><p>' + SGAGO[def.ago || 'none'] + '</p>'; }; });
 Object.keys(FL).forEach(f => { HELP['f_' + f] = () => '<p><b>' + FL[f][0] + '.</b> ' + FL[f][1] + '</p>' + (SEVERE[f] ? '<p>This is a data warning: check the figure before trusting anything else in the row.</p>' : ''); });
+/* ---------- a note for every line of a company's detail ----------
+   On 2026-11-24 the owner read "More cash than debt ... at most 3, covered 5" in a company's A-list box and asked what
+   it meant. A line that needs a guide is a line that is not finished. So each test, each sign of a low price or of a
+   slipping business, and each measure behind the five questions and the record against rivals has a name that opens
+   its own note: what it is in plain words, this company's own figures, the pass mark, and why it matters. */
+const aPass = (r, k) => { const t = r && r.a ? r.a.t[k] : null; return t === true ? 'It passes.' : t === false ? 'It misses this test.' : 'The file cannot say, and a test it cannot answer does not count as a pass.'; };
+const EBITDA = 'what the business earns in a year before interest, tax and the wearing out of its equipment';
+Object.assign(HELP, {
+  a_returns: b => { const r = rowOf(b); if (!r) return ''; const L = !!(r.a && r.a.lender), five = L ? r.roe5 : r.roic5, now = L ? r.roe : r.roic, m5 = L ? C.a_roe5 : C.a_roic5, m1 = L ? C.a_roe : C.a_roic;
+    const short = five == null || now == null || !r.a || r.a.t.returns !== false ? '' : five < m5 && now < m1 ? ' Both figures are short.' : five < m5 ? ' The five-year figure is short.' : ' The latest year is short.';
+    return (L ? '<p><b>Return on its owners\' money.</b> For every $100 the owners have in the business, how much profit does it make in a year? Reports call it return on equity.</p>'
+        : '<p><b>Return on capital.</b> For every $100 put into the business, by its owners and its lenders together, how much profit does it make in a year?</p>') +
+      '<p>' + (five == null || now == null ? 'The file does not give both figures for ' + esc(r.sym) + '. ' : esc(r.sym) + ' earned ' + pct(five) + ' a year on average over five years, and ' + pct(now) + ' in the latest year. ') +
+      'The pass marks are ' + pct(m5) + ' and ' + pct(m1) + ', and it needs both. ' + aPass(r, 'returns') + short + '</p>' +
+      '<p>' + (L ? 'A bank or an insurer works with borrowed money as its raw material, so it is judged on what it earns for its owners.' : 'A business that earns a lot on each $100 can grow without asking anyone for more money.') + ' Five years show a record. The latest year shows the record is not fading.</p>'; },
+  a_profitable: b => { const r = rowOf(b); if (!r) return '';
+    return '<p><b>Years of profit.</b> How many years in a row the company has made a profit, counting back from the latest.</p>' +
+      '<p>' + (r.py == null ? 'The file does not say for ' + esc(r.sym) + '. ' : esc(r.sym) + ': ' + r.py + (r.py === 1 ? ' year' : ' years') + '. ') + 'The pass mark is ' + C.a_years + '. ' + aPass(r, 'profitable') + '</p>' +
+      '<p>A run that long takes in a hard stretch for most industries. A business that stayed in profit through one has shown it can take a knock. A single year of loss breaks the run.</p>'; },
+  a_grows: b => { const r = rowOf(b); if (!r) return '';
+    return '<p><b>Sales growth.</b> How fast sales grew each year, on average, over five years and over ten.</p>' +
+      '<p>' + (r.revg5 == null ? 'The file gives no five-year figure for ' + esc(r.sym) + '. ' : esc(r.sym) + ': ' + pct(r.revg5) + ' a year over five years' + (r.revg10 != null ? ', and ' + pct(r.revg10) + ' over ten. ' : '. The file has no ten-year figure. ')) +
+      'The pass mark is ' + pct(C.a_grow) + ' a year, for each period the file has. ' + aPass(r, 'grows') + '</p>' +
+      '<p>The mark is low on purpose. It asks only that the business is not standing still: sales that shrink for years rarely belong to a business worth owning for long. Sales added by buying other companies count too, so look at how it grew.</p>'; },
+  a_cash: b => { const r = rowOf(b); if (!r) return '';
+    return '<p><b>Cash from operations.</b> Profit is an accountant\'s figure. Cash from operations is the money that actually came in from running the business. This test asks whether the profit turned up as cash.</p>' +
+      '<p>' + (r.ni == null || r.ocf == null ? 'The file does not give both figures for ' + esc(r.sym) + '. ' : r.ni <= 0 ? esc(r.sym) + ' made a loss over the year, so there is no profit to set the cash against. ' : esc(r.sym) + ' brought in cash equal to ' + pct(r.ocf / r.ni) + ' of its profit. ') +
+      'The pass mark is ' + pct(C.a_cash) + '. ' + aPass(r, 'cash') + '</p>' +
+      '<p>When cash stays well below profit, the profit may rest on sales that have not been paid for, or on costs pushed into later years.</p>'; },
+  a_shares: b => { const r = rowOf(b); if (!r) return '';
+    return '<p><b>Share count.</b> How much the number of shares changed over the past year.</p>' +
+      '<p>' + (r.sh == null ? 'The file does not say for ' + esc(r.sym) + '. ' : esc(r.sym) + ': ' + (r.sh < -0.0005 ? 'down ' + pct(-r.sh) : r.sh > 0.0005 ? 'up ' + pct(r.sh) : 'unchanged') + '. ') + 'The pass mark is growth of no more than ' + pct(C.a_dil) + ' a year. ' + aPass(r, 'shares') + '</p>' +
+      '<p>Every new share makes your slice of the company a little smaller. Companies issue shares to pay staff, to buy other companies or to raise cash. A falling count means the company is buying its own shares back, so each share that is left owns more.</p>'; },
+  a_debt: b => { const r = rowOf(b); if (!r) return ''; const lv = r.ndlev != null ? r.ndlev : r.lev, after = r.ndlev != null ? ', after subtracting its cash,' : '';
+    const two = 'Its debt' + after + ' must be no more than ' + C.a_lev + ' times its EBITDA: ' + EBITDA + '. And its operating profit must cover the yearly interest at least ' + C.a_cov + ' times.';
+    return '<p><b>Debt.</b> Can the company comfortably carry what it owes?</p>' +
+      (r.netcash != null && r.netcash >= 0 ? '<p>' + esc(r.sym) + ' has more cash than debt: ' + money(r.netcash) + ' more. So it passes outright.</p><p>A company that owes more than it holds in cash is asked two things. ' + two + '</p>'
+        : lv == null ? '<p>The file has no debt figures for ' + esc(r.sym) + ', and a test it cannot answer does not count as a pass.</p><p>A company that owes more than it holds in cash is asked two things. ' + two + '</p>'
+        : '<p>' + esc(r.sym) + ' owes more than it holds in cash' + (r.netcash != null ? ': ' + money(-r.netcash) + ' more' : '') + '. So it is asked two things. ' + two + '</p>' +
+          '<p>' + (lv < 0 ? 'Its EBITDA is negative: the business lost money even before interest and tax.' : 'Its debt' + after + ' is ' + lv.toFixed(1) + ' times its EBITDA.') + (r.cov != null ? ' Its operating profit covers the interest ' + r.cov.toFixed(r.cov < 10 ? 1 : 0) + ' times.' : ' The file does not say how well its profit covers the interest, so only the first counts.') + ' ' + aPass(r, 'debt') + '</p>') +
+      '<p>A company with little debt can wait out a bad year. One that owes a lot may have to sell shares or assets at the worst moment.</p>'; },
+  a_assets: b => { const r = rowOf(b); if (!r) return '';
+    return '<p><b>Return on everything it holds.</b> For every $100 of loans, investments and other things the company holds, how much profit does it make in a year? Reports call it return on assets.</p>' +
+      '<p>' + (r.roa == null ? 'The file does not say for ' + esc(r.sym) + '. ' : esc(r.sym) + ': ' + (r.roa * 100).toFixed(2) + '%. ') + 'The pass mark is ' + pct(C.a_roa) + '. ' + aPass(r, 'assets') + '</p>' +
+      '<p>A bank or an insurer holds many dollars of other people\'s money for each dollar of its owners\', so a small figure here is normal.</p>'; },
+  a_cushion: b => { const r = rowOf(b); if (!r) return '';
+    return '<p><b>Its owners\' money.</b> Of every $100 the company holds, how much belongs to its owners, and not to depositors, policyholders and lenders?</p>' +
+      '<p>' + (r.eqa == null ? 'The file does not say for ' + esc(r.sym) + '. ' : esc(r.sym) + ': ' + pct(r.eqa) + '. ') + 'The pass mark is ' + pct(C.a_equity) + '. ' + aPass(r, 'cushion') + '</p>' +
+      '<p>The owners\' money takes the first losses when loans or investments go bad. The thinner that cushion, the smaller the loss that puts the company in trouble. The file cannot show bad loans or reserves: read those in the company\'s own report.</p>'; },
+  /* the three signs of a low price */
+  p_own: b => { const r = rowOf(b), z = r && r.sale; if (!z) return '';
+    return '<p><b>Against its own past.</b> The P/E is the share price divided by a year\'s profit per share: what you pay for each $1 of yearly profit.</p>' +
+      '<p>' + (r.pe > 0 && z.ownPE ? esc(r.sym) + '\'s P/E is ' + r.pe.toFixed(1) + ' today. Its own long-run average is ' + (z.ownPE >= C.sale_pecap ? 'over ' + C.sale_pecap : z.ownPE.toFixed(1)) + '. ' : 'The file has no P/E for ' + esc(r.sym) + ', or no average to set it against. ') +
+      'The sign is there when today\'s P/E is at least ' + pct(1 - C.sale_pe) + ' below that average.' + (z.own === true ? ' It is there.' : z.own === false ? ' It is not there.' : '') + '</p>' +
+      '<p>Prism takes the lower of the company\'s five- and ten-year averages, and counts no average above ' + C.sale_pecap + ', because a few years of thin profit can blow an average up. The company is compared with itself and not with others: some businesses always carry a high P/E.</p>'; },
+  p_implied: b => { const r = rowOf(b), z = r && r.sale; if (!z) return '';
+    return '<p><b>Against its growth.</b> Prism works out the growth a year that today\'s price needs to be fair. "What the price implies", lower down, shows the sum.</p>' +
+      '<p>' + (z.imp != null && z.rec != null ? 'For ' + esc(r.sym) + ' that is ' + gtxt(z.imp) + '. Its sales have grown ' + pct(z.rec) + ' a year, taking the slower of its five- and ten-year pace. ' : 'The file does not give what is needed to work it out for ' + esc(r.sym) + '. ') +
+      'The sign is there when the price needs growth at least ' + Math.round(C.sale_gap * 100) + ' points below what the company has delivered.' + (z.implied === true ? ' It is there.' : z.implied === false ? ' It is not there.' : '') + '</p>' +
+      '<p>Then the price expects much less of the business than it has done so far.</p>'; },
+  p_high: b => { const r = rowOf(b), z = r && r.sale; if (!z) return '';
+    return '<p><b>Against its high.</b> How far today\'s price is below its highest price of the past 52 weeks.</p>' +
+      '<p>' + (r.dd != null ? esc(r.sym) + ': ' + pct(-r.dd) + ' below. ' : 'The file has no 52-week high for ' + esc(r.sym) + '. ') + 'The sign is there at ' + pct(-C.sale_dd) + ' or more.' + (z.high === true ? ' It is there.' : z.high === false ? ' It is not there.' : '') + '</p>' +
+      '<p>A fall says the mood has changed. It does not say whether the business has: that is the next question, "Is the business slipping?".</p>'; },
+  /* the four signs that a business is weakening */
+  s_growth: b => { const r = rowOf(b), z = r && r.slip; if (!z) return ''; const far = 'below half that pace and at least ' + Math.round(C.slip_gap * 100) + ' points under it';
+    return '<p><b>Latest quarter.</b> Sales in the latest quarter against the same quarter a year before, set beside the company\'s own usual pace.</p>' +
+      '<p>' + (r.revgq != null && z.pace != null ? esc(r.sym) + ': sales ' + (r.revgq < 0 ? 'fell ' : 'grew ') + pct(Math.abs(r.revgq)) + '. Its usual pace is ' + pct(z.pace) + ' a year, taking the slower of its five- and ten-year growth. ' : 'The file does not give both figures for ' + esc(r.sym) + '. ') +
+      'It counts as a weak spot when the latest quarter is ' + far + '.' + (z.s.growth === true ? ' That is so here.' : z.s.growth === false ? ' That is not so here.' : '') + '</p>' +
+      '<p>One quarter can be noise: a late order, or a strong quarter a year ago. That is why Prism says "slipping" only at two weak spots.</p>'; },
+  s_returns: b => { const r = rowOf(b), z = r && r.slip; if (!z) return ''; const L = r.lane === 'financial', now = L ? r.roe : r.roic, avg = L ? r.roe5 : r.roic5;
+    return '<p><b>Returns.</b> What the business earns on the money ' + (L ? 'its owners have in it' : 'put into it') + ' now, set beside its own five-year average.</p>' +
+      '<p>' + (now != null && avg != null ? esc(r.sym) + ': ' + pct(now) + ' now, ' + pct(avg) + ' over five years. ' : 'The file does not give both figures for ' + esc(r.sym) + '. ') +
+      'It counts as a weak spot when the latest figure is under ' + pct(C.slip_roic) + ' of the average.' + (z.s.returns === true ? ' That is so here.' : z.s.returns === false ? ' That is not so here.' : '') + '</p>' +
+      '<p>Falling returns often show before falling profit: the business is having to spend more to earn the same.</p>'; },
+  s_forecast: b => { const r = rowOf(b), z = r && r.slip; if (!z) return '';
+    return '<p><b>Forecast.</b> The sales growth that analysts expect over the next year, set beside the company\'s own usual pace.</p>' +
+      '<p>' + (r.revgn != null && z.pace != null ? esc(r.sym) + ': analysts expect sales to ' + (r.revgn < 0 ? 'fall ' : 'grow ') + pct(Math.abs(r.revgn)) + '. Its usual pace is ' + pct(z.pace) + ' a year. ' : 'The file has no forecast for ' + esc(r.sym) + ', or no pace to set it against. ') +
+      'It counts as a weak spot when the forecast is below half that pace and at least ' + Math.round(C.slip_gap * 100) + ' points under it.' + (z.s.forecast === true ? ' That is so here.' : z.s.forecast === false ? ' That is not so here.' : '') + '</p>' +
+      '<p>It is a forecast, and forecasts are often wrong. It is one sign among four, no more.</p>'; },
+  s_profit: b => { const r = rowOf(b), z = r && r.slip; if (!z) return ''; const op = r.oig != null && r.lane !== 'financial', v = op ? r.oig : r.epsgq;
+    return '<p><b>Profit.</b> ' + (op ? 'Whether operating profit rose or fell over the year. Operating profit is what is left of sales after the costs of running the business.' : 'Whether the profit for each share rose or fell in the latest quarter, against the same quarter a year before.') + '</p>' +
+      '<p>' + (v != null ? esc(r.sym) + ': it ' + (v < 0 ? 'fell ' : 'rose ') + pct(Math.abs(v)) + '. ' : 'The file gives no profit trend for ' + esc(r.sym) + '. ') + 'It counts as a weak spot when it fell ' + pct(C.slip_profit) + ' or more.' + (z.s.profit === true ? ' That is so here.' : z.s.profit === false ? ' That is not so here.' : '') + '</p>'; },
+  rank: () => '<p><b>Sector rank.</b> Where the company stands on each measure among the companies of its own sector worth ' + money(C.size_min) + ' or more. 0 is the weakest and 100 the best: 77 means it does better than about 77 in every 100.</p>' +
+    '<p>The answer to the question comes from the average of these ranks, and a yes needs ' + C.gate + ' or better. For "' + GQ.T[0] + '" a weaker share price ranks higher.</p>' +
+    '<p>Prism ranks within the sector because a margin that is good for a supermarket is poor for a software company. A cyclical industry has ' + C.cyc_haircut + ' points taken off quality and price, because one good year can flatter both.</p>'
+});
+/* What each measure is, in plain words: [name, what it is, how to read it]. The note that opens from a measure's name
+   is built from these, with the company's own figure and its rank where it has one. */
+const TERM = {
+  roic: ['Return on capital', 'For every $100 put into the business, by its owners and its lenders together, the profit it makes in a year.', 'Higher is better. A business that earns a lot on each $100 can grow without asking anyone for more money.'],
+  roic5: ['Return on capital, five years', 'For every $100 put into the business, by its owners and its lenders together, the profit it made in a year, averaged over five years.', 'Higher is better. Five years show a record, where one year can be luck.'],
+  gm: ['Gross margin', 'Of every $100 of sales, what is left after paying for the goods or the work that was sold.', 'Higher is better. A high figure usually means customers pay well above what the product costs to make.'],
+  om: ['Operating margin', 'Of every $100 of sales, what is left after all the costs of running the business, before interest and tax.', 'Higher is better. It is how much of each sale the business keeps.'],
+  fcfm: ['Free cash flow margin', 'Of every $100 of sales, how much ends up as spare cash: the cash left after running the business and investing in it. Reports call spare cash "free cash flow".', 'Higher is better. Spare cash is what can be paid to the owners, or put to work for them.'],
+  fcf_ev: ['Free cash flow ÷ enterprise value', 'A year\'s spare cash, as a share of what it would cost to buy the whole company and pay off its debts. That cost is called the enterprise value: the market value, plus the debt, less the cash.', 'Higher means a lower price for the cash the business makes.'],
+  ey: ['Earnings yield', 'A year\'s profit per share, as a share of the share price. It is the P/E turned upside down: a P/E of 20 is an earnings yield of 5%.', 'Higher means a lower price for the profit.'],
+  ebitda_ev: ['EBITDA ÷ enterprise value', 'EBITDA is ' + EBITDA + '. Here it is shown as a share of what it would cost to buy the whole company and pay off its debts.', 'Higher means a lower price. It sets companies with different debts and tax bills side by side.'],
+  fey: ['Forward earnings yield', 'The profit per share that analysts expect over the next year, as a share of today\'s price.', 'Higher means a lower price for the profit that is expected. It rests on a forecast, and forecasts are often wrong.'],
+  owner: ['Cash flow after stock pay ÷ market value', 'A year\'s spare cash, less what was paid to staff in new shares, as a share of what the whole company is worth on the market.', 'Higher means a lower price. Pay in shares is a real cost to the owners that the cash figures leave out, and this measure counts it.'],
+  fcfy: ['Free-cash-flow yield on market value', 'A year\'s spare cash, as a share of what the whole company is worth on the market.', 'Higher means a lower price for the cash the business makes.'],
+  revg: ['Sales growth', 'How much sales grew over the past twelve months, against the twelve months before.', 'Higher is better.'],
+  revg3: ['Sales growth, 3-year', 'How fast sales grew each year, on average, over the past three years.', 'Higher is better. Three years smooth out one unusual year.'],
+  revg5: ['Sales growth a year, five years', 'How fast sales grew each year, on average, over the past five years.', 'Higher is better. Sales added by buying other companies count too.'],
+  fcfps_g: ['Free cash flow per share growth', 'How much the spare cash for each share grew over the past year.', 'Higher is better. It is growth an owner keeps: more cash, and not spread over more shares.'],
+  epsg: ['Earnings per share growth', 'How much the profit for each share grew over the past year.', 'Higher is better.'],
+  sh: ['Share count change', 'How much the number of shares changed over the past year.', 'Lower is better. Every new share makes each owner\'s slice a little smaller. A falling count means the company is buying its own shares back.'],
+  buyback: ['Buyback yield', 'What the company spent buying back its own shares over the past year, as a share of its market value.', 'Higher means more of the company was bought in for the owners who stay.'],
+  ret1y: ['One-year return', 'What an owner made or lost over the past year, with dividends counted in.', 'For this question a weaker return ranks higher: Prism is looking for good businesses the market has turned away from.'],
+  dd: ['Below 52-week high', 'How far today\'s price is below its highest price of the past year.', 'For this question a deeper fall ranks higher.'],
+  netcash: ['Net cash', 'The company\'s cash less its debt. Above zero, it could pay off all it owes tomorrow and have cash left.', 'More is safer.'],
+  lev: ['Debt ÷ EBITDA', 'The company\'s debt, set against its EBITDA: ' + EBITDA + '. Roughly, the number of years of those earnings it would take to pay the debt off.', 'Lower is safer.'],
+  ndlev: ['Debt against earnings', 'The company\'s debt after subtracting its cash, set against its EBITDA: ' + EBITDA + '. Roughly, the number of years of those earnings it would take to pay the debt off.', 'Lower is safer. Below zero, the company has more cash than debt.'],
+  cov: ['Interest cover', 'How many times the operating profit covers the yearly interest on the debt.', 'Higher is safer. Below 1, the profit does not pay the interest.'],
+  roe: ['Return on the owners\' money', 'For every $100 the owners have in the business, the profit it made in the latest year. Reports call it return on equity.', 'Higher is better. It is the measure for a bank or an insurer, whose borrowings are its raw material.'],
+  roe5: ['Return on the owners\' money, five years', 'For every $100 the owners have in the business, the profit it made in a year, averaged over five years.', 'Higher is better. Five years show a record, where one year can be luck.'],
+  roa: ['Return on assets', 'For every $100 of loans, investments and other things the company holds, the profit it makes in a year.', 'Higher is better. A bank holds many dollars of other people\'s money for each dollar of its owners\', so a small figure is normal.'],
+  eqa: ['Owners\' money as a share of assets', 'Of every $100 the company holds, how much belongs to its owners, and not to depositors, policyholders and lenders.', 'Higher is safer. The owners\' money takes the first losses when loans or investments go bad.']
+};
+Object.keys(TERM).forEach(k => { HELP['m_' + k] = b => { const t = TERM[k], r = rowOf(b), v = !r ? null : k === 'ndlev' ? debtFig(r) : r[k], rk = r && r.pc && r.pc[k] != null ? Math.round(r.pc[k]) : null;
+  const fig = v == null || !isFinite(v) ? null : k === 'netcash' ? money(v) : /^(lev|ndlev|cov)$/.test(k) ? v.toFixed(1) + ' times' : k === 'roa' ? (v * 100).toFixed(2) + '%' : pct(v);
+  /* what a question asks of this measure beyond its rank */
+  const more = k === 'roic' ? ' A yes to "' + GQ.Q[0] + '" also needs this to be at least ' + pct(C.q_roic) + '.' : k === 'fcfy' ? ' A yes to "' + GQ.V[0] + '" also needs this to be at least ' + pct(C.v_fcf) + '.'
+    : k === 'revg' ? ' A yes to "' + GQ.P[0] + '" also needs sales not to be falling.' : k === 'lev' ? ' For "' + GQ.S[0] + '" the limit is ' + C.s_lev + ' times, unless the company has more cash than debt.'
+    : k === 'sh' ? ' "' + GQ.S[0] + '" allows growth of up to ' + pct(C.s_dil) + ' a year.' : '';
+  return '<p><b>' + t[0] + '.</b> ' + t[1] + '</p><p>' + t[2] + more + '</p>' +
+    (!r ? '' : fig == null ? '<p>The file has no figure for ' + esc(r.sym) + '.</p>' : k === 'ndlev' && v < 0 ? '<p>' + esc(r.sym) + ' has more cash than debt, so its figure is below zero.</p>' : '<p>' + esc(r.sym) + ': ' + fig + '.' + (rk != null ? ' On this measure it ranks ' + rk + ' of 100 in its sector, where 100 is the best for the question.' : '') + '</p>'); }; });
 const pop = document.createElement('div'); pop.id = 'helpPop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Help note'); document.body.appendChild(pop);
 let popFor = null;
 const hideHelp = () => { pop.hidden = true; popFor = null; };
@@ -2168,7 +2298,7 @@ function runBox(r) {
      screen without scrolling sideways */
   const rv = x.rivals, cols = 2 + rv.length;
   h += '<div class="sgqw"><div class="sgq" style="grid-template-columns:auto repeat(' + cols + ',minmax(78px,auto))"><div class="h n">Measure</div><div class="h f">' + sym + '</div><div class="h f">Typical</div>' + rv.map(o => '<div class="h f">' + esc(o.sym) + '</div>').join('');
-  x.measures.forEach(m => { h += '<div class="n">' + esc(m.name) + (m.up ? '' : ' <span style="color:var(--fg3)">(lower is better)</span>') + '<br>' +
+  x.measures.forEach(m => { h += '<div class="n">' + tipFor(r, 'm_' + (m.k === 'debt' ? 'ndlev' : m.k), m.name) + (m.up ? '' : ' <span style="color:var(--fg3)">(lower is better)</span>') + '<br>' +
       (m.word ? '<span class="pill ' + RUNW[m.word][0] + '">' + RUNW[m.word][1] + '</span> <span style="color:var(--fg3)">better than ' + Math.round(m.beats) + ' of ' + (m.n - 1) + '</span>' : '<span style="color:var(--fg3)">' + (m.v == null ? 'no figure in the file' : 'too few to rank') + '</span>') + '</div>' +
     '<div class="f me">' + runNum(m, m.v) + '</div><div class="f">' + runNum(m, m.median) + '</div>' + rv.map(o => '<div class="f">' + runNum(m, runFig(o, m.k)) + '</div>').join(''); });
   h += '</div></div>';
@@ -2379,37 +2509,41 @@ function drawResearch() {
    price is low, the dividend, and the facts a put seller looks at. */
 function aBox(r) {
   const T = r.a ? r.a.t : null, mark = v => v === true ? '✓' : v === false ? '✗' : '?', lv = r.ndlev != null ? r.ndlev : r.lev;
-  const kv = a => '<div class="kv">' + a.map(x => '<span>' + esc(x[0]) + '</span><b>' + mark(x[1]) + '</b><i>' + esc(x[2]) + '</i>').join('') + '</div>';
+  /* a line: the name of what is tested, which opens its own note; the company's figure; the answer; the pass mark */
+  const kv = (a, words) => '<div class="kv w">' + a.map(x => '<span>' + tipFor(r, x[0], x[1]) + esc(x[2]) + '</span><b>' + (words ? (x[3] == null ? '?' : words[x[3] ? 0 : 1]) : mark(x[3])) + '</b><i>' + esc(x[4]) + '</i>').join('') + '</div>';
   const head = r.pin === 'in' ? '<span class="pill good">On your A-list</span>' : r.pin === 'out' ? '<span class="pill mute">Taken off by you</span>' : r.grade === 'A' ? '<span class="pill good">A-list</span>' : r.a ? '<span class="pill mute">' + r.a.yes + ' of 6</span>' : '<span class="pill mute">Not graded</span>';
   let h = '<div class="dbox"><h4>' + head + 'Is it an A-class business?</h4>';
-  if (T && r.a.lender) h += '<p class="note">Six tests of a bank or an insurer. The price plays no part.</p>' + kv([
-    ['Return on its owners\' money: ' + pct(r.roe5) + ' over five years, ' + pct(r.roe) + ' now', T.returns, 'needs ' + pct(C.a_roe5) + ' and ' + pct(C.a_roe)],
-    ['Profitable ' + (r.py == null ? 'for an unknown number of' : 'for ' + r.py) + ' years running', T.profitable, 'needs ' + C.a_years],
-    ['Sales growth a year: ' + pct(r.revg5) + ' over five years' + (r.revg10 != null ? ', ' + pct(r.revg10) + ' over ten' : ''), T.grows, 'needs ' + pct(C.a_grow)],
-    ['Return on everything it holds: ' + (r.roa == null ? 'unknown' : (r.roa * 100).toFixed(2) + '%'), T.assets, 'needs ' + pct(C.a_roa)],
-    ['Share count change in a year: ' + pct(r.sh), T.shares, 'at most ' + pct(C.a_dil)],
-    ['Its owners\' money is ' + (r.eqa == null ? 'an unknown share' : pct(r.eqa)) + ' of what it holds', T.cushion, 'needs ' + pct(C.a_equity)]]);
-  else if (T) h += '<p class="note">Six tests of the business itself. The price plays no part.</p>' + kv([
-    ['Return on capital: ' + pct(r.roic5) + ' over five years, ' + pct(r.roic) + ' now', T.returns, 'needs ' + pct(C.a_roic5) + ' and ' + pct(C.a_roic)],
-    ['Profitable ' + (r.py == null ? 'for an unknown number of' : 'for ' + r.py) + ' years running', T.profitable, 'needs ' + C.a_years],
-    ['Sales growth a year: ' + pct(r.revg5) + ' over five years' + (r.revg10 != null ? ', ' + pct(r.revg10) + ' over ten' : ''), T.grows, 'needs ' + pct(C.a_grow)],
-    ['Cash from operations is ' + (r.ni > 0 && r.ocf != null ? pct(r.ocf / r.ni) + ' of profit' : r.ni <= 0 ? 'set against a loss' : 'unknown'), T.cash, 'needs ' + pct(C.a_cash)],
-    ['Share count change in a year: ' + pct(r.sh), T.shares, 'at most ' + pct(C.a_dil)],
-    [r.netcash >= 0 ? 'More cash than debt' : 'Net debt is ' + (lv == null ? 'an unknown number of' : lv.toFixed(1)) + ' times EBITDA' + (r.cov != null ? ', interest covered ' + r.cov.toFixed(0) + ' times' : ''), T.debt, 'at most ' + C.a_lev + ', covered ' + C.a_cov]]);
+  const TAP = ' Tap a name for what it means.', fig = x => x == null ? 'no figure in the file' : pct(x);
+  if (T && r.a.lender) h += '<p class="note">Six tests of a bank or an insurer. The price plays no part.' + TAP + '</p>' + kv([
+    ['a_returns', 'Return on its owners\' money', ': ' + fig(r.roe5) + ' over five years, ' + fig(r.roe) + ' now', T.returns, 'needs ' + pct(C.a_roe5) + ' and ' + pct(C.a_roe)],
+    ['a_profitable', 'Profitable', ' ' + (r.py == null ? 'for an unknown number of' : 'for ' + r.py) + ' years running', T.profitable, 'needs ' + C.a_years + ' years'],
+    ['a_grows', 'Sales growth', ' a year: ' + fig(r.revg5) + ' over five years' + (r.revg10 != null ? ', ' + pct(r.revg10) + ' over ten' : ''), T.grows, 'needs ' + pct(C.a_grow) + ' a year'],
+    ['a_assets', 'Return on everything it holds', ': ' + (r.roa == null ? 'unknown' : (r.roa * 100).toFixed(2) + '%'), T.assets, 'needs ' + pct(C.a_roa)],
+    ['a_shares', 'Share count', ' change in a year: ' + fig(r.sh), T.shares, 'needs ' + pct(C.a_dil) + ' or less'],
+    ['a_cushion', 'Its owners\' money', ' is ' + (r.eqa == null ? 'an unknown share' : pct(r.eqa)) + ' of what it holds', T.cushion, 'needs ' + pct(C.a_equity)]]);
+  else if (T) h += '<p class="note">Six tests of the business itself. The price plays no part.' + TAP + '</p>' + kv([
+    ['a_returns', 'Return on capital', ': ' + fig(r.roic5) + ' over five years, ' + fig(r.roic) + ' now', T.returns, 'needs ' + pct(C.a_roic5) + ' and ' + pct(C.a_roic)],
+    ['a_profitable', 'Profitable', ' ' + (r.py == null ? 'for an unknown number of' : 'for ' + r.py) + ' years running', T.profitable, 'needs ' + C.a_years + ' years'],
+    ['a_grows', 'Sales growth', ' a year: ' + fig(r.revg5) + ' over five years' + (r.revg10 != null ? ', ' + pct(r.revg10) + ' over ten' : ''), T.grows, 'needs ' + pct(C.a_grow) + ' a year'],
+    ['a_cash', 'Cash from operations', ' is ' + (r.ni > 0 && r.ocf != null ? pct(r.ocf / r.ni) + ' of profit' : r.ni <= 0 ? 'set against a loss' : 'unknown'), T.cash, 'needs ' + pct(C.a_cash) + ' of profit'],
+    ['a_shares', 'Share count', ' change in a year: ' + fig(r.sh), T.shares, 'needs ' + pct(C.a_dil) + ' or less'],
+    /* a company with more cash than debt passes outright: the two pass marks are for one that owes more than it holds */
+    r.netcash >= 0 ? ['a_debt', 'More cash than debt', '', T.debt, 'passes outright']
+      : ['a_debt', r.ndlev != null ? 'Debt after its cash' : 'Debt', ' is ' + (lv == null ? 'an unknown number of' : lv.toFixed(1)) + ' times EBITDA' + (r.cov != null ? '; profit covers the interest ' + r.cov.toFixed(r.cov < 10 ? 1 : 0) + ' times' : ''), T.debt, 'needs ' + C.a_lev + ' times or less, covered ' + C.a_cov + ' times']]);
   else h += '<p class="note">Prism does not grade this company, but you can still put it on your A-list.</p>';
   h += '<label class="f" style="max-width:320px">My A-list<select data-mine="' + esc(r.sym) + '"><option value="">Follow Prism\'s grade</option><option value="in"' + (r.pin === 'in' ? ' selected' : '') + '>Always on my A-list</option><option value="out"' + (r.pin === 'out' ? ' selected' : '') + '>Never on my A-list</option></select></label>';
   if (r.sale) { const z = r.sale;
     h += '<p class="note"><b>Is the price low?</b> ' + (r.onSale ? 'Yes' : 'No') + ': ' + z.n + ' of 3 signs, and 2 are needed.</p>' + kv([
-      [r.pe > 0 && z.ownPE ? 'P/E of ' + r.pe.toFixed(1) + ' against its own long-run ' + (z.ownPE >= C.sale_pecap ? 'average of over ' + C.sale_pecap : z.ownPE.toFixed(1)) : 'No P/E to set against its own past', z.own, 'needs ' + pct(1 - C.sale_pe) + ' under'],
-      [z.imp != null && z.rec != null ? 'Price implies ' + gtxt(z.imp) + '; sales grew ' + pct(z.rec) + ' a year' : 'No growth record to set the price against', z.implied, 'needs ' + Math.round(C.sale_gap * 100) + ' points under'],
-      [r.dd != null ? pct(-r.dd) + ' below its 52-week high' : 'No 52-week high in the file', z.high, 'needs ' + pct(-C.sale_dd)]]); }
+      ['p_own', 'Against its own past', ': ' + (r.pe > 0 && z.ownPE ? 'a P/E of ' + r.pe.toFixed(1) + ', and a long-run average of ' + (z.ownPE >= C.sale_pecap ? 'over ' + C.sale_pecap : z.ownPE.toFixed(1)) : 'no P/E to set against its own past'), z.own, 'a sign at ' + pct(1 - C.sale_pe) + ' under'],
+      ['p_implied', 'Against its growth', ': ' + (z.imp != null && z.rec != null ? 'the price implies ' + gtxt(z.imp) + '; sales grew ' + pct(z.rec) + ' a year' : 'no growth record to set the price against'), z.implied, 'a sign at ' + Math.round(C.sale_gap * 100) + ' points under'],
+      ['p_high', 'Against its high', ': ' + (r.dd != null ? pct(-r.dd) + ' below its highest price of the past year' : 'no 52-week high in the file'), z.high, 'a sign at ' + pct(-C.sale_dd) + ' below']], ['sign', 'no sign']); }
   if (r.slip && r.slip.known) { const z = r.slip, st = r.slipping, good = v => v == null ? null : !v;
     h += '<p class="note"><b>Is the business slipping?</b> ' + (st === 'slipping' ? 'Yes: ' + z.n + ' of 4 signs.' : st === 'one' ? 'One sign of 4. Two would count as slipping.' : st === 'steady' ? 'No: none of 4 signs.' : 'Too little in the file to say.') + '</p>' + kv([
-      [r.revgq != null && z.pace != null ? 'Sales grew ' + pct(r.revgq) + ' in the latest quarter; its usual pace is ' + pct(z.pace) + ' a year' : 'No latest-quarter sales growth to compare', good(z.s.growth), 'a sign if far below'],
-      r.lane === 'financial' ? [r.roe != null && r.roe5 != null ? 'Return on its owners\' money is ' + pct(r.roe) + ' now, ' + pct(r.roe5) + ' over five years' : 'No return on the owners\' money to compare', good(z.s.returns), 'a sign under ' + pct(C.slip_roic) + ' of it']
-        : [r.roic != null && r.roic5 != null ? 'Return on capital is ' + pct(r.roic) + ' now, ' + pct(r.roic5) + ' over five years' : 'No return on capital to compare', good(z.s.returns), 'a sign under ' + pct(C.slip_roic) + ' of it'],
-      [r.revgn != null && z.pace != null ? 'Analysts expect sales to grow ' + pct(r.revgn) + ' next year' : 'No forecast in the file', good(z.s.forecast), 'a sign if far below'],
-      [r.oig != null && r.lane !== 'financial' ? 'Operating profit ' + (r.oig < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.oig)) + ' over the year' : r.epsgq != null ? 'Earnings per share ' + (r.epsgq < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.epsgq)) + ' in the latest quarter' : 'No profit trend in the file', good(z.s.profit), 'a sign if down ' + pct(C.slip_profit)]]); }
+      ['s_growth', 'Latest quarter', ': ' + (r.revgq != null && z.pace != null ? 'sales ' + (r.revgq < 0 ? 'fell ' : 'grew ') + pct(Math.abs(r.revgq)) + '; its usual pace is ' + pct(z.pace) + ' a year' : 'no latest-quarter sales growth to compare'), good(z.s.growth), 'a sign if far below'],
+      r.lane === 'financial' ? ['s_returns', 'Returns', ': ' + (r.roe != null && r.roe5 != null ? 'return on its owners\' money is ' + pct(r.roe) + ' now, ' + pct(r.roe5) + ' over five years' : 'no return on the owners\' money to compare'), good(z.s.returns), 'a sign under ' + pct(C.slip_roic) + ' of it']
+        : ['s_returns', 'Returns', ': ' + (r.roic != null && r.roic5 != null ? 'return on capital is ' + pct(r.roic) + ' now, ' + pct(r.roic5) + ' over five years' : 'no return on capital to compare'), good(z.s.returns), 'a sign under ' + pct(C.slip_roic) + ' of it'],
+      ['s_forecast', 'Forecast', ': ' + (r.revgn != null && z.pace != null ? 'analysts expect sales to ' + (r.revgn < 0 ? 'fall ' : 'grow ') + pct(Math.abs(r.revgn)) + ' next year' : 'no forecast in the file'), good(z.s.forecast), 'a sign if far below'],
+      ['s_profit', 'Profit', ': ' + (r.oig != null && r.lane !== 'financial' ? 'operating profit ' + (r.oig < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.oig)) + ' over the year' : r.epsgq != null ? 'earnings per share ' + (r.epsgq < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.epsgq)) + ' in the latest quarter' : 'no profit trend in the file'), good(z.s.profit), 'a sign if down ' + pct(C.slip_profit)]], ['fine', 'weak']); }
   h += dividendLine(r);
   if (r.alist) { const a = [];
     if (r.earnIn != null) a.push('next earnings ' + day(r.earn) + (r.earnIn >= 0 ? ', in ' + r.earnIn + ' days' : ''));
@@ -2447,7 +2581,7 @@ function gateBox(r, k) {
     if (r.sh != null && r.sh > C.s_dil) why.push('The share count grew ' + pct(r.sh) + ' in a year; the limit is ' + pct(C.s_dil));
     if (r.cov != null && r.cov < C.s_cov && !(r.netcash >= 0)) why.push(r.cov < 0 ? 'It runs at an operating loss while carrying net debt' : 'Profit covers interest only ' + r.cov.toFixed(1) + ' times; ' + C.s_cov + ' is needed');
     s = g === true ? (r.netcash >= 0 ? 'It has more cash than debt' : 'Debt is ' + (r.lev == null ? 'modest' : r.lev.toFixed(1) + ' times EBITDA')) + ', and the share count ' + (r.sh < 0 ? 'fell ' + pct(-r.sh) : 'grew ' + pct(r.sh)) + ' in a year.' : g === false ? why.join('. ') + '.' : 'The file is missing debt or share-count figures for this company.';
-    kv = '<span>Net cash (cash less debt)</span><b>' + money(r.netcash) + '</b><i></i><span>Debt ÷ EBITDA</span><b>' + (r.lev == null ? '–' : r.lev.toFixed(1) + '×') + '</b><i></i><span>Share count change</span><b>' + pct(r.sh) + '</b><i></i>' + (r.cov != null ? '<span>Interest cover</span><b>' + r.cov.toFixed(1) + '×</b><i></i>' : '');
+    kv = '<span>' + tipFor(r, 'm_netcash', 'Net cash') + ' (cash less debt)</span><b>' + money(r.netcash) + '</b><i></i><span>' + tipFor(r, 'm_lev', 'Debt ÷ EBITDA') + '</span><b>' + (r.lev == null ? '–' : r.lev.toFixed(1) + '×') + '</b><i></i><span>' + tipFor(r, 'm_sh', 'Share count change') + '</span><b>' + pct(r.sh) + '</b><i></i>' + (r.cov != null ? '<span>' + tipFor(r, 'm_cov', 'Interest cover') + '</span><b>' + r.cov.toFixed(1) + '×</b><i></i>' : '');
   } else {
     const floor = k === 'Q' ? ['roic', C.q_roic, 'Return on capital'] : k === 'V' ? ['fcfy', C.v_fcf, 'Free-cash-flow yield'] : null, why = [];
     if (rank != null && rank < gate) why.push('It ranks ' + rank + ' of 100 in its sector; ' + gate + ' is needed');
@@ -2456,11 +2590,11 @@ function gateBox(r, k) {
     s = g === true ? (k === 'T' ? 'Its one-year return of ' + pct(r.ret1y) + ' is weaker than ' + rank + '% of its sector.' : 'It ranks ' + rank + ' of 100 in its sector' + (floor ? ', with ' + floor[2].toLowerCase() + ' of ' + pct(r[floor[0]]) : '') + '.')
       : g === false ? why.join('. ') + '.' : 'The file doesn\'t have enough data to answer this for the company.';
     if (r.cyc && (k === 'Q' || k === 'V') && rank != null) s += ' Includes a ' + C.cyc_haircut + '-point deduction for a cyclical industry.';
-    kv = LENS[k].keys.filter(m => RES.avail[m]).map(m => '<span>' + ML[m] + '</span><b>' + pct(r[m]) + '</b><i>' + (r.pc[m] == null ? '–' : Math.round(r.pc[m])) + '</i>').join('');
-    if (k === 'V') kv += '<span>Free-cash-flow yield on market value</span><b>' + pct(r.fcfy) + '</b><i></i>';
+    kv = LENS[k].keys.filter(m => RES.avail[m]).map(m => '<span>' + tipFor(r, 'm_' + m, ML[m]) + '</span><b>' + pct(r[m]) + '</b><i>' + (r.pc[m] == null ? '–' : Math.round(r.pc[m])) + '</i>').join('');
+    if (k === 'V') kv += '<span>' + tipFor(r, 'm_fcfy', 'Free-cash-flow yield on market value') + '</span><b>' + pct(r.fcfy) + '</b><i></i>';
     if (k === 'V' && r.fcfy != null && r.fcfy_file != null && Math.abs(r.fcfy_file) > 0.002 && Math.abs(r.fcfy - r.fcfy_file) > 0.2 * Math.abs(r.fcfy_file)) s += ' The file\'s own yield column says ' + pct(r.fcfy_file) + '. Prism uses free cash flow over the whole company\'s market value, which differs when a company has more than one class of share.';
   }
-  return '<div class="dbox"><h4><span class="pill ' + (g === true ? 'good' : 'mute') + '">' + (g === true ? '✓ Yes' : g === false ? '✗ No' : '? Unknown') + '</span>' + GQ[k][0] + '</h4><p class="note">' + esc(s) + '</p><div class="kv">' + (k === 'S' ? '' : '<span></span><b></b><i>sector rank</i>') + kv + '</div></div>';
+  return '<div class="dbox"><h4><span class="pill ' + (g === true ? 'good' : 'mute') + '">' + (g === true ? '✓ Yes' : g === false ? '✗ No' : '? Unknown') + '</span>' + GQ[k][0] + '</h4><p class="note">' + esc(s) + '</p><div class="kv">' + (k === 'S' ? '' : '<span></span><b></b><i>' + tipFor(r, 'rank', 'sector rank') + '</i>') + kv + '</div></div>';
 }
 function detailHTML(r) {
   const v = S.verdicts[r.sym] || {};

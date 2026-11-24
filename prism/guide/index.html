@@ -122,7 +122,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>The card at the top, <b class="k s">Today's file</b>, says what is loaded.</span></li>
             <li><span>Under it is the list. Its title is the answer: how many A-class businesses are on sale. The sentence below the title says what put them there.</span></li>
             <li><span>Each row is one company. It says in a few words what Prism found, then what the price is counting on and the most to pay.</span></li>
-            <li><span>Tap any <b class="k s">?</b>, or any small tag in a row, for a note about it.</span></li>
+            <li><span>Tap any <b class="k s">?</b>, or any small tag in a row, for a note about it. In an opened company, tap any underlined name.</span></li>
             <li><span>Tap a row to open the figures behind it. Tap it again to close it.</span></li>
           </ol>
           <p><b>The page at a glance.</b> Prism has more on it than you need on day one. This is the order things come in.</p>
@@ -205,7 +205,8 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
           </ol>
           <p class="tip"><b>Good to know.</b> A bank or an insurer has six tests of its own, because debt is its raw material. Its row carries the tag <b class="k s">Bank or insurer</b>: tap it for the tests.</p>
           <p class="tip"><b>Good to know.</b> A test the file can't answer does not count as a pass. To include companies that miss exactly one test, open <b class="k s">More options</b> and tick <b class="k">Put companies that miss just one of the six tests on the A-list too</b>.</p>
-          <p class="tip"><b>Good to know.</b> Each test's pass mark is shown beside it in the row. The pass marks are starting points. None has been tested against later returns.</p>
+          <p class="tip"><b>Good to know.</b> Each test's pass mark is shown beside it. Tap a test's name for a note on it. The pass marks are starting points. None has been tested against later returns.</p>
+          <p class="tip"><b>Want each test explained?</b> See "What does each of the six tests ask?", further down this guide.</p>
           <div class="go"><a class="btn" data-go='{"list":"A","el":"tblTitle"}' href="#">Show me the A-list →</a><a class="btn" data-go='{"list":"A","open":"first","el":"detail"}' href="#">Show me the six tests →</a></div>
         </div>
       </details>
@@ -223,7 +224,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>Under <b class="k s">Show</b>, choose <b class="k s">A-list on sale</b>. Prism opens here.</span></li>
             <li><span>Read the first line of each row. It names the signs that are present.</span></li>
             <li><span>Look at the tag. <b class="k s">Holding up</b> means the business shows none of four signs of weakening: slowing sales, falling returns, a weak forecast, falling profit. <b class="k s">Slipping</b> means it shows two or more. Businesses that are holding up come first.</span></li>
-            <li><span>Open a row. <b class="k s">Is the price low?</b> and <b class="k">Is the business slipping?</b> show each sign with the company's own figures.</span></li>
+            <li><span>Open a row. <b class="k s">Is the price low?</b> and <b class="k">Is the business slipping?</b> show each sign with the company's own figures. Tap a sign's name for its rule.</span></li>
           </ol>
           <p class="tip"><b>Good to know.</b> A low price with a slipping business is often a trap. Read why it is slipping before anything else.</p>
           <p class="tip"><b>One worry, many names.</b> When one sector fills a large part of the list, a line under the opening sentence says so. Several companies marked down by the same worry are one bet, not several.</p>
@@ -282,7 +283,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>Under <b class="k s">Show</b>, choose <b class="k">Yes to all five questions</b>.</span></li>
             <li><span>For more names, choose <b class="k">Near misses: one question short</b>. Each row names the question it misses.</span></li>
             <li><span>To stop requiring a question, open <b class="k s">More options</b> and press it under <b class="k s">The five questions</b>.</span></li>
-            <li><span>Open a row to see each answer with the figures behind it.</span></li>
+            <li><span>Open a row to see each answer with the figures behind it. Tap a figure's name for what it is.</span></li>
           </ol>
           <p class="tip"><b>Five answers, never one score.</b> A single score would let a very cheap price make up for a weak business. Here a company must pass each question on its own.</p>
           <p class="tip"><b>Good to know.</b> An answer the file can't give is "unknown", and unknown is never a pass.</p>
@@ -381,6 +382,74 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
           </ol>
           <p class="tip"><b>Good to know.</b> Banks and insurers are not asked the five questions, but they can be on the A-list: Prism grades them on six tests of their own. Property companies need a figure the download does not carry, so Prism leaves them out and does not guess.</p>
           <div class="go"><a class="btn" data-go='{"el":"look"}' href="#">Show me the look-up →</a><a class="btn" data-go='{"el":"aside"}' href="#">Show me what is set aside →</a></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="gLines">
+    <h2 id="gLines">A company's page, line by line <small>the detail</small></h2>
+    <div class="list">
+
+      <details class="lesson" id="tests">
+        <summary><span class="t"><span class="q">What does each of the six tests ask?</span><span class="where">Is it an A-class business?</span></span></summary>
+        <div class="body">
+          <p>Open any company. Its first box, <b class="k">Is it an A-class business?</b>, has a line for each test: the company's own figure, a tick or a cross, and what the test needs.</p>
+          <p>Tap the underlined name at the start of a line. A note opens, written for that company: what the test asks, its figures, the pass mark and why it matters.</p>
+          <ul class="points">
+            <li><span><b class="k s">Return on capital</b></span><span>For every hundred dollars put into the business, by its owners and its lenders together, how much profit does it make in a year? The line gives the average of five years and the latest year, and each has its own mark. A business that earns a lot on each hundred dollars can grow without asking anyone for more money.</span></li>
+            <li><span><b class="k s">Profitable</b></span><span>How many years in a row it has made a profit. A long run takes in a hard stretch for most industries. A business that stayed in profit through one can take a knock.</span></li>
+            <li><span><b class="k s">Sales growth</b></span><span>How fast sales grew each year, over five years and over ten. The mark is low on purpose: it asks only that the business is not standing still.</span></li>
+            <li><span><b class="k s">Cash from operations</b></span><span>Profit is an accountant's figure. Cash from operations is the money that actually came in. The test asks whether the profit turned up as cash. When cash stays well below profit, find out why.</span></li>
+            <li><span><b class="k s">Share count</b></span><span>How much the number of shares changed in a year. Every new share makes your slice a little smaller. A falling count means the company is buying its own shares back.</span></li>
+            <li><span><b class="k s">More cash than debt</b>, or <b class="k s">Debt after its cash</b></span><span>Can it comfortably carry what it owes? A company with more cash than debt <b class="k s">passes outright</b>. One that owes more than it holds is asked two things. Is its debt small against what the business earns in a year? And does its profit cover the interest several times over? The line gives both figures and both marks.</span></li>
+          </ul>
+          <p class="tip"><b>What is EBITDA?</b> The debt line sets debt against EBITDA: what the business earns in a year before interest, tax and the wearing out of its equipment. Think of it as the yearly earnings there are to pay lenders with.</p>
+          <p class="tip"><b>A bank or an insurer</b> has six tests of its own: <b class="k">Return on its owners' money</b>, <b class="k s">Profitable</b>, <b class="k s">Sales growth</b>, <b class="k">Return on everything it holds</b>, <b class="k s">Share count</b> and <b class="k s">Its owners' money</b> as a share of what it holds. Debt is its raw material, so it is not tested on debt.</p>
+          <p class="tip"><b>Reading the marks.</b> A tick passes and a cross misses. A question mark means the file cannot say, which does not count as a pass. The pass marks are starting points that you can change under <b class="k s">Settings</b>. None has been tested against later returns.</p>
+          <div class="go"><a class="btn" data-go='{"list":"A","open":"first","el":"detail"}' href="#">Show me the six tests →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="lowslip">
+        <summary><span class="t"><span class="q">Low price, or weak business? Line by line</span><span class="where">Is the price low? · Is the business slipping?</span></span></summary>
+        <div class="body">
+          <p>Under the six tests are two questions that Prism asks of every A-list company. Each has its own lines. A line ends in a word, not a tick, so there is nothing to work out: "sign" or "no sign" for the price, "fine" or "weak" for the business.</p>
+          <p><b class="k s">Is the price low?</b> Two of the three signs are needed.</p>
+          <ul class="points">
+            <li><span><b class="k s">Against its own past</b></span><span>The P/E is what you pay for each dollar of yearly profit. The line sets today's P/E beside the company's own average over the years. A company is compared with itself, because some businesses always carry a high P/E.</span></li>
+            <li><span><b class="k s">Against its growth</b></span><span>Prism works out the growth a year that today's price needs to be fair, and sets it beside the growth the company has delivered. The sign is there when the price expects much less than the record.</span></li>
+            <li><span><b class="k s">Against its high</b></span><span>How far the price is below its highest of the past year. A fall says the mood has changed. It does not say that the business has.</span></li>
+          </ul>
+          <p><b class="k">Is the business slipping?</b> Two weak spots make it <b class="k s">Slipping</b>. One is only a tag, <b class="k s">One weak spot</b>. None is <b class="k s">Holding up</b>.</p>
+          <ul class="points">
+            <li><span><b class="k s">Latest quarter</b></span><span>Sales in the latest quarter against the same quarter a year before, set beside the company's own usual pace.</span></li>
+            <li><span><b class="k s">Returns</b></span><span>What it earns now on the money put into it, against its own five-year average. Falling returns often show before falling profit.</span></li>
+            <li><span><b class="k s">Forecast</b></span><span>The sales growth that analysts expect next year, against the usual pace. Forecasts are often wrong, so this is one sign among four and no more.</span></li>
+            <li><span><b class="k s">Profit</b></span><span>Whether operating profit rose or fell over the year. Operating profit is what is left of sales after the costs of running the business.</span></li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> Each mark has an exact rule: how far below its average, how far under its pace. Tap the name at the start of a line. The note gives the rule and the company's own figures.</p>
+          <p class="tip"><b>Why two.</b> One quarter can be noise: a late order, or a strong quarter a year ago. So one weak spot is a reason to look, and two are a reason to find out what is wrong before anything else.</p>
+          <div class="go"><a class="btn" data-go='{"list":"sale","open":"first","el":"detail"}' href="#">Show me these lines →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="measures">
+        <summary><span class="t"><span class="q">What are the figures behind the five questions?</span><span class="where">Sector rank, and each measure in plain words</span></span></summary>
+        <div class="body">
+          <p>Lower in an opened company are five boxes, one for each question. A box gives the answer, a sentence that says why, and the measures behind it. Beside each measure is the company's figure and its <b class="k s">sector rank</b>.</p>
+          <p>The rank says where the company stands on that measure among the companies of its own sector, on a scale where the top is the best. The answer to a question comes from the average of its ranks. Prism ranks inside a sector because a margin that is good for a supermarket is poor for a software company.</p>
+          <p>Tap any measure's name for a note with the company's own figure and rank.</p>
+          <ul class="points">
+            <li><span><b class="k s">Good business?</b></span><span><b class="k s">Return on capital</b> and <b class="k">Return on capital, 5-year</b>: the profit on each hundred dollars put into the business, now and over five years. <b class="k s">Gross margin</b>: of each hundred dollars of sales, what is left after paying for what was sold. <b class="k s">Operating margin</b>: what is left after all the costs of running the business. <b class="k">Free cash flow margin</b>: how much of each hundred dollars of sales ends up as spare cash.</span></li>
+            <li><span><b class="k s">Low expectations?</b></span><span>Each measure sets something the business makes against what it costs to buy, so higher means a lower price. <b class="k s">Earnings yield</b>: a year's profit as a share of the price, which is the P/E turned upside down. <b class="k">Forward earnings yield</b>: the same, on the profit analysts expect next year. <b class="k">Free cash flow ÷ enterprise value</b>: a year's spare cash against what it would cost to buy the whole company and pay off its debts. <b class="k">EBITDA ÷ enterprise value</b>: the yearly earnings before interest, tax and wear, against that same cost. <b class="k">Cash flow after stock pay ÷ market value</b>: spare cash, less what staff were paid in new shares, against what the company is worth on the market.</span></li>
+            <li><span><b class="k s">Strong enough to wait?</b></span><span>A plain test, with no ranks. <b class="k s">Net cash</b>: cash less debt. <b class="k s">Debt ÷ EBITDA</b>: debt against a year's earnings before interest, tax and wear. <b class="k s">Share count change</b>: new shares issued in a year. <b class="k s">Interest cover</b>: how many times the profit covers the interest.</span></li>
+            <li><span><b class="k s">Growing per share?</b></span><span><b class="k s">Sales growth</b> and <b class="k">Sales growth, 3-year</b>. <b class="k">Free cash flow per share growth</b> and <b class="k">Earnings per share growth</b>: growth in the spare cash and in the profit for each share. <b class="k s">Share count change</b> and <b class="k s">Buyback yield</b>: fewer shares mean that each one owns more.</span></li>
+            <li><span><b class="k s">Out of favor?</b></span><span>Here a weaker share price ranks higher. <b class="k s">One-year return</b>: what an owner made or lost in a year, dividends included. <b class="k s">Below 52-week high</b>: how far the price is below its highest of the past year.</span></li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> Each measure in <b class="k s">How well is it run?</b> opens a note in the same way.</p>
+          <p class="tip"><b>Five answers, never one score.</b> The ranks feed one question each. Prism never adds the questions up.</p>
+          <div class="go"><a class="btn" data-go='{"list":"","open":"first","el":"detail"}' href="#">Show me the five boxes →</a></div>
         </div>
       </details>
     </div>
@@ -539,6 +608,14 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <div><dt>Return on capital</dt><dd>What a business earns each year on the money invested in it.</dd></div>
             <div><dt>P/E</dt><dd>The share price divided by a year's profit per share. A low P/E means the price expects little.</dd></div>
             <div><dt>Sector rank</dt><dd>Where a company stands among the companies of its own sector, from 0 to 100.</dd></div>
+            <div><dt>Margin</dt><dd>What is left of each dollar of sales. Gross margin is what is left after paying for what was sold. Operating margin is what is left after all the costs of running the business.</dd></div>
+            <div><dt>EBITDA</dt><dd>What a business earns in a year before interest, tax and the wearing out of its equipment. Lenders look at it, because it is what there is to pay them with.</dd></div>
+            <div><dt>Market value</dt><dd>What the whole company is worth at today's share price: the price times the number of shares.</dd></div>
+            <div><dt>Enterprise value</dt><dd>What it would cost to buy the whole company and pay off its debts: the market value, plus the debt, less the cash.</dd></div>
+            <div><dt>Earnings yield</dt><dd>A year's profit as a share of the price. It is the P/E turned upside down, so a higher yield means a lower price.</dd></div>
+            <div><dt>Net cash</dt><dd>A company's cash less its debt. Above zero, it could pay off all it owes and have cash left.</dd></div>
+            <div><dt>Interest cover</dt><dd>How many times a company's operating profit covers the yearly interest on its debt.</dd></div>
+            <div><dt>Share count</dt><dd>The number of shares a company has. New shares make each owner's slice smaller. Buybacks make it larger.</dd></div>
             <div><dt>Cyclical</dt><dd>An industry whose profits swing with the economy or a commodity price, so one good year can flatter it.</dd></div>
             <div><dt>Data warning</dt><dd>A figure that looks too good to be true. It is usually a one-off or an error.</dd></div>
             <div><dt>Ex-dividend date</dt><dd>The date from which a buyer of the share no longer gets the next dividend. Whoever owns the share the day before does. Prism shows the date once the company has declared it, and does not guess before then.</dd></div>

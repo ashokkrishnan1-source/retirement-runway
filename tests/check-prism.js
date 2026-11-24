@@ -880,5 +880,26 @@ console.log('--- The guide keeps step with the page ---');
   check('guide: it never calls a list proven', /\bproven\b/i.test(words), false);
   check('guide: the page reads the note the guide leaves', /ftolShow\('prism'\)/.test(html) && /data-tool="prism"/.test(guide) && /localStorage\.setItem\('ftol-show'/.test(guide), true); }
 
+{ // Every line of a company's detail explains itself. The owner read "More cash than debt ... at most 3, covered 5" and
+  // asked what it meant: a line that needs a guide is not finished. So each test, each sign and each measure has a name
+  // that opens a note written for the company on show.
+  console.log('--- A note for every line of a company ---');
+  const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));
+  const X = new Function(eng + '\nreturn {A_TESTS, L_TESTS, LENS, SLIP, RUN_MEASURES};')();
+  check('notes: each of the six tests, and of a bank\'s six, has its own', [...new Set(X.A_TESTS.concat(X.L_TESTS))].filter(k => !new RegExp('\\n  a_' + k + ': b =>').test(ui)), []);
+  check('notes: each sign of a low price and each sign of slipping has its own', ['p_own', 'p_implied', 'p_high'].concat(X.SLIP.map(k => 's_' + k)).filter(k => !new RegExp('\\n  ' + k + ': b =>').test(ui)), []);
+  const TERM = new Function('EBITDA', ui.match(/const TERM = \{[\s\S]*?\n\};/)[0] + '\nreturn TERM;')('what a business earns');
+  const run = X.RUN_MEASURES.std.concat(X.RUN_MEASURES.lender).map(m => m[0] === 'debt' ? 'ndlev' : m[0]);
+  const measures = [...new Set(Object.keys(X.LENS).reduce((a, L) => a.concat(X.LENS[L].keys), []).concat(['fcfy', 'netcash', 'lev', 'cov'], run))];
+  check('notes: each measure behind the five questions and the record against rivals is explained', measures.filter(k => !TERM[k]), []);
+  check('notes: a measure is explained in three parts, and none is left blank', Object.keys(TERM).filter(k => TERM[k].length !== 3 || TERM[k].some(x => typeof x !== 'string' || x.length < 8)), []);
+  // one figure is typed in on purpose: "a P/E of 20 is an earnings yield of 5%" is arithmetic, not a pass mark
+  check('notes: no pass mark is typed into what a measure is', Object.keys(TERM).filter(k => k !== 'ey' && /\d\s?%|\$\s?\d(?!00 )/.test(TERM[k][1] + TERM[k][2])), []);
+  check('page: a company with more cash than debt is told it passes outright', /\['a_debt', 'More cash than debt', '', T\.debt, 'passes outright'\]/.test(ui), true);
+  check('page: the tests, the signs, the measures and the rank each open a note', ['tipFor(r, x[0], x[1])', "tipFor(r, 'm_' + m, ML[m])", "tipFor(r, 'rank', 'sector rank')", "tipFor(r, 'm_' + (m.k === 'debt' ? 'ndlev' : m.k), m.name)"].filter(x => !ui.includes(x)), []);
+  check('page: a sign says "sign" or "weak" in words, not with a tick that could be read either way', /\['sign', 'no sign'\]/.test(ui) && /\['fine', 'weak'\]/.test(ui), true);
+  check('page: where the file has no figure the line says so, not a bare dash', /fig = x => x == null \? 'no figure in the file' : pct\(x\)/.test(ui), true);
+}
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exitCode = fail ? 1 : 0;
