@@ -12,7 +12,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `guide/index.html`, `prism/guide/index.html` | The companion guides to Runway and to Prism: pages of short lessons on how to use each tool (see "The guides" below). No engine and no data of their own. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page (266 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page (383 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -137,7 +137,8 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
     Show example, which keeps them (see the section above).
   - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
     holding up or slipping), the entry ceiling, the put desk, the five questions, the nine named lists, moonshots,
-    why a company isn't listed; verdicts (and how to note a put), what changed, the scorecard; options and settings,
+    why a company isn't listed; verdicts (and how to note a put), the signs that a business is winning, what
+    changed, the scorecard; options and settings,
     saving, a routine for each new file.
 - **It shows where things are and leaves the figures to the page.** No tax or benefit figure goes in Runway's guide,
   and no pass mark or price in Prism's (each check scans its guide), so nothing in a guide needs the yearly update
@@ -155,7 +156,8 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
 - **"Show me" links.** Each carries `data-go` with what to show. Runway: `{"lens", "wi", "el"}`, a view, a what-if
   calculator and the id of a part of the page. Prism: `{"list", "sort", "open", "el", "box"}`: a list of the Show
   menu (`""` is the five-question list, `"near"` the near misses), an order, `"open":"first"` to open the first
-  company, and a part of the page (`"detail"` and `"vform"` are the opened company's detail and its verdict form;
+  company, and a part of the page (`"detail"`, `"vform"` and `"signs"` are the opened company's detail, its
+  verdict form and its "Is the business winning?" box;
   `"box":"self"` outlines the part itself and not the panel around it). Any may be left out. On a tap the guide
   writes this as a note in `localStorage` key `ftol-show`, with the tool's name. The tool reads its own note once
   as it loads (`ftolShow`, while it is under a minute old), sets its view, and calls `ftolSpot`, which opens any
@@ -189,7 +191,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (266 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (383 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -282,6 +284,7 @@ format as the other tools; no AI, no live data.
   was a grey sentence in the file card. So now (`OLDER`, `#olderNote`) an amber note in the file card says "Load your
   file again" and names what is missing, and a company's detail says the same in the place where the dividend line
   would be. **Whenever a column is added, say so where the reader will look for its result, not only in small print.**
+  The signs do the same: with such a file, "Is the business winning?" opens with "Load your file again".
 - **Several users, one file (the owner's direction, 2026-11-24; not built).** He wants the screener file loaded once,
   by him as admin, and used by several people, each at their own level. The data provider's terms decide the shape.
   The clause he pasted forbids republishing the provider's content in full without explicit permission, and allows
@@ -300,18 +303,51 @@ format as the other tools; no AI, no live data.
   - Where it would live: an owner-only shared store on the claude.ai link (`db` rules, with each person's verdicts,
     A-list choices and signs under `data/users/<id>/`). The standalone site has no store, so it stays "bring your
     own file". The provider's site is outside this session's network policy: rely on what the owner pastes.
-- **Signs that a company is winning (proposed 2026-11-24; not built, awaiting his go-ahead).** He would track a few
-  indicators each quarter for the companies he follows (his example had six: organic revenue growth, revenue per
-  employee, gross margin, managed services bookings, outcome-based contracts, free cash flow per share). On his
-  file: reported revenue growth (not organic), `Rev / Employee`, `Gross Margin` and `FCF / Share` are there, as
-  trailing-twelve-month figures; bookings and contract mix are in no download and would be typed in. `Last Report
-  Date` (the period the figures cover) and `Last Earnings` (the day they came out) let Prism file one record per
-  company per quarter, so daily files are not needed for this. Proposed: keep the file-fed signs for every followed
-  company and the A-list, let him add named signs of his own per company, show a small quarter-by-quarter table in
-  the detail, and say under "What changed" when a followed company has reported. Plain better-or-worse
-  comparisons; no forecast and no combined score. History starts with the first file after it is built; a
-  per-company financial-history download could fill in the past (needs a sample). Keep the history apart from
-  personal notes, so that it can move to a shared store later.
+- **Signs that a business is winning (`SIGNS`, `KINDS`, `trackStep`, `signsRead`, `signBox`).** The owner asked
+  on 2026-11-24 how to follow, quarter by quarter, the indicators that would convince him a company is winning
+  (his example, for a consultancy: organic revenue growth, revenue per employee, gross margin, managed-services
+  bookings, outcome-based contracts, free cash flow per share). He then said: "Lets do a solid tracker", and that
+  one company's metrics "are relevant perhaps only for" that company: "you have to divine similar metrics for
+  others."
+  - **The box.** A company's detail has "Is the business winning?", after the A-list box. It is open for a company
+    he follows (a Watch, Act or Own verdict) or has given a sign of his own, and closed, with the count in its
+    heading, for any other. One line per sign: the figure now, what it is compared with, a reading in one word
+    (Better, Worse, The same, Too early), and what happened since the report before. "Report by report" at the
+    foot shows every report on record side by side.
+  - **Signs fit the kind of business.** `KINDS` has fifteen kinds, each with four or five of the thirteen `SIGNS`
+    and a sentence on what winning looks like. `KIND_OF` files the provider's 145 industry labels under them; a
+    label it does not know gets the general signs. "Read it as" lets him choose another kind for a company
+    (`S.kind`). On his file every label is covered and every A-list company has a figure for each of its signs.
+  - **A reading from the first file.** A sign is set against the figure a year before. Until Prism has a year of
+    its own record, that figure is worked out from the same file's growth columns (`signAgo`): for a margin, this
+    year's margin times the growth in sales over the growth in profit. Sales growth is the latest quarter against
+    the year as a whole; return on capital and on equity are set against their five-year average. Turnover, debt
+    and book value have nothing to be set against on the first day and say "Too early".
+  - **An allowance, so that noise is not read as news.** Each sign has one (`tol`): a third of a point for a
+    margin, a point for growth and returns, one to three percent for the rest. A change inside it is "The same".
+    A sign's note shows the company's two figures and says when the gap is inside the allowance.
+  - **The record (`S.track`).** `Last Report Date` says which reported period the figures cover, so Prism files
+    one set of figures per company per report: daily files are not needed. It keeps twelve reports for a company
+    he follows or has given a sign of his own, five for the rest of the A-list (`sign_keep`, `sign_keep_other`).
+    It only moves forward: an older file changes nothing. A period still on show is refreshed, because a figure
+    can be corrected. After a share split, the per-share figures already recorded are dropped. `Last Earnings`
+    is the day the results came out. "Start the record of signs again" is under Settings.
+  - **His own signs (`S.own`).** Bookings, same-store sales, orders in hand: no download carries them. Each kind
+    suggests two or three, and he can name his own, as "Higher is better", "Lower is better" or "I will judge it
+    myself" (a judgement per report instead of a figure). He types the figure for the latest report and the one a
+    year before from the same report. They are kept as he types them (`ownSet`), and `signPatch` redraws only the
+    readings, so a field being typed in is never replaced.
+  - **What tells him to look.** "What changed" says when a followed company has new results and how its signs
+    stand, and when a sign of his own is waiting for a figure. "Your verdicts" has a "Signs" column with the count
+    and a "New report" tag.
+  - **Rules.** No combined score, no forecast, no "winning" or "losing" from Prism (a check holds the page to it);
+    the signs feed no test, list or order (a check asserts it). The figures are the file's trailing-twelve-month
+    ones, and sales growth is as reported, not organic: the box and the notes say so. Headcount comes from the
+    annual report, so sales per employee is compared only with a year before (`yearly`). Keep `track` apart from
+    `own` and `kind`: it is the part that could one day be filled by one person for several.
+  - Offered and not built: a download of the record as a CSV; filling in the past from a per-company
+    financial-history download or from the regulator's filings (needs a sample, or network access); own signs
+    that Prism works out from two typed figures.
 - **Fee businesses in financial industries.** In Credit Services, Asset Management, Capital Markets and Financial
   Conglomerates, a company is scored like any other when the file gives it EBITDA-based figures (a card network,
   a fund manager); a lender gets none and stays set aside. Banks and insurers are always set aside.
@@ -323,9 +359,9 @@ format as the other tools; no AI, no live data.
   five verdict names come from his case-notes headings: don't add trade types as verdicts. Separate strike and
   expiry boxes, with each file showing the distance from the strike, were offered and are not built.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
-- `FIELDS`: the first spelling of each of the 74 columns was checked against the owner's real downloads (a
-  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 74 headings.
-  The last eight are the dividend columns, added on 2026-11-24.
+- `FIELDS`: the first spelling of each of the 85 columns was checked against the owner's real downloads (a
+  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 85 headings.
+  The last nineteen were added on 2026-11-24: eight dividend columns, then eleven for the signs.
   Later spellings are guesses for other files, and a match on one is reported on the page as "matched by name
   only". What the full file taught us, so nobody has to find it twice:
   - Statement figures are already in US dollars, whatever currency the company reports in.
@@ -348,11 +384,17 @@ format as the other tools; no AI, no live data.
 - "Columns found in the file" has a list of every column heading in the loaded file (`colText`), to copy or save.
   It holds headings only, never figures, so the owner can send it when asking for more columns to be read.
 - State: `localStorage` key `prism-v1` (settings, verdicts, A-list choices, the scorecard, last two list
-  memberships; `v: 2` marks state saved since the A-list became the opening view); IndexedDB `prism` keeps the
-  last file in that browser only; `ftol-summary-prism` feeds the home page. The vault copy holds the same things
-  except the file: the scorecard carries entry prices and the last prices of the large companies, nothing more.
-- The built-in example carries made-up values for the newer columns too (a second random stream, so the first
-  twenty columns stay as they were), including a few young fast growers so the moonshot list has something to show.
+  memberships, and the three parts of the signs: `track`, `kind`, `own`; `v: 2` marks state saved since the A-list
+  became the opening view); IndexedDB `prism` keeps the last file in that browser only; `ftol-summary-prism` feeds
+  the home page. The vault copy holds the same things except the file: the scorecard carries entry prices and the
+  last prices of the large companies, and the record of signs a few figures per report for the A-list and the
+  followed companies. On the owner's file the saved state is about 90 KB on the first day (the scorecard is two
+  thirds of it) and the record of signs grows to about 50 KB.
+- The built-in example carries made-up values for the newer columns too. Each batch of columns has its own random
+  stream (four so far), so every earlier figure stays as it was. It includes a few young fast growers so the
+  moonshot list has something to show, and a made-up record of five earlier reports for every company
+  (`DATA.track`, built by running the real `trackStep` on made-up earlier figures), so the signs have a history to
+  show. Adding an operating margin moved one company off one named list; the main lists did not change.
 - **The guide** (`prism/guide/index.html`, asked for on 2026-11-20) has a lesson for each list and each thing the
   owner asked about along the way: the entry ceiling, the order, how to note a put, what the columns list is for.
   When a name on this page changes, the guide changes in the same commit (see "The guides").

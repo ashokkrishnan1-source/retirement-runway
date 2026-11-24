@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'prism', 'index.html'), 'utf8');
 const eng = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
-const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes,dividendOf};')();
+const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes,dividendOf,SIGNS,KINDS,KIND_OF,kindOf,signNow,signAgo,signsFor,signKeys,monthsBack,trackStep,signSeries,signCompare,readSign,signFromFile,readOwn,ownYearKey,signTally,signsRead};')();
 let pass = 0, fail = 0;
 const check = (name, actual, expected, tol) => {
   const ok = typeof expected === 'number' ? Math.abs(actual - expected) <= (tol == null ? 1e-6 : tol) : JSON.stringify(actual) === JSON.stringify(expected);
@@ -54,7 +54,7 @@ check('date: text date', E.toDate('2026-11-04'), '2026-11-04');
 }
 
 console.log('--- The provider\'s full download ---');
-// The headings of the 74 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
+// The headings of the 85 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
 // them. Headings only: the values below are invented.
 { const FULL = ['Symbol', 'Company Name', 'Sector', 'Industry', 'Stock Price', 'Market Cap', 'Avg. Volume', 'Revenue', 'PE Ratio', 'EV/EBITDA',
     'Debt / EBITDA', 'Total Cash', 'Total Debt', 'Net Cash', 'FCF Yield', 'ROIC', 'Rev. Growth', 'FCF Growth', 'Shares Ch. (YoY)', 'Return 1Y',
@@ -63,16 +63,19 @@ console.log('--- The provider\'s full download ---');
     'Rev. Growth 3Y', 'Rev. Growth 5Y', 'EPS Growth', 'Buyback Yield', '52W High Chg', 'Shares Insiders', 'Short % Float',
     'Profit Years', 'Rev. Growth 10Y', 'Operating CF', 'Net Income', 'ND / EBITDA', 'PE (5Y)', 'PE (10Y)', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR',
     'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Rev. Growth (Q)', 'OpInc Growth', 'EPS Growth (Q)',
-    'Div. Yield', 'Dividend', 'Div. Years', 'Div. Gr. Years', 'FCF Payout', 'Div. Growth', 'Ex-Div Date', 'Payout Freq.'];
+    'Div. Yield', 'Dividend', 'Div. Years', 'Div. Gr. Years', 'FCF Payout', 'Div. Growth', 'Ex-Div Date', 'Payout Freq.',
+    'Rev / Employee', 'Empl. Growth', 'FCF / Share', 'GP Growth', 'Asset Turnover', 'Inv. Turnover', 'BV / Share', 'EPS', 'ROE (5Y)', 'Last Report Date', 'Last Earnings'];
   // look-alike headings that are also in the download and must not be mistaken for the ones above
-  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth (Q)', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', 'ROE (5Y)', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date',
-    'Div. Growth 3Y', 'Div. Growth 5Y', 'Div. Growth 10Y', 'Payout Ratio', 'Payment Date', 'Last Div.', 'Shareh. Yield'];
+  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth (Q)', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date',
+    'Div. Growth 3Y', 'Div. Growth 5Y', 'Div. Growth 10Y', 'Payout Ratio', 'Payment Date', 'Last Div.', 'Shareh. Yield',
+    'Prof / Employee', 'Empl. Change', 'Employees', 'FCF Growth (Q)', 'GP Growth 3Y', 'GP Growth (Q)', 'WC Turnover', 'TBV / Share', 'EPS Growth (Qtrs)', 'Est. EPS', 'ROA (5Y)', 'Earnings Time', '10K Date'];
   const row = FULL.map(() => ''), set = (h, v) => { row[FULL.indexOf(h)] = v; };
   set('Symbol', 'zzz.x'); set('Stock Price', '40'); set('Market Cap', '2000000000'); set('FCF Yield', '9.00%'); set('FCF', '100000000'); set('ROIC', '12.50%');
   set('Shares Ch. (YoY)', '-0.21%'); set('CIK Code', '0000123456'); set('Price Date', '2026-11-19'); set('Ent. Value', '2500000000'); set('Int. Cov.', '-4.5');
   set('Z-Score', '2.75'); set('F-Score', '7'); set('52W High Chg', '-10.88%'); set('Short % Float', '0.82%');
   set('Profit Years', '35'); set('50MA Chg %', '-4.18%'); set('Options', 'Yes'); set('Next Earnings', '2027-01-27'); set('ND / EBITDA', '-0.0356');
   set('Div. Yield', '2.50%'); set('Dividend', '1'); set('Div. Years', '12'); set('Div. Gr. Years', '5'); set('FCF Payout', '40.00%'); set('Div. Growth', '-11.80%'); set('Ex-Div Date', '2026-12-01'); set('Payout Freq.', 'Semi-Annual');
+  set('Rev / Employee', '250000'); set('Empl. Growth', '2.00%'); set('FCF / Share', '4.125'); set('GP Growth', '-3.50%'); set('Asset Turnover', '0.85'); set('Inv. Turnover', '6.2'); set('BV / Share', '18.75'); set('EPS', '-1.2'); set('ROE (5Y)', '14.00%'); set('Last Report Date', '2026-09-30'); set('Last Earnings', '2026-11-05');
   const m = E.mapTable(FULL.concat(DECOYS), [row.concat(DECOYS.map(() => '99'))]), r = m.rows[0];
   check('full download: every column Prism reads is found', Object.keys(m.report.found).length, E.FIELDS.length);
   check('full download: none missing', m.report.missing, []);
@@ -87,6 +90,8 @@ console.log('--- The provider\'s full download ---');
   check('full download: options and the next earnings date', [r.opt, r.earn], ['Yes', '2027-01-27']); check('full download: net debt over EBITDA can be negative', r.ndlev, -0.0356);
   check('full download: percentages carry a % sign, so no whole-number conversion', m.report.percentUnits, false);
   check('full download: the dividend columns', [r.dy, r.div, r.dyrs, r.dgyrs, r.fpay, Math.round(r.dg1 * 1e6) / 1e6, r.exdiv, r.dfreq], [0.025, 1, 12, 5, 0.4, -0.118, '2026-12-01', 'Semi-Annual']);
+  check('full download: the columns behind the signs', [r.rpe, r.emplg, r.fcfps, Math.round(r.gpg * 1e6) / 1e6, r.ato, r.invt, r.bvps, r.eps, Math.round(r.roe5 * 1e6) / 1e6, r.lastrep, r.lastearn], [250000, 0.02, 4.125, -0.035, 0.85, 6.2, 18.75, -1.2, 0.14, '2026-09-30', '2026-11-05']);
+  check('the engine reads 85 columns', E.FIELDS.length, 85);
   // a spelling that is only a guess is reported as one: "Ticker" and "Enterprise Value" are not the provider's headings
   check('a guessed spelling is reported', E.mapTable(['Ticker', 'Enterprise Value'], [['x', '5']]).report.guessed, ['sym', 'ev']);
   // The yield is free cash flow over the whole company's market value: 100m / 2,000m = 5%, though the file's column says 9%
@@ -403,6 +408,196 @@ console.log('--- Dividends ---');
   check('dividend: every company carries its dividend facts', [rich.rows.every(r => r.dividend && r.dividend.pays && r.dividend.exIn === 6), plain.rows.every(r => r.dividend && !r.dividend.pays)], [true, true]);
   check('dividend: the file is known to have dividend columns, or not', [rich.can.div, plain.can.div], [true, false]); }
 
+console.log('--- Signs that a business is winning ---');
+{ // Which figures show that a business is winning depends on the kind of business. Worked by hand; the companies are invented.
+  const SG = E.SIGNS, K = E.KINDS, r6 = x => x == null ? x : Math.round(x * 1e6) / 1e6;
+  // the kinds of business
+  check('kinds: a consultancy is a people business', E.kindOf({industry: 'Information Technology Services'}), 'people');
+  check('kinds: a chip maker, a bank and an office landlord', ['Semiconductors', 'Banks - Regional', 'REIT - Office'].map(i => E.kindOf({industry: i})), ['hardware', 'lender', 'property']);
+  check('kinds: an industry Prism does not know, or none at all, gets the general signs', [E.kindOf({industry: 'Zeppelin Makers'}), E.kindOf({}), E.kindOf(null)], ['general', 'general', 'general']);
+  check('kinds: every industry points at a real kind', Object.keys(E.KIND_OF).filter(i => !K[E.KIND_OF[i]]), []);
+  { const src = eng.slice(eng.indexOf('var KIND_OF'), eng.indexOf('function kindOf')), labels = src.match(/'[A-Z][^']*'/g) || [];
+    check('kinds: no industry is filed under two kinds', labels.length, Object.keys(E.KIND_OF).length); }
+  check('kinds: every kind but the general one has industries', Object.keys(K).filter(k => k !== 'general' && !Object.keys(E.KIND_OF).some(i => E.KIND_OF[i] === k)), []);
+  check('kinds: each calls only on signs that exist', Object.keys(K).filter(k => E.signKeys(k).some(s => !SG[s])), []);
+  check('kinds: each shows four or five signs', Object.keys(K).filter(k => K[k].signs.length < 4 || K[k].signs.length > 5), []);
+  check('kinds: every sign is used by some kind', Object.keys(SG).filter(s => !Object.keys(K).some(k => E.signKeys(k).includes(s))), []);
+  check('kinds: each has a name, a sentence on what winning looks like, and its own-report signs as [name, higher is better]',
+    Object.keys(K).filter(k => !K[k].name || !/\.$/.test(K[k].what) || !Array.isArray(K[k].own) || K[k].own.some(a => typeof a[0] !== 'string' || typeof a[1] !== 'boolean')), []);
+  check('signs: each has a name, a question, a direction, a unit and an allowance', Object.keys(SG).filter(s => !SG[s].name || !/\?$/.test(SG[s].ask) || typeof SG[s].up !== 'boolean' || !/^(rate|pct|usd|x|count)$/.test(SG[s].unit) || !/^(abs|rel)$/.test(SG[s].tol[0]) || !(SG[s].tol[1] > 0)), []);
+  check('signs: the people business has the four the owner named', E.signKeys('people'), ['grow', 'rpe', 'gm', 'cash']);
+  // the figure now
+  const Z = {revgq: 0.08, revg: 0.05, gm: 0.40, gpg: 0.10, om: 0.20, oig: 0.25, rpe: 300000, emplg: 0.02, fcfps: 5, fcfg: 0.20, sh: -0.04, shares: 96e6, eps: 4.4, epsg: 0.10, roic: 0.18, roic5: 0.21, roe: 0.15, roe5: 0.12, ato: 0.9, invt: 6, bvps: 20, ndlev: 1.5, netcash: -100};
+  check('now: sales growth is the latest quarter\'s', E.signNow(Z, 'grow'), 0.08);
+  check('now: without a quarterly figure, the year\'s', E.signNow({revg: 0.05}, 'grow'), 0.05);
+  check('now: the plain figures', ['rpe', 'gm', 'om', 'cash', 'roic', 'turn', 'stock', 'shares', 'debt', 'roe', 'book', 'eps'].map(k => E.signNow(Z, k)), [300000, 0.40, 0.20, 5, 0.18, 0.9, 6, 96e6, 1.5, 0.15, 20, 4.4]);
+  // without a per-share column: 200 of spare cash over 50 shares is 4
+  check('now: spare cash per share from the totals', E.signNow({fcf: 200, shares: 50}, 'cash'), 4);
+  check('now: more cash than debt is a figure below zero', E.signNow({ndlev: -0.4, netcash: 50}, 'debt'), -0.4);
+  check('now: net debt with a loss where the earnings should be has no figure', E.signNow({ndlev: -2, netcash: -100}, 'debt'), null);
+  check('now: nothing in the file, no figure', ['grow', 'rpe', 'cash', 'shares', 'debt'].map(k => E.signNow({}, k)), [null, null, null, null, null]);
+  // a year before, from the same file. Gross margin: 0.40 x 1.05 / 1.10 = 0.381818. Operating margin: 0.20 x 1.05 / 1.25 = 0.168.
+  check('a year before: gross margin 38.18%', E.signAgo(Z, 'gm'), 0.40 * 1.05 / 1.10, 1e-12); check('a year before: gross margin, to six places', r6(E.signAgo(Z, 'gm')), 0.381818);
+  check('a year before: operating margin 16.8%', E.signAgo(Z, 'om'), 0.168, 1e-12);
+  // sales per employee: 300,000 x 1.02 / 1.05 = 291,428.57
+  check('a year before: sales per employee 291,429', E.signAgo(Z, 'rpe'), 291428.571429, 1e-5);
+  // spare cash per share: cash grew 20% on 4% fewer shares, so 5 x 0.96 / 1.20 = 4.00
+  check('a year before: spare cash per share 4.00', E.signAgo(Z, 'cash'), 4, 1e-12);
+  check('a year before: 100m shares, 4% more than now', E.signAgo(Z, 'shares'), 1e8, 1e-3);
+  check('a year before: profit per share 4.00', E.signAgo(Z, 'eps'), 4, 1e-12);
+  check('set against: sales growth, the year as a whole', [E.signAgo(Z, 'grow'), SG.grow.ago], [0.05, 'whole']);
+  check('set against: returns, their five-year average', [E.signAgo(Z, 'roic'), E.signAgo(Z, 'roe'), SG.roic.ago, SG.roe.ago], [0.21, 0.12, 'avg5', 'avg5']);
+  check('set against: nothing, for turnover, debt and book value', ['turn', 'stock', 'debt', 'book'].map(k => E.signAgo(Z, k)), [null, null, null, null]);
+  check('a year before: without the growth figure, unknown', [E.signAgo({gm: 0.4, revg: 0.05}, 'gm'), E.signAgo({fcfps: 5, sh: 0.01}, 'cash'), E.signAgo({revg: 0.05}, 'grow')], [null, null, null]);
+  check('a year before: a share count that moved by more than half is a split, not a trend', [E.signAgo({shares: 2e8, sh: 1}, 'shares'), E.signAgo({fcfps: 5, fcfg: 0.2, sh: 1}, 'cash')], [null, null]);
+  check('a year before: a loss has no rate of change to undo', [E.signAgo({eps: -1, epsg: 0.5}, 'eps'), E.signAgo({om: -0.05, revg: 0.1, oig: 0.2}, 'om')], [null, null]);
+  // 0.90 x 1.50 / 1.10 = 1.227: a margin above 100% is no margin
+  check('a year before: an impossible margin is dropped', E.signAgo({gm: 0.9, revg: 0.5, gpg: 0.1}, 'gm'), null);
+  // which signs a company gets
+  check('signs for a shop that reports its inventory', E.signsFor({invt: 6, ato: 1.5}, 'shops'), ['grow', 'om', 'stock', 'roic', 'cash']);
+  check('signs for a shop that does not: sales per dollar of assets takes its place', E.signsFor({ato: 1.5}, 'shops'), ['grow', 'om', 'turn', 'roic', 'cash']);
+  check('signs for a shop with neither: the first is named, and shown as missing', E.signsFor({}, 'shops'), ['grow', 'om', 'stock', 'roic', 'cash']);
+  check('both are kept on record, so the choice can change', E.signKeys('shops'), ['grow', 'om', 'stock', 'turn', 'roic', 'cash']);
+  check('a fee business with no cash figure is read on profit per share', E.signsFor({eps: 3}, 'fees'), ['grow', 'om', 'rpe', 'eps', 'shares']);
+  check('an unknown kind is read as the general one', E.signsFor(Z, 'nonsense'), ['grow', 'gm', 'roic', 'cash', 'shares']);
+  // dates
+  check('months back: a month end stays a month end', [E.monthsBack('2026-08-31', 12), E.monthsBack('2026-05-31', 3), E.monthsBack('2024-02-29', 12), E.monthsBack('2026-01-31', 3)], ['2025-08-31', '2026-02-28', '2023-02-28', '2025-10-31']);
+  check('months back: any other day keeps its number', [E.monthsBack('2026-09-26', 12), E.monthsBack('2026-03-15', 6), E.monthsBack('2026-03-30', 1)], ['2025-09-26', '2025-09-15', '2026-02-28']);
+  // better, worse or the same. Gross margin allows 0.3 of a point; the share count allows 0.5% and is better when lower.
+  check('compare: 0.2 of a point is the same', E.signCompare(SG.gm, 0.402, 0.400), 'same'); check('compare: exactly the allowance is still the same', E.signCompare(SG.gm, 0.403, 0.400), 'same');
+  check('compare: 0.31 of a point up is better, down is worse', [E.signCompare(SG.gm, 0.4031, 0.400), E.signCompare(SG.gm, 0.3969, 0.400)], ['better', 'worse']);
+  check('compare: 1% fewer shares is better, 1% more is worse, 0.4% more is the same', [E.signCompare(SG.shares, 99, 100), E.signCompare(SG.shares, 101, 100), E.signCompare(SG.shares, 100.4, 100)], ['better', 'worse', 'same']);
+  check('compare: debt down from 1.5 to 1.2 is better; 1.45 is the same', [E.signCompare(SG.debt, 1.2, 1.5), E.signCompare(SG.debt, 1.45, 1.5)], ['better', 'same']);
+  // sales per employee allows 1%: 303,000 against 300,000 is exactly 1%, the same; 304,000 is better
+  check('compare: an allowance that is a share of the earlier figure', [E.signCompare(SG.rpe, 303000, 300000), E.signCompare(SG.rpe, 304000, 300000)], ['same', 'better']);
+  check('compare: a missing figure gives no answer', [E.signCompare(SG.gm, null, 0.4), E.signCompare(SG.gm, 0.4, null)], [null, null]);
+  // reading one sign from five reports: up 0.4 of a point each quarter
+  const five = [['2025-09-30', 0.380], ['2025-12-31', 0.384], ['2026-03-31', 0.388], ['2026-06-30', 0.392], ['2026-09-30', 0.396]].map(a => ({p: a[0], v: a[1]}));
+  let x = E.readSign(SG.gm, five, 0.50);
+  check('read: now, the report before and a year before', [x.now, x.period, x.prev, x.prevPeriod, x.year, x.yearPeriod], [0.396, '2026-09-30', 0.392, '2026-06-30', 0.380, '2025-09-30']);
+  check('read: the record is used before the file\'s own sum', x.yearFrom, 'record');
+  check('read: better than both, four reports running', [x.vsPrev, x.vsYear, x.run, x.state], ['better', 'better', 4, 'better']);
+  // the same five, but the last quarter fell back by 0.5 of a point: worse than the report before, still better than a year before
+  x = E.readSign(SG.gm, five.slice(0, 4).concat([{p: '2026-09-30', v: 0.387}]), null);
+  check('read: slipped since the report before, still better than a year before', [x.vsPrev, x.vsYear, x.run, x.state], ['worse', 'better', 1, 'better']);
+  // two reports a quarter apart: nothing on record from a year before, so the file's own sum is used (0.396 against 0.39 is 0.6 of a point)
+  x = E.readSign(SG.gm, five.slice(3), 0.39);
+  check('read: without a year on record, the file\'s figure', [x.year, x.yearFrom, x.vsYear, x.vsPrev, x.run, x.state], [0.39, 'year', 'better', 'better', 1, 'better']);
+  x = E.readSign(SG.grow, [{p: '2026-09-30', v: 0.08}], 0.05);
+  check('read: one report, sales growth against the year as a whole', [x.prev, x.vsPrev, x.year, x.yearFrom, x.vsYear, x.state], [null, null, 0.05, 'whole', 'better', 'better']);
+  x = E.readSign(SG.turn, five.slice(3), null);
+  check('read: with no year at all, the report before decides', [x.year, x.vsYear, x.vsPrev, x.state], [null, null, 'same', 'same']);
+  x = E.readSign(SG.turn, [{p: '2026-09-30', v: 0.9}], null);
+  check('read: one report and nothing to set it against is too early to say', [x.now, x.state, x.run], [0.9, null, 0]);
+  x = E.readSign(SG.gm, [], 0.39); check('read: no figure, no reading', [x.now, x.state, x.year], [null, null, null]);
+  // a report a year back is not "the report before"
+  x = E.readSign(SG.gm, [{p: '2025-09-30', v: 0.380}, {p: '2026-09-30', v: 0.396}], null);
+  check('read: a figure from a year back is the year before, not the report before', [x.prev, x.vsPrev, x.year, x.yearFrom, x.vsYear, x.run], [null, null, 0.380, 'record', 'better', 0]);
+  // a run stops at a gap in the record: Mar, Jun, Sep 2026 after a lone Mar 2025
+  x = E.readSign(SG.gm, [{p: '2025-03-31', v: 0.37}, {p: '2026-03-31', v: 0.388}, {p: '2026-06-30', v: 0.392}, {p: '2026-09-30', v: 0.396}], null);
+  check('read: a run does not jump a gap in the record', [x.vsPrev, x.run, x.year], ['better', 2, null]);
+  // headcount comes once a year: no report-to-report reading for sales per employee
+  x = E.readSign(SG.rpe, [{p: '2025-09-30', v: 280000}, {p: '2026-06-30', v: 300000}, {p: '2026-09-30', v: 300000}], null);
+  check('read: a yearly sign is set only against a year before', [x.prev, x.vsPrev, x.run, x.year, x.vsYear, x.state], [null, null, 0, 280000, 'better', 'better']);
+  // 330 to 400 days counts as a year: a 53-week year (371 days) does, nine months (273) does not
+  check('read: a 53-week year is a year', E.readSign(SG.gm, [{p: '2025-09-27', v: 0.38}, {p: '2026-10-03', v: 0.39}], null).yearFrom, 'record');
+  check('read: nine months is not', E.readSign(SG.gm, [{p: '2025-12-31', v: 0.38}, {p: '2026-09-30', v: 0.39}], null).year, null);
+  // the record, file by file
+  const keep = n => () => n, A = (o) => Object.assign({sym: 'AAA', industry: 'Consulting Services', lastrep: '2026-06-30', revgq: 0.0612378, rpe: 250000, gm: 0.3, fcfps: 4.123456}, o);
+  let rec = E.trackStep(null, [A()], {AAA: 'people'}, '2026-08-01', keep(12));
+  check('record: the first file starts it, figures to five digits', rec, {AAA: {k: ['grow', 'rpe', 'gm', 'cash'], q: {'2026-06-30': [0.061238, 250000, 0.3, 4.1235]}, at: '2026-08-01', nu: '2026-08-01'}});
+  const one = JSON.stringify(rec);
+  let rec2 = E.trackStep(rec, [A({gm: 0.31})], {AAA: 'people'}, '2026-08-08', keep(12));
+  check('record: a later file with the same report refreshes it', [rec2.AAA.q['2026-06-30'][2], Object.keys(rec2.AAA.q).length, rec2.AAA.at, rec2.AAA.nu], [0.31, 1, '2026-08-08', '2026-08-01']);
+  check('record: the earlier record is not altered in place', JSON.stringify(rec), one);
+  let rec3 = E.trackStep(rec2, [A({lastrep: '2026-09-30', gm: 0.32, revgq: 0.07})], {AAA: 'people'}, '2026-11-05', keep(12));
+  check('record: a new report is added and dated', [Object.keys(rec3.AAA.q), rec3.AAA.q['2026-09-30'][2], rec3.AAA.at, rec3.AAA.nu], [['2026-06-30', '2026-09-30'], 0.32, '2026-11-05', '2026-11-05']);
+  check('record: the same file again changes nothing', JSON.stringify(E.trackStep(rec3, [A({lastrep: '2026-09-30', gm: 0.32, revgq: 0.07})], {AAA: 'people'}, '2026-11-05', keep(12))), JSON.stringify(rec3));
+  check('record: an older file changes nothing', JSON.stringify(E.trackStep(rec3, [A({gm: 0.99})], {AAA: 'people'}, '2026-08-08', keep(12))), JSON.stringify(rec3));
+  check('record: no report date in the file, nothing kept', E.trackStep({}, [A({lastrep: null})], {AAA: 'people'}, '2026-08-01', keep(12)), {});
+  check('record: no file date, the record is returned as it was', E.trackStep(rec3, [A()], {AAA: 'people'}, null, keep(12)) === rec3, true);
+  check('record: a company nobody asked for is not recorded', E.trackStep({}, [A()], {}, '2026-08-01', keep(12)), {});
+  // only the newest two are kept when two is the limit
+  let rec4 = E.trackStep(rec3, [A({lastrep: '2026-12-31'})], {AAA: 'people'}, '2027-02-01', keep(2));
+  check('record: only as many reports as asked for are kept, the newest', Object.keys(rec4.AAA.q), ['2026-09-30', '2026-12-31']);
+  // a 2-for-1 split on 1 Dec 2026, after the last file read (5 Nov): what was recorded per share is on the old count
+  let rec5 = E.trackStep(rec3, [A({lastrep: '2026-12-31', split: '2026-12-01', fcfps: 2.1})], {AAA: 'people'}, '2027-02-01', keep(12));
+  check('record: after a split, earlier per-share figures are dropped and the rest kept', [rec5.AAA.q['2026-06-30'], rec5.AAA.q['2026-09-30'], rec5.AAA.q['2026-12-31'][3]], [[0.061238, 250000, 0.31, null], [0.07, 250000, 0.32, null], 2.1]);
+  check('record: a split from before the last file read changes nothing', E.trackStep(rec3, [A({lastrep: '2026-12-31', split: '2026-10-01'})], {AAA: 'people'}, '2027-02-01', keep(12)).AAA.q['2026-09-30'][3], 4.1235);
+  // read as another kind: the signs both kinds share keep their history, the new ones start empty
+  let rec6 = E.trackStep(rec3, [A({lastrep: '2026-09-30', gm: 0.32, revgq: 0.07, om: 0.2, shares: 5e7})], {AAA: 'software'}, '2026-11-06', keep(12));
+  check('record: read as another kind, shared signs keep their history', [rec6.AAA.k, rec6.AAA.q['2026-06-30'], rec6.AAA.q['2026-09-30']], [['grow', 'gm', 'om', 'cash', 'shares'], [0.061238, 0.31, null, 4.1235, null], [0.07, 0.32, 0.2, 4.1235, 5e7]]);
+  // no longer wanted: kept for 200 days after the last file read (5 Nov 2026 to 24 May 2027 is 200 days), then dropped
+  check('record: a company no longer wanted is kept for 200 days', [!!E.trackStep(rec3, [], {}, '2027-05-24', keep(12)).AAA, !!E.trackStep(rec3, [], {}, '2027-05-25', keep(12)).AAA], [true, false]);
+  check('record: a wanted company that has left the file keeps its record', JSON.stringify(E.trackStep(rec3, [], {AAA: 'people'}, '2028-01-01', keep(12)).AAA), JSON.stringify(rec3.AAA));
+  check('record: its figures for one sign, oldest first', E.signSeries(rec3.AAA, 'gm'), [{p: '2026-06-30', v: 0.31}, {p: '2026-09-30', v: 0.32}]);
+  check('record: a sign that is not kept has no figures', [E.signSeries(rec3.AAA, 'om'), E.signSeries(null, 'gm')], [[], []]);
+  // a company as the page reads it: the latest figures from the row, earlier reports from the record
+  const row = A({lastrep: '2026-09-30', lastearn: '2026-11-04', gm: 0.32, revgq: 0.07, revg: 0.05, gpg: 0.08, emplg: 0.03, fcfg: 0.10, sh: 0});
+  let R = E.signsRead(row, 'people', rec3.AAA, null, '2026-11-05');
+  check('company: its kind, its report and when it came out', [R.kind, R.period, R.out, R.periods], ['people', '2026-09-30', '2026-11-04', ['2026-09-30', '2026-06-30']]);
+  check('company: the four signs, in order', R.file.map(s => s.k), ['grow', 'rpe', 'gm', 'cash']);
+  // growth 7% against 5% for the year: better (2 points). Sales per employee: 250,000 x 1.03 / 1.05 = 245,238, up 1.9%: better.
+  // Gross margin: 0.32 x 1.05 / 1.08 = 0.3111, up 0.9 of a point: better; against 0.31 the report before, up a point: better.
+  // Spare cash per share: 4.123456 / 1.10 = 3.7486, up 10%: better; against 4.1235 the report before: the same.
+  check('company: sales growth', [R.file[0].now, R.file[0].year, R.file[0].yearFrom, R.file[0].state, R.file[0].vsPrev], [0.07, 0.05, 'whole', 'better', 'same']);
+  check('company: sales per employee, a year before from the file', [r6(R.file[1].year), R.file[1].state, R.file[1].vsPrev], [245238.095238, 'better', null]);
+  check('company: gross margin', [r6(R.file[2].year), R.file[2].prev, R.file[2].vsPrev, R.file[2].state], [0.311111, 0.31, 'better', 'better']);
+  check('company: spare cash per share', [r6(R.file[3].year), R.file[3].vsYear, R.file[3].vsPrev], [3.748596, 'better', 'same']);
+  check('company: four better', R.tally, {better: 4, worse: 0, same: 0, wait: 0, n: 4});
+  check('company: it has reported since the file before', R.fresh, true);
+  check('company: not fresh on a later file, nor with only one report on record', [E.signsRead(row, 'people', rec3.AAA, null, '2026-11-12').fresh, E.signsRead(A(), 'people', rec.AAA, null, '2026-08-01').fresh], [false, false]);
+  // an older file on show: the record's later reports are left out of its reading
+  R = E.signsRead(A({gm: 0.31}), 'people', rec3.AAA, null, '2026-08-08');
+  check('company: an older file is read as it stands', [R.period, R.periods, R.file[2].now, R.file[2].prev, R.fresh], ['2026-06-30', ['2026-06-30'], 0.31, null, false]);
+  R = E.signsRead({sym: 'BBB', gm: 0.3}, 'people', null, null, '2026-08-01');
+  check('company: without a report date there is a reading and no record', [R.period, R.periods, R.file[2].now, R.file[2].state, R.tally.wait], [null, [], 0.3, null, 4]);
+  R = E.signsRead(A({rpe: null}), 'people', rec3.AAA, null, '2026-08-08');
+  check('company: a figure missing from this file, with the last one on record', [R.file[1].now, R.file[1].state, R.file[1].last], [null, null, null]);
+  R = E.signsRead(A({lastrep: '2026-12-31', rpe: null}), 'people', rec3.AAA, null, '2027-02-01');
+  check('company: the last figure on record is offered when the file has none now', R.file[1].last, {p: '2026-09-30', v: 250000});
+  // the reader's own signs
+  const own = {n: 'New bookings', up: true, q: {'2025-09-30': [20, '20'], '2026-06-30': [23, '23.0'], '2026-09-30': [22, '22']}};
+  let o = E.readOwn(own, '2026-09-30');
+  check('own sign: now, the report before and a year before, as typed', [o.now, o.text, o.prev, o.prevText, o.year, o.yearText, o.yearFrom], [22, '22', 23, '23.0', 20, '20', 'record']);
+  check('own sign: better than a year before, worse than the report before', [o.vsYear, o.vsPrev, o.run, o.state, o.judged], ['better', 'worse', 1, 'better', false]);
+  o = E.readOwn(Object.assign({}, own, {up: false}), '2026-09-30');
+  check('own sign: when lower is better the readings turn round', [o.vsYear, o.vsPrev, o.state], ['worse', 'better', 'worse']);
+  o = E.readOwn(own, '2026-12-31');
+  check('own sign: nothing typed for this report yet, the last one is offered', [o.now, o.state, o.last], [null, null, {p: '2026-09-30', v: 22, t: '22'}]);
+  o = E.readOwn(own, '2026-06-30');
+  check('own sign: a later entry is left out when an earlier report is on show', [o.now, o.prev, o.year, o.state], [23, null, null, null]);
+  o = E.readOwn({n: 'x', up: true, q: {'2026-09-30': [100.4, '100.4'], '2026-06-30': [100, '100']}}, '2026-09-30');
+  check('own sign: a change of under half a percent is the same', [o.vsPrev, o.state], ['same', 'same']);
+  o = E.readOwn({n: 'x', up: true}, '2026-09-30'); check('own sign: nothing typed at all', [o.now, o.state, o.last], [null, null, null]);
+  o = E.readOwn(own, null); check('own sign: no report date, no reading', [o.now, o.state], [null, null]);
+  const jd = {n: 'Outcome-based contracts', up: null, q: {'2026-03-31': 'same', '2026-06-30': 'better', '2026-09-30': 'better'}};
+  o = E.readOwn(jd, '2026-09-30');
+  check('own sign: a judgement is the reading, two reports running', [o.judged, o.now, o.state, o.run], [true, 'better', 'better', 2]);
+  o = E.readOwn(jd, '2026-12-31'); check('own sign: no judgement yet for a new report', [o.now, o.state, o.last], [null, null, {p: '2026-09-30', v: 'better', t: 'better'}]);
+  o = E.readOwn({n: 'x', up: null, q: {'2026-09-30': [5, '5']}}, '2026-09-30'); check('own sign: a figure where a judgement belongs is ignored', [o.now, o.state], [null, null]);
+  check('own sign: a year-before figure goes on a report already used a year back', E.ownYearKey(own, '2026-09-30'), '2025-09-30');
+  check('own sign: or else on the same day a year earlier', [E.ownYearKey(own, '2026-12-31'), E.ownYearKey(null, '2026-08-31')], ['2025-12-31', '2025-08-31']);
+  check('tally: better, worse, the same and not yet known', E.signTally(['better', 'better', 'worse', 'same', null, undefined]), {better: 2, worse: 1, same: 1, wait: 2, n: 6});
+  // the company with its own signs: one typed and better, one waiting
+  R = E.signsRead(row, 'people', rec3.AAA, [own, {n: 'Staff kept busy', up: true, q: {}}], '2026-11-05');
+  check('company: the reader\'s signs are counted with Prism\'s', [R.own.map(s => [s.i, s.n, s.state]), R.tally, R.todo], [[[0, 'New bookings', 'better'], [1, 'Staff kept busy', null]], {better: 5, worse: 0, same: 0, wait: 1, n: 6}, 1]);
+  check('company: reports the reader has typed figures for are listed too', R.periods, ['2026-09-30', '2026-06-30', '2025-09-30']);
+  // signs play no part in any test, list or order: the same companies, with and without the figures, land in the same places
+  const T = '2026-11-19', plain = E.run(universe(), {}, {today: T}), rich = E.run(universe().map((r, i) => Object.assign(r, {rpe: 1e5 + i, emplg: 0.5, fcfps: 9, gpg: -0.5, ato: 3, invt: 9, bvps: 1, eps: i % 2 ? -5 : 5, roe5: 0.9, lastrep: '2026-09-30', lastearn: '2026-11-01'})), {}, {today: T});
+  const key = r => [r.sym, r.Q, r.V, r.P, r.T, r.g, r.n5, r.lists, r.grade, r.alist, r.onSale, r.put, r.moon, r.slipping, r.ceiling, r.blocks];
+  check('signs: every company is graded and listed the same with or without them', rich.rows.map(key), plain.rows.map(key));
+  check('signs: the lists are the same', E.memberships(rich.rows, ['Q', 'V', 'S', 'P', 'T']), E.memberships(plain.rows, ['Q', 'V', 'S', 'P', 'T']));
+  check('signs: the file is known to carry report dates, or not', [rich.can.signs, plain.can.signs], [true, false]);
+  // the page: a note for every sign, and words for each way a single file can be read
+  const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));
+  const what = new Function(ui.match(/const SGWHAT = \{[\s\S]*?\n\};/)[0] + '\nreturn SGWHAT;')(), ago = new Function(ui.match(/const SGAGO = \{[\s\S]*?\n\};/)[0] + '\nreturn SGAGO;')();
+  check('page: every sign has a note saying what it measures', Object.keys(SG).filter(s => !what[s]), []);
+  check('page: and no note is left over', Object.keys(what).filter(s => !SG[s]), []);
+  check('page: each way a single file can be read is explained', [...new Set(Object.keys(SG).map(s => SG[s].ago || 'none'))].filter(a => !ago[a]), []);
+  check('page: it never calls a company winning or losing itself', /is winning\.|is losing|a winner\b|Prism thinks/i.test(ui.replace(/Is the business winning\?/g, '').replace(/Signs that a business is winning\./g, '').replace(/show a business is winning/g, '').replace(/Whether the company is winning is your call/g, '')), false);
+}
+
 console.log('--- The guide keeps step with the page ---');
 { // prism/guide/index.html is a page of lessons about Prism. It must not drift from it. Every name it sets as a label
   // (class "k") must be on the page, word for word. Every "Show me" link must name a real list, a real order and a real
@@ -424,7 +619,7 @@ console.log('--- The guide keeps step with the page ---');
   const sorts = Object.keys(new Function(ui.match(/const SORTS = \{[\s\S]*?\n\};/)[0] + '\nreturn SORTS;')());
   check('guide: the page has nine named lists', Object.keys(LI).length, 9);
   check('guide: the engine and the page agree on the named lists', Object.keys(LI).slice().sort(), E.LISTS.slice().sort());
-  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform'];
+  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs'];
   const gos = all(/<a\b[^>]*\bdata-go='([^']+)'[^>]*>([\s\S]*?)<\/a>/g, guide).map(x => [JSON.parse(x[1]), plain(x[2])]);
   const bad = gos.filter(([g]) => (g.list !== undefined && !lists.includes(g.list)) || (g.sort !== undefined && !sorts.includes(g.sort)) || (g.open !== undefined && g.open !== 'first') ||
     (g.box !== undefined && g.box !== 'self') || !g.el || !(parts.includes(g.el) || html.includes('id="' + g.el + '"')) || (parts.includes(g.el) && g.open !== 'first'));

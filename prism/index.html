@@ -128,6 +128,32 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
 .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .how{display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--fg2);max-width:80ch}
 .drop{outline:2px dashed var(--accent);outline-offset:4px}
+/* Signs that a business is winning: a box in a company's detail. One row per sign: its name, the figure now, what it
+   is set against, and the reading in a word and a sentence. On a phone each row stacks, with the word at top right. */
+details.sg>summary{font:600 14px var(--display);letter-spacing:0;text-transform:none;color:var(--fg)}
+details.sg>summary [data-sp]{margin-left:6px}details.sg>summary .pill{vertical-align:1px}
+details.sg>summary .hlp{vertical-align:2px}
+.sgr{display:grid;grid-template-columns:minmax(0,1.6fr) 112px minmax(0,1.4fr) 84px minmax(0,1.4fr);gap:2px 12px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;align-items:start}
+.sgr.h{border-top:0;padding:0 0 4px;font:600 11.5px var(--body);letter-spacing:.05em;text-transform:uppercase;color:var(--fg2)}
+.sgr>.n{order:1;min-width:0}.sgr>.now{order:2}.sgr>.cmp{order:3}.sgr>.pl{order:4}.sgr>.rd{order:5}
+.sgr>.n i{display:block;font-style:normal;font-size:12.5px;color:var(--fg3)}
+.sgr>.now,.sgr>.cmp{min-width:0}
+.sgr .fig{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--fg)}
+.sgr>.cmp,.sgr>.rd{color:var(--fg2)}
+.sgr .lab{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;color:var(--fg3)}
+.sg input[type=text],.sg select{min-height:32px;padding:4px 8px;font-size:13px}
+.sgr input[type=text]{max-width:112px}.sgr select{max-width:130px}
+.sg input.bad{outline:2px solid var(--bad);outline-offset:1px}
+.sg .kindrow{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--fg2);max-width:360px}
+.sg h5{font:600 12px var(--body);letter-spacing:.05em;text-transform:uppercase;color:var(--fg2);margin:6px 0 0}
+.sg details>summary{font:500 13px var(--body);letter-spacing:0;text-transform:none;color:var(--accent)}
+.sgq{display:grid;gap:0 12px;font-size:12.5px;align-items:center;min-width:max-content}
+.sgq>*{padding:5px 0;border-top:1px solid var(--line);white-space:nowrap}
+.sgq>.h{font:600 11.5px var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--fg2);border-top:0}
+.sgq>.n{position:sticky;left:0;background:var(--surface);padding-right:10px;white-space:normal;max-width:190px}
+.sgq>.f{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.sgq input[type=text]{width:84px;text-align:right}.sgq select{width:104px}
+.sgqw{overflow-x:auto;margin-top:6px}
 /* a note the reader must not miss: the stored copy of the file is older than what Prism can read now */
 .older{background:var(--warn-bg);color:var(--fg);border-radius:8px;padding:9px 12px;font-size:14px;max-width:none}
 @media (max-width:760px){
@@ -142,6 +168,14 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
   #tbl td .m{max-width:none;white-space:normal}
   #tbl tr.detail td{padding:10px;border-top:0}
   .detail>td>div{position:static;width:auto;max-width:none}
+  .sgr{grid-template-columns:minmax(0,1fr) auto;gap:3px 10px}
+  .sgr.h{display:none}
+  .sgr>.n{order:1}.sgr>.pl{order:2;justify-self:end}.sgr>.now{order:3}.sgr>.cmp{order:4}.sgr>.rd{order:5}
+  .sgr>.now,.sgr>.cmp,.sgr>.rd{grid-column:1/-1}
+  .sgr>.rd.e,.sgr>.cmp:empty{display:none}
+  .sgq>.n{max-width:112px}
+  .sgr input[type=text]{max-width:92px}
+  .sgr .lab{position:static;width:auto;height:auto;overflow:visible;clip-path:none}
 }
 </style>
 
@@ -241,6 +275,7 @@ details>summary{cursor:pointer;font:600 13px var(--body);letter-spacing:.06em;te
     </div>
     <label class="f" for="leaveOut">Symbols to leave out<span class="h">separated by commas or spaces</span><textarea id="leaveOut"></textarea></label>
     <div class="row"><span class="note">The last file you loaded is kept in this browser, so the page reopens where you left off.</span><button type="button" class="btn sm" id="forget">Forget the stored file</button></div>
+    <div class="row"><span class="note">Prism keeps the figures of each report for the companies you follow and for the A-list. Your own signs are not touched by this.</span><button type="button" class="btn sm" id="trackReset">Start the record of signs again</button></div>
   </details>
 
   <details class="card">
@@ -310,7 +345,11 @@ var CONTROLS = {
   /* "One worry, many names": a sector with this share of a list, and at least crowd_min companies, is called out */
   crowd_share: 0.3, crowd_min: 4,
   /* Dividends: one that is lower than a year ago by more than this is said to be lower (less is rounding or currency) */
-  div_down: 0.02
+  div_down: 0.02,
+  /* Signs that a business is winning: how many reported periods to keep for a company the reader follows (three
+     years of quarters), and for any other company on the A-list (five, so that "a year before" is already on record
+     on the day he starts to follow one) */
+  sign_keep: 12, sign_keep_other: 5
 };
 
 /* Columns the engine understands: [name used here, kind, header spellings with letters and digits only].
@@ -351,7 +390,13 @@ var FIELDS = [
   ['dy', 'p', 'divyield', 'dividendyield'], ['div', 'n', 'dividend', 'dividendpershare', 'annualdividend'],
   ['dyrs', 'n', 'divyears', 'dividendyears'], ['dgyrs', 'n', 'divgryears', 'divgrowthyears', 'dividendgrowthyears'],
   ['fpay', 'p', 'fcfpayout', 'fcfpayoutratio'], ['dg1', 'p', 'divgrowth', 'dividendgrowth'],
-  ['exdiv', 'd', 'exdivdate', 'exdividenddate'], ['dfreq', 's', 'payoutfreq', 'payoutfrequency']
+  ['exdiv', 'd', 'exdivdate', 'exdividenddate'], ['dfreq', 's', 'payoutfreq', 'payoutfrequency'],
+  /* for the signs that a business is winning: the measures themselves, the growth figures that say what each was a
+     year earlier, and the dates that say which reported period the figures cover and when it came out */
+  ['rpe', 'n', 'revemployee', 'revenueperemployee'], ['emplg', 'p', 'emplgrowth', 'employeegrowth'], ['fcfps', 'n', 'fcfshare', 'fcfpershare'],
+  ['gpg', 'p', 'gpgrowth', 'grossprofitgrowth'], ['ato', 'n', 'assetturnover'], ['invt', 'n', 'invturnover', 'inventoryturnover'],
+  ['bvps', 'n', 'bvshare', 'bookvaluepershare'], ['eps', 'n', 'eps', 'epsttm'],
+  ['roe5', 'p', 'roe5y'], ['lastrep', 'd', 'lastreportdate'], ['lastearn', 'd', 'lastearnings', 'lastearningsdate']
 ];
 var VERIFIED = FIELDS.length;   /* how many columns have a checked first spelling: all of them */
 
@@ -674,7 +719,9 @@ function run(rows, controls, opt) {
   judge(rows, C, opt);
   var has = function (k) { return rows.some(function (r) { return r[k] != null; }); };
   /* which of the newer views this file has the columns for */
-  var can = {grade: has('roic5') && has('py') && has('revg5') && has('ocf') && has('ni'), moon: has('gm') && has('rev') && has('revg'), div: has('dy') || has('div')};
+  var can = {grade: has('roic5') && has('py') && has('revg5') && has('ocf') && has('ni'), moon: has('gm') && has('rev') && has('revg'), div: has('dy') || has('div'),
+    /* signs: the file says which reported period its figures cover, so a record can be kept from one report to the next */
+    signs: has('lastrep')};
   return {rows: rows, C: C, avail: avail, scored: ref.length, can: can};
 }
 
@@ -768,6 +815,278 @@ function dividendOf(r, C, today) {
   d.down = r.dg1 != null && r.dg1 < -C.div_down && !(r.dgyrs >= 1) ? -r.dg1 : null;
   if (r.exdiv && today) { var k = daysBetween(today, r.exdiv); if (k >= 0) { d.exIn = k; d.next = r.exdiv; } else d.last = r.exdiv; }
   return d;
+}
+/* ---------- signs that a business is winning ---------- */
+/* The owner asked (2026-11-24) to follow, report by report, the few figures that would convince him a company is
+   winning, and pointed out that the right figures differ from one kind of business to the next: what he would watch
+   for a consultancy is not what he would watch for a chip maker or a retailer.
+     SIGNS   the measures a download can supply: the question each answers, which way is good, and how big a change
+             has to be before it counts (less is rounding);
+     KINDS   the kinds of business: what winning looks like for each, the signs that fit it, and the figures to look
+             for in the company's own report, which no download carries;
+     kindOf  picks the kind from the provider's industry label.
+   Nothing here feeds a test, a list or an order, and there is no combined score and no forecast. Prism reads each sign
+   as better, worse or the same; whether the company is winning is for the reader to decide.
+
+   up: whether higher is better. unit: how the figure is written (rate and pct are shares of one, usd dollars, x a
+   plain ratio, count a number of shares). tol: the allowance, as an absolute amount or as a share of the earlier
+   figure. ago: what a single file can set the figure against on the first day:
+     'year'  the figure a year before, worked out from the file's growth columns (signAgo);
+     'whole' for sales growth, the growth of the past year as a whole, against the latest quarter's;
+     'avg5'  the company's own five-year average.
+   yearly: a figure that moves only once a year (headcount comes from the annual report), so it is compared with a
+   year before and never with the report before. perShare: a share split changes it, so figures recorded before a
+   split are dropped. */
+var SIGNS = {
+  grow:   {name: 'Sales growth', ask: 'Is demand growing?', up: true, unit: 'rate', tol: ['abs', 0.01], ago: 'whole'},
+  rpe:    {name: 'Sales per employee', ask: 'Is each person producing more?', up: true, unit: 'usd', tol: ['rel', 0.01], ago: 'year', yearly: true},
+  gm:     {name: 'Gross margin', ask: 'Is it keeping more of each sale?', up: true, unit: 'pct', tol: ['abs', 0.003], ago: 'year'},
+  om:     {name: 'Operating margin', ask: 'Is more left after running the business?', up: true, unit: 'pct', tol: ['abs', 0.003], ago: 'year'},
+  cash:   {name: 'Spare cash per share', ask: 'Is it reaching the owners?', up: true, unit: 'usd', tol: ['rel', 0.03], ago: 'year', perShare: true},
+  roic:   {name: 'Return on capital', ask: 'Is it earning more on the money put into it?', up: true, unit: 'pct', tol: ['abs', 0.01], ago: 'avg5'},
+  turn:   {name: 'Sales per dollar of assets', ask: 'Is it getting more out of what it owns?', up: true, unit: 'x', tol: ['rel', 0.02]},
+  stock:  {name: 'Inventory turns a year', ask: 'Are its goods selling faster?', up: true, unit: 'x', tol: ['rel', 0.03]},
+  shares: {name: 'Share count', ask: 'Is your slice of the company holding?', up: false, unit: 'count', tol: ['rel', 0.005], ago: 'year', perShare: true},
+  debt:   {name: 'Debt against earnings', ask: 'Is the debt getting lighter?', up: false, unit: 'x', tol: ['abs', 0.1]},
+  roe:    {name: 'Return on the owners\' money', ask: 'Is it earning more on its owners\' money?', up: true, unit: 'pct', tol: ['abs', 0.01], ago: 'avg5'},
+  book:   {name: 'Book value per share', ask: 'Is each share backed by more?', up: true, unit: 'usd', tol: ['rel', 0.02], perShare: true},
+  eps:    {name: 'Profit per share', ask: 'Is profit per share rising?', up: true, unit: 'usd', tol: ['rel', 0.03], ago: 'year', perShare: true}
+};
+/* name: as in "a people business". what: what winning looks like. signs: the measures that fit, in the order shown;
+   an inner list gives alternatives, the first one the file can supply being used. own: figures to look for in the
+   company's own report, as [name, whether higher is better]. note: a caution shown with the signs. */
+var KINDS = {
+  people:    {name: 'a people business', what: 'It sells the time and skill of its staff, so it wins by signing more work and getting more from each person.',
+    signs: ['grow', 'rpe', 'gm', 'cash'], own: [['New bookings', true], ['Staff kept busy', true], ['Sales growth without acquisitions or currency', true]]},
+  software:  {name: 'a software or internet business', what: 'It wins by growing while each extra sale costs little, and without paying for the growth in new shares.',
+    signs: ['grow', 'gm', 'om', 'cash', 'shares'], own: [['Customers who stay and spend more', true], ['Work under contract, not yet billed', true], ['Paying customers', true]]},
+  hardware:  {name: 'a maker of chips or hardware', what: 'It wins when its products sell at good prices and goods do not pile up unsold.',
+    signs: ['grow', 'gm', 'stock', 'roic', 'cash'], own: [['New orders against shipments', true], ['Orders in hand', true]]},
+  shops:     {name: 'a chain of shops or restaurants, or a distributor', what: 'It wins by selling more through what it already has and turning its goods over quickly.',
+    signs: ['grow', 'om', ['stock', 'turn'], 'roic', 'cash'], own: [['Sales at stores open a year', true], ['Stores or restaurants', true]]},
+  brands:    {name: 'a consumer brand', what: 'It wins when people pay up for the name: prices hold and volumes grow.',
+    signs: ['grow', 'gm', 'om', 'roic', 'cash'], own: [['Volume sold', true], ['Market share', true]]},
+  makers:    {name: 'a maker of equipment or materials', what: 'It wins with a full order book and plant that earns its keep.',
+    signs: ['grow', 'om', 'turn', 'roic', 'cash'], own: [['Orders in hand', true], ['New orders against sales', true]]},
+  medicine:  {name: 'a medicine or medical-products business', what: 'It wins when newer products take over from older ones at good margins.',
+    signs: ['grow', 'gm', 'om', 'roic', 'cash'], own: [['Sales of newer products', true], ['Units or procedures sold', true]]},
+  care:      {name: 'a healthcare provider', what: 'It wins by treating more patients at a steady margin without piling on debt.',
+    signs: ['grow', 'om', 'roic', 'debt', 'cash'], own: [['Patients treated', true], ['Beds or sites filled', true]]},
+  commodity: {name: 'a commodity producer', what: 'Its sales follow a price it does not set, so it wins on costs, on debt and on what it hands back to its owners.',
+    signs: ['roic', 'om', 'debt', 'cash', 'shares'], own: [['Amount produced', true], ['Cost to produce one unit', false]],
+    note: 'These figures swing with the price of what it sells. Set them beside its rivals\' as well as beside its own past.'},
+  fees:      {name: 'a fee business in finance', what: 'It wins when more money or more payments pass through it at a steady margin.',
+    signs: ['grow', 'om', 'rpe', ['cash', 'eps'], 'shares'], own: [['Money looked after, or payments handled', true], ['New money in, less money out', true]]},
+  lender:    {name: 'a bank or an insurer', what: 'It wins by earning well on its owners\' money without taking losses.',
+    signs: ['grow', 'roe', 'book', 'eps', 'shares'], own: [['Margin between lending and borrowing', true], ['Loans gone bad', false], ['Claims and costs against premiums', false]]},
+  property:  {name: 'a property company', what: 'It wins when its buildings stay let and its debt stays manageable.',
+    signs: ['grow', 'book', 'debt', 'shares'], own: [['Cash earnings per share', true], ['Space let', true]]},
+  travel:    {name: 'a travel or transport business', what: 'It wins by filling what it runs, at good prices.',
+    signs: ['grow', 'om', 'turn', 'debt', 'cash'], own: [['Seats, rooms or loads filled', true], ['Sales per seat, room or load', true]]},
+  networks:  {name: 'a telecom, media or utility business', what: 'It wins by keeping its customers and paying for its network without strain.',
+    signs: ['grow', 'om', 'roic', 'debt', 'cash'], own: [['Customers', true], ['Customers leaving', false]]},
+  general:   {name: 'a business of no special kind', what: 'The general signs apply: growing sales kept as profit, earned on little capital and reaching the owners.',
+    signs: ['grow', ['gm', 'om'], 'roic', 'cash', 'shares'], own: []}
+};
+/* The provider's industry labels, by kind. A label that is not here is read as 'general'. */
+var KIND_OF = (function () {
+  var by = {
+    people: ['Information Technology Services', 'Consulting Services', 'Staffing & Employment Services', 'Advertising Agencies', 'Specialty Business Services', 'Education & Training Services', 'Personal Services', 'Security & Protection Services'],
+    software: ['Software - Application', 'Software - Infrastructure', 'Internet Content & Information', 'Electronic Gaming & Multimedia', 'Health Information Services', 'Financial Data & Stock Exchanges'],
+    hardware: ['Semiconductors', 'Semiconductor Equipment & Materials', 'Computer Hardware', 'Communication Equipment', 'Electronic Components', 'Consumer Electronics', 'Scientific & Technical Instruments', 'Solar'],
+    shops: ['Apparel Retail', 'Department Stores', 'Discount Stores', 'Grocery Stores', 'Home Improvement Retail', 'Internet Retail', 'Specialty Retail', 'Restaurants', 'Auto & Truck Dealerships', 'Pharmaceutical Retailers', 'Food Distribution', 'Industrial Distribution', 'Electronics & Computer Distribution', 'Medical Distribution'],
+    brands: ['Packaged Foods', 'Beverages - Brewers', 'Beverages - Non-Alcoholic', 'Beverages - Wineries & Distilleries', 'Confectioners', 'Household & Personal Products', 'Tobacco', 'Apparel Manufacturing', 'Footwear & Accessories', 'Luxury Goods', 'Furnishings, Fixtures & Appliances', 'Leisure', 'Recreational Vehicles', 'Textile Manufacturing', 'Farm Products'],
+    makers: ['Aerospace & Defense', 'Specialty Industrial Machinery', 'Electrical Equipment & Parts', 'Farm & Heavy Construction Machinery', 'Building Products & Equipment', 'Metal Fabrication', 'Tools & Accessories', 'Pollution & Treatment Controls', 'Business Equipment & Supplies', 'Conglomerates', 'Auto Manufacturers', 'Auto Parts', 'Packaging & Containers', 'Building Materials', 'Specialty Chemicals', 'Engineering & Construction', 'Residential Construction', 'Waste Management', 'Rental & Leasing Services'],
+    medicine: ['Drug Manufacturers - General', 'Drug Manufacturers - Specialty & Generic', 'Biotechnology', 'Medical Devices', 'Medical Instruments & Supplies', 'Diagnostics & Research', 'Medical - Pharmaceuticals'],
+    care: ['Medical Care Facilities'],
+    commodity: ['Oil & Gas Drilling', 'Oil & Gas Equipment & Services', 'Oil & Gas Exploration & Production', 'Oil & Gas Integrated', 'Oil & Gas Midstream', 'Oil & Gas Refining & Marketing', 'Thermal Coal', 'Uranium', 'Agricultural Inputs', 'Aluminum', 'Chemicals', 'Coking Coal', 'Copper', 'Gold', 'Lumber & Wood Production', 'Other Industrial Metals & Mining', 'Other Precious Metals & Mining', 'Paper & Paper Products', 'Silver', 'Steel'],
+    fees: ['Asset Management', 'Capital Markets', 'Credit Services', 'Insurance Brokers', 'Financial Conglomerates'],
+    lender: ['Banks - Diversified', 'Banks - Regional', 'Insurance - Diversified', 'Insurance - Life', 'Insurance - Property & Casualty', 'Insurance - Reinsurance', 'Insurance - Specialty', 'Mortgage Finance', 'Healthcare Plans'],
+    property: ['REIT - Diversified', 'REIT - Healthcare Facilities', 'REIT - Hotel & Motel', 'REIT - Industrial', 'REIT - Mortgage', 'REIT - Office', 'REIT - Residential', 'REIT - Retail', 'REIT - Specialty', 'Real Estate - Development', 'Real Estate - Diversified', 'Real Estate Services'],
+    travel: ['Airlines', 'Railroads', 'Trucking', 'Marine Shipping', 'Integrated Freight & Logistics', 'Airports & Air Services', 'Travel Services', 'Lodging', 'Resorts & Casinos', 'Gambling', 'Infrastructure Operations'],
+    networks: ['Telecom Services', 'Broadcasting', 'Entertainment', 'Publishing', 'Utilities - Diversified', 'Utilities - Independent Power Producers', 'Utilities - Regulated Electric', 'Utilities - Regulated Gas', 'Utilities - Regulated Water', 'Utilities - Renewable']
+  }, out = {};
+  Object.keys(by).forEach(function (k) { by[k].forEach(function (i) { out[i] = k; }); });
+  return out;
+})();
+function kindOf(r) { return (r && KIND_OF[r.industry]) || 'general'; }
+/* A sign's figure for a company, as the file gives it. Sales growth is the latest quarter's, against the same quarter
+   a year before, when the file has it. Debt against earnings means nothing when a company with net debt has a loss
+   where the earnings should be, so no figure is given then. */
+function signNow(r, k) {
+  var v = null;
+  if (k === 'grow') v = r.revgq != null ? r.revgq : r.revg;
+  else if (k === 'rpe') v = r.rpe; else if (k === 'gm') v = r.gm; else if (k === 'om') v = r.om;
+  else if (k === 'cash') v = r.fcfps != null ? r.fcfps : (r.fcf != null && r.shares > 0 ? r.fcf / r.shares : null);
+  else if (k === 'roic') v = r.roic; else if (k === 'turn') v = r.ato; else if (k === 'stock') v = r.invt;
+  else if (k === 'shares') v = r.shares > 0 ? r.shares : null;
+  else if (k === 'debt') v = r.ndlev == null || (r.netcash != null && r.netcash < 0 && r.ndlev < 0) ? null : r.ndlev;
+  else if (k === 'roe') v = r.roe; else if (k === 'book') v = r.bvps; else if (k === 'eps') v = r.eps;
+  return v == null || !isFinite(v) ? null : v;
+}
+/* What one file can set the figure against (see SIGNS.ago). For 'year' it is the figure a year before, worked out from
+   the growth columns of the same file: a margin is profit over sales, so last year's margin is this year's times the
+   growth in sales over the growth in profit, and the others follow the same way. Null when the file cannot tell.
+   A growth figure is used only where both years are positive (a profit that crossed zero has no meaningful rate), and
+   a share count that moved by more than half is a split or a merger, not a trend. */
+function signAgo(r, k) {
+  var ok = function (x) { return x != null && isFinite(x) && x > -0.9; }, now = signNow(r, k), v = null;
+  if (now == null) return null;
+  if (k === 'grow') return r.revgq != null && r.revg != null ? r.revg : null;
+  if (k === 'roic') return r.roic5 != null ? r.roic5 : null;
+  if (k === 'roe') return r.roe5 != null ? r.roe5 : null;
+  if (!(now > 0)) return null;
+  var sh = ok(r.sh) && Math.abs(r.sh) <= 0.5 ? r.sh : null;
+  if (k === 'gm' && ok(r.revg) && ok(r.gpg)) v = now * (1 + r.revg) / (1 + r.gpg);
+  else if (k === 'om' && ok(r.revg) && ok(r.oig)) v = now * (1 + r.revg) / (1 + r.oig);
+  else if (k === 'rpe' && ok(r.revg) && ok(r.emplg)) v = now * (1 + r.emplg) / (1 + r.revg);
+  else if (k === 'cash' && ok(r.fcfg) && sh != null) v = now * (1 + sh) / (1 + r.fcfg);
+  else if (k === 'shares' && sh != null) v = now / (1 + sh);
+  else if (k === 'eps' && ok(r.epsg)) v = now / (1 + r.epsg);
+  if (v == null || !isFinite(v) || v <= 0) return null;
+  return (k === 'gm' || k === 'om') && v > 1 ? null : v;
+}
+/* The signs for a company of a given kind: for each place in the kind's list, the first alternative the file can
+   supply, or the first named when it can supply none (the sign is then shown as missing). */
+function signsFor(r, kind) {
+  var K = KINDS[kind] || KINDS.general, out = [];
+  K.signs.forEach(function (s) { var opts = Array.isArray(s) ? s : [s], pick = opts[0];
+    for (var i = 0; i < opts.length; i++) if (signNow(r, opts[i]) != null) { pick = opts[i]; break; }
+    if (out.indexOf(pick) < 0) out.push(pick); });
+  return out;
+}
+/* Every measure a kind may call on, alternatives included: these are the ones recorded for a company of that kind. */
+function signKeys(kind) {
+  var K = KINDS[kind] || KINDS.general, out = [];
+  K.signs.forEach(function (s) { (Array.isArray(s) ? s : [s]).forEach(function (k) { if (out.indexOf(k) < 0) out.push(k); }); });
+  return out;
+}
+/* The date n months before d. The last day of a month stays the last day of a month, as period ends do. */
+function monthsBack(d, n) {
+  var a = String(d).split('-'), y = +a[0], m = +a[1], day = +a[2];
+  var end = function (yy, mm) { return new Date(Date.UTC(yy, mm, 0)).getUTCDate(); };
+  var t = y * 12 + (m - 1) - n, yy = Math.floor(t / 12), mm = t - yy * 12 + 1, dd = day === end(y, m) ? end(yy, mm) : Math.min(day, end(yy, mm));
+  return yy + '-' + ('0' + mm).slice(-2) + '-' + ('0' + dd).slice(-2);
+}
+/* The record: the figures of each reported period, kept as the files arrive. It is the file-fed part only (the
+   reader's own signs are kept apart), so that it could one day be filled by one person for several.
+     rec = {symbol: {k: [sign keys], q: {periodEnd: [a figure for each key]}, at: the date of the last file read for
+            this company, nu: the date of the file that first showed its latest period}}
+   want = {symbol: kind} names the companies to keep a record for; keep(symbol) says how many periods to hold.
+   A period is added when a file first shows it, and refreshed while later files still show it: a figure can be
+   corrected, and headcount arrives with the annual report. The record only moves forward: a file older than the last
+   one read for a company changes nothing for it. When a share split falls after the last file read, the per-share
+   figures already recorded are on the old share count and are dropped. A company that is no longer wanted keeps its
+   record for 200 days, in case it comes back. Returns the new record; rec is left as it was. */
+function trackStep(rec, rows, want, date, keep) {
+  var out = {}, by = {}, round = function (v) { return v == null ? null : +v.toPrecision(5); };
+  if (!date) return rec || {};
+  rows.forEach(function (r) { by[r.sym] = r; });
+  Object.keys(rec || {}).forEach(function (s) { var one = rec[s];
+    if (want[s] || !one.at || daysBetween(one.at, date) <= 200) out[s] = one; });
+  Object.keys(want).forEach(function (s) {
+    var r = by[s], old = out[s], kind = want[s];
+    if (!r || !r.lastrep || (old && old.at > date)) return;
+    var keys = signKeys(kind), q = {}, cut = !!(old && r.split && r.split > old.at);
+    if (old) Object.keys(old.q).forEach(function (p) { var a = old.q[p];
+      q[p] = keys.map(function (k) { var i = old.k.indexOf(k); return i < 0 || (cut && SIGNS[k].perShare) ? null : a[i]; }); });
+    var isNew = !q[r.lastrep];
+    q[r.lastrep] = keys.map(function (k) { return round(signNow(r, k)); });
+    var ps = Object.keys(q).sort(), n = Math.max(1, keep(s));
+    ps.slice(0, Math.max(0, ps.length - n)).forEach(function (p) { delete q[p]; });
+    out[s] = {k: keys, q: q, at: date, nu: isNew || !old ? date : old.nu};
+  });
+  return out;
+}
+/* A company's record for one sign, oldest first: [{p: period end, v: figure}], leaving out periods with no figure. */
+function signSeries(one, k) {
+  if (!one || !one.k) return []; var i = one.k.indexOf(k); if (i < 0) return [];
+  return Object.keys(one.q).sort().map(function (p) { return {p: p, v: one.q[p][i]}; }).filter(function (x) { return x.v != null; });
+}
+/* Is a better than b, for this sign? 'better', 'worse', 'same' (the change is within the sign's allowance) or null. */
+function signCompare(def, a, b) {
+  if (a == null || b == null) return null;
+  var d = a - b, lim = def.tol[0] === 'abs' ? def.tol[1] : Math.abs(b) * def.tol[1];
+  if (Math.abs(d) <= lim + 1e-12) return 'same';
+  return (d > 0) === !!def.up ? 'better' : 'worse';
+}
+/* How one sign stands. pts: its figures, oldest first, the last being the latest report's. ago: what the file alone
+   can set the latest figure against (signAgo), used only while the record holds no period from a year before.
+   now, prev, year: the latest figure, the one from the report before (at most 200 days earlier, so a quarter or a
+   half-year back and not an older one that happens to be next in the record) and the one a year before (330 to 400
+   days), with their periods.
+   yearFrom: 'record', or the sign's ago ('year', 'whole' or 'avg5') when the file supplied it.
+   vsPrev, vsYear: 'better', 'worse', 'same' or null.
+   run: for how many reports in a row it has moved the way it moved last (0 when it did not move).
+   state: what the tally counts: the comparison with a year before when there is one, else with the report before. */
+function readSign(def, pts, ago) {
+  var n = pts.length, o = {now: null, period: null, prev: null, prevPeriod: null, year: null, yearPeriod: null, yearFrom: null, vsPrev: null, vsYear: null, run: 0, state: null};
+  if (!n) return o;
+  var cur = pts[n - 1]; o.now = cur.v; o.period = cur.p;
+  var near = function (a, b) { var d = daysBetween(a.p, b.p); return d > 0 && d <= 200; };
+  if (n > 1 && !def.yearly && near(pts[n - 2], cur)) { o.prev = pts[n - 2].v; o.prevPeriod = pts[n - 2].p; o.vsPrev = signCompare(def, cur.v, o.prev); }
+  for (var i = n - 2; i >= 0; i--) { var d = daysBetween(pts[i].p, cur.p); if (d >= 330 && d <= 400) { o.year = pts[i].v; o.yearPeriod = pts[i].p; o.yearFrom = 'record'; break; } }
+  if (o.year == null && ago != null) { o.year = ago; o.yearFrom = def.ago || 'year'; }
+  if (o.year != null) o.vsYear = signCompare(def, cur.v, o.year);
+  if (o.vsPrev === 'better' || o.vsPrev === 'worse') { o.run = 1;
+    for (var j = n - 2; j > 0; j--) { if (near(pts[j - 1], pts[j]) && signCompare(def, pts[j].v, pts[j - 1].v) === o.vsPrev) o.run++; else break; } }
+  o.state = o.vsYear || o.vsPrev;
+  return o;
+}
+/* One of Prism's signs for a company: the latest figure from the row itself, the earlier ones from the record.
+   last: the latest recorded figure, when the file has none now. */
+function signFromFile(r, one, k) {
+  var def = SIGNS[k], now = signNow(r, k), past = r.lastrep ? signSeries(one, k).filter(function (x) { return x.p < r.lastrep; }) : [], o;
+  if (now == null) { o = readSign(def, [], null); o.last = past.length ? past[past.length - 1] : null; }
+  else { o = readSign(def, past.concat([{p: r.lastrep || null, v: now}]), signAgo(r, k)); o.last = null; }
+  o.k = k; return o;
+}
+/* One of the reader's own signs, as it stands for the report that ends on `period`.
+     o = {n: name, up: true (higher is better), false (lower is better) or null (the reader judges it),
+          q: {periodEnd: [figure, as typed] for a figure, or 'better', 'same' or 'worse' for a judgement}}
+   A figure is compared like one of Prism's, with a small allowance. A judgement is the state itself, and run counts the
+   reports in a row that carry the same one. last: the latest earlier entry, when this report has none yet. */
+function readOwn(o, period) {
+  var q = o.q || {}, ps = Object.keys(q).sort(), judged = o.up == null, i;
+  var out = {now: null, text: null, period: period || null, prev: null, prevText: null, prevPeriod: null, year: null, yearText: null, yearPeriod: null, yearFrom: null, vsPrev: null, vsYear: null, run: 0, state: null, judged: judged, last: null};
+  var mine = ps.filter(function (p) { return (judged ? typeof q[p] === 'string' : Array.isArray(q[p]) && q[p][0] != null) && (!period || p <= period); });
+  if (!period || !mine.length || mine[mine.length - 1] !== period) { var lp = mine.length ? mine[mine.length - 1] : null; out.last = lp ? {p: lp, v: judged ? q[lp] : q[lp][0], t: judged ? q[lp] : q[lp][1]} : null; return out; }
+  if (judged) { out.now = out.state = q[period]; out.run = 1; for (i = mine.length - 2; i >= 0 && q[mine[i]] === q[period]; i--) out.run++; return out; }
+  var text = {}, pts = mine.map(function (p) { text[p] = q[p][1]; return {p: p, v: q[p][0]}; }), rd = readSign({up: o.up, tol: ['rel', 0.005]}, pts, null), key;
+  for (key in rd) out[key] = rd[key];
+  out.text = text[period]; out.prevText = rd.prevPeriod ? text[rd.prevPeriod] : null; out.yearText = rd.yearPeriod ? text[rd.yearPeriod] : null;
+  return out;
+}
+/* Where a figure typed as "a year before" belongs: on a period the reader has already used a year back, or else on the
+   same day a year earlier. */
+function ownYearKey(o, period) {
+  var ps = Object.keys((o && o.q) || {}).sort();
+  for (var i = ps.length - 1; i >= 0; i--) { var d = daysBetween(ps[i], period); if (d >= 330 && d <= 400) return ps[i]; }
+  return monthsBack(period, 12);
+}
+/* The tally over a company's signs: how many stand better, worse or the same, and how many cannot yet be compared. */
+function signTally(states) {
+  var t = {better: 0, worse: 0, same: 0, wait: 0, n: states.length};
+  states.forEach(function (s) { if (s === 'better' || s === 'worse' || s === 'same') t[s]++; else t.wait++; });
+  return t;
+}
+/* Everything the page says about a company's signs. kind: the kind of business it is read as. one: its record.
+   own: the reader's own signs for it. date: the date of the file on show.
+   period: the end of the latest reported period, and out: the day those results came out, as the file gives them.
+   file and own: the signs as they stand. tally: over both. todo: own signs with nothing entered for this report.
+   fresh: the latest period first appeared with the file on show, and an earlier one is on record: it has reported.
+   periods: the reported periods on record, newest first, the latest included. */
+function signsRead(r, kind, one, own, date) {
+  var keys = signsFor(r, kind), file = keys.map(function (k) { return signFromFile(r, one, k); });
+  var mine = (own || []).map(function (o, i) { var x = readOwn(o, r.lastrep || null); x.i = i; x.n = o.n; x.up = o.up == null ? null : !!o.up; return x; });
+  var past = r.lastrep && one && one.q ? Object.keys(one.q).filter(function (p) { return p < r.lastrep; }) : [];
+  var per = {}; past.forEach(function (p) { per[p] = 1; });
+  if (r.lastrep) { per[r.lastrep] = 1; (own || []).forEach(function (o) { Object.keys(o.q || {}).forEach(function (p) { if (p <= r.lastrep) per[p] = 1; }); }); }
+  return {kind: KINDS[kind] ? kind : 'general', period: r.lastrep || null, out: r.lastearn || null, file: file, own: mine,
+    tally: signTally(file.map(function (s) { return s.state; }).concat(mine.map(function (s) { return s.state; }))),
+    todo: r.lastrep ? mine.filter(function (s) { return s.now == null; }).length : 0,
+    fresh: !!(r.lastrep && one && date && one.nu === date && past.length && one.q[r.lastrep]),
+    periods: Object.keys(per).sort().reverse()};
 }
 /* One worry, many names: the sector that holds the largest share of a list, with its biggest industries.
    Returns null unless that sector has at least crowd_min companies and crowd_share of the list. */
@@ -928,7 +1247,8 @@ const FLABEL = {sym: 'Symbol', name: 'Company name', sector: 'Sector', industry:
   country: 'Country', exchange: 'Exchange', cik: 'CIK', pdate: 'Price date', split: 'Last split date', ev: 'Enterprise value', fcf: 'Free cash flow', sbc: 'Stock-based compensation', shares: 'Shares outstanding', fpe: 'Forward P/E', ev_fcf: 'EV/FCF', pb: 'P/B ratio', cov: 'Interest coverage', altman: 'Altman Z-score', piotroski: 'Piotroski F-score', analysts: 'Analyst count', eyield: 'Earnings yield', roic5: 'ROIC 5-year', roe: 'ROE', gm: 'Gross margin', om: 'Operating margin', fcfm: 'FCF margin', revg3: 'Revenue growth 3-year', revg5: 'Revenue growth 5-year', epsg: 'EPS growth', buyback: 'Buyback yield', dd: '52-week high change', insider: 'Insider ownership', short: 'Short % of float',
   py: 'Profit years', revg10: 'Revenue growth 10-year', ocf: 'Operating cash flow', ni: 'Net income', ndlev: 'Net debt / EBITDA', pe5: 'P/E 5-year average', pe10: 'P/E 10-year average',
   ret1w: 'Return 1 week', ret1m: 'Return 1 month', ma50: '50-day average change', atr: 'Average daily range', opt: 'Options', earn: 'Next earnings', revgn: 'Revenue growth next year', revgq: 'Revenue growth latest quarter', oig: 'Operating income growth', epsgq: 'EPS growth latest quarter',
-  dy: 'Dividend yield', div: 'Dividend per share', dyrs: 'Dividend years', dgyrs: 'Dividend growth years', fpay: 'FCF payout', dg1: 'Dividend growth', exdiv: 'Ex-dividend date', dfreq: 'Payout frequency'};
+  dy: 'Dividend yield', div: 'Dividend per share', dyrs: 'Dividend years', dgyrs: 'Dividend growth years', fpay: 'FCF payout', dg1: 'Dividend growth', exdiv: 'Ex-dividend date', dfreq: 'Payout frequency',
+  rpe: 'Revenue per employee', emplg: 'Employee growth', fcfps: 'FCF per share', gpg: 'Gross profit growth', ato: 'Asset turnover', invt: 'Inventory turnover', bvps: 'Book value per share', eps: 'EPS', roe5: 'ROE 5-year', lastrep: 'Last report date', lastearn: 'Last earnings date'};
 /* label, explanation, whether it hides the row by default */
 const FL = {
   fcf_hi: ['Cash yield looks too high', 'A free-cash-flow yield this high is usually a one-off, customer money, a cycle peak or a data error.'],
@@ -955,13 +1275,18 @@ const CTL = [['gate', 'Sector rank needed for a yes (0 to 100)', 1], ['q_roic', 
   ['sale_pe', 'On sale: P/E at most this share of its own average, %', 100], ['put_drop', 'Put desk: weekly change that puts a company on it, %', 100], ['moon_growth', 'Moonshots: lowest sales growth, %', 100]];
 
 /* ---------- state ---------- */
-/* mine: the reader's own A-list choices, {symbol: 'in' or 'out'}. card: the scorecard. v: 2 since the A-list became the opening view. */
-const blank = () => ({v: 2, controls: {}, noMining: false, leaveOut: '', verdicts: {}, hist: null, mine: {}, tierB: false, card: null, ui: {pool: 'main', need: GK.slice(), slack: 0, list: 'sale', hideWarn: true, showRej: false, sort: 'auto', page: 0}});
+/* mine: the reader's own A-list choices, {symbol: 'in' or 'out'}. card: the scorecard. v: 2 since the A-list became the opening view.
+   Signs that a business is winning, in three parts that are kept apart:
+     track  what the files said at each report (the engine's trackStep), for followed companies and the A-list;
+     kind   the reader's own choice of what kind of business a company is, {symbol: kind};
+     own    the signs the reader types in from a company's own report, {symbol: [{n, up, q}]} (the engine's readOwn). */
+const blank = () => ({v: 2, controls: {}, noMining: false, leaveOut: '', verdicts: {}, hist: null, mine: {}, tierB: false, card: null, track: {}, kind: {}, own: {}, ui: {pool: 'main', need: GK.slice(), slack: 0, list: 'sale', hideWarn: true, showRej: false, sort: 'auto', page: 0}});
 let S = blank(), DATA = null, RES = null, BY = {}, NEW = new Set(), OPEN = null, FIND = '', C = CONTROLS;
 let OLDER = false;     /* the file on show was stored in this browser before Prism could read some of today's columns */
 function load() { try { const o = JSON.parse(localStorage.getItem(STORE)); if (o && o.ui) { S = Object.assign(blank(), o); S.ui = Object.assign(blank().ui, o.ui);
   /* a browser that last saved before the A-list existed opens on it once; after that the reader's own choice is kept */
-  if (!(o.v >= 2)) { S.v = 2; S.ui.list = 'sale'; S.ui.slack = 0; } } } catch (e) {} }
+  if (!(o.v >= 2)) { S.v = 2; S.ui.list = 'sale'; S.ui.slack = 0; }
+  ['track', 'kind', 'own'].forEach(k => { if (!S[k] || typeof S[k] !== 'object') S[k] = {}; }); } } catch (e) {} }
 function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
 
 /* the last file is kept in this browser so the page reopens where you left off */
@@ -1013,13 +1338,22 @@ function exampleData() {
     ['Financials', [['Banks - Regional', 'Bank'], ['Insurance Brokers', 'Brokers'], ['Shell Companies', 'Acquisition']], 0.05, 0.10, 0.06, 40], ['Real Estate', [['REIT - Retail', 'Properties']], 0.04, 0.04, 0.04, 15]];
   const headers = ['Symbol', 'Stock Price', 'Market Cap', 'EV/EBITDA', 'FCF Yield', 'Company Name', 'Industry', 'Sector', 'Avg. Volume', 'Return 1Y', 'Revenue', 'PE Ratio', 'Shares Ch. (YoY)', 'Total Cash', 'Total Debt', 'Net Cash', 'Debt / EBITDA', 'ROIC', 'Rev. Growth', 'FCF Growth',
     'ROIC (5Y)', 'Profit Years', 'Rev. Growth 3Y', 'Rev. Growth 5Y', 'Rev. Growth 10Y', 'Net Income', 'Operating CF', 'ND / EBITDA', 'Int. Cov.', 'PE (5Y)', 'PE (10Y)', '52W High Chg', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR', 'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Gross Margin', 'FCF', 'Rev. Growth (Q)', 'OpInc Growth',
-    'Div. Yield', 'Dividend', 'Payout Freq.', 'Div. Years', 'Div. Gr. Years', 'Div. Growth', 'FCF Payout', 'Ex-Div Date'];
+    'Div. Yield', 'Dividend', 'Payout Freq.', 'Div. Years', 'Div. Gr. Years', 'Div. Growth', 'FCF Payout', 'Ex-Div Date',
+    'Rev / Employee', 'Empl. Growth', 'FCF / Share', 'GP Growth', 'Asset Turnover', 'Inv. Turnover', 'BV / Share', 'EPS', 'ROE', 'ROE (5Y)', 'Shares', 'Oper. Margin', 'Last Report Date', 'Last Earnings'];
   /* a second stream of made-up numbers for the newer columns, so the first twenty stay as they were */
   let a2 = 20261120; const rnd2 = () => { a2 |= 0; a2 = a2 + 0x6D2B79F5 | 0; let t = Math.imul(a2 ^ a2 >>> 15, 1 | a2); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const n2 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd2(); return (u - 3) / 0.7071; };
   /* a third stream for the dividend columns, so that every figure above stays as it was */
   let a3 = 20261124; const rnd3 = () => { a3 |= 0; a3 = a3 + 0x6D2B79F5 | 0; let t = Math.imul(a3 ^ a3 >>> 15, 1 | a3); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const GM = {Technology: 0.62, Healthcare: 0.6, 'Communication Services': 0.5, 'Consumer Staples': 0.4}, base = new Date(today() + 'T12:00:00Z');
+  /* a fourth stream for the signs that a business is winning: what each company's latest report says, and (further
+     down) a made-up record of its five reports before that, so the example has a history to show */
+  let a4 = 20261125; const rnd4 = () => { a4 |= 0; a4 = a4 + 0x6D2B79F5 | 0; let t = Math.imul(a4 ^ a4 >>> 15, 1 | a4); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const n4 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd4(); return (u - 3) / 0.7071; };
+  const PER = {Technology: 42e4, Healthcare: 38e4, Industrials: 3e5, 'Consumer Discretionary': 22e4, 'Consumer Staples': 35e4, Energy: 12e5, Materials: 5e5, 'Communication Services': 45e4, Utilities: 9e5, Financials: 4e5, 'Real Estate': 15e5};
+  const TURN = {Technology: 0.6, Healthcare: 0.55, Industrials: 0.85, 'Consumer Discretionary': 1.4, 'Consumer Staples': 1.1, Energy: 0.6, Materials: 0.75, 'Communication Services': 0.45, Utilities: 0.25, Financials: 0.2, 'Real Estate': 0.12};
+  const NOSTOCK = {Software: 1, Telecom: 1, Media: 1, Power: 1, Bank: 1, Brokers: 1, Acquisition: 1, Properties: 1, Air: 1, Services: 1, Pipelines: 1};
+  const iso = t => new Date(t).toISOString().slice(0, 10), ym = base.getUTCFullYear() * 12 + base.getUTCMonth(), trend = {};
   const data = [], names = {}, syms = {};
   SEC.forEach(sec => { for (let n = 0; n < sec[5]; n++) {
     const ind = sec[1][Math.floor(rnd() * sec[1].length)]; let nm, tries = 0; do { nm = A[Math.floor(rnd() * A.length)] + ' ' + ind[1]; } while (names[nm] && ++tries < 50); if (names[nm]) continue; names[nm] = 1;
@@ -1050,10 +1384,28 @@ function exampleData() {
       +(0.035 * n2() - 0.005).toFixed(4), +m1.toFixed(4), +(0.6 * m1 + 0.02 * n2()).toFixed(4), +(px * (0.018 + 0.02 * rnd2())).toFixed(2), cap >= 4e8 ? 'Yes' : 'No', due.toISOString().slice(0, 10),
       +(0.8 * revg + 0.01 + 0.02 * n2()).toFixed(4), +gm.toFixed(4), Math.round(fcfy * cap),
       /* a share price that has fallen hard sometimes has a business that has slowed behind it */
-      +(revg + 0.03 * n2() - (zt < -0.8 && rnd2() < 0.5 ? 0.6 * Math.abs(revg) + 0.05 : 0)).toFixed(4), +(revg + 0.05 * n2() + 0.03 * zq).toFixed(4)]).concat(dividend()));
+      +(revg + 0.03 * n2() - (zt < -0.8 && rnd2() < 0.5 ? 0.6 * Math.abs(revg) + 0.05 : 0)).toFixed(4), +(revg + 0.05 * n2() + 0.03 * zq).toFixed(4)]).concat(dividend()).concat(signs()));
+    /* The latest report: the period ended one to three month-ends ago and the results came out three to six weeks
+       later. A better business tends to have been improving (tr), which the made-up record below follows. */
+    function signs() { const tr = 0.6 * zq + 0.6 * n4(), k = 2 + Math.floor(3 * rnd4()), end = Date.UTC(Math.floor((ym - k + 1) / 12), (ym - k + 1) % 12, 0), eps = pe ? px / pe : -px * 0.02, roe = roic * (1.1 + 0.5 * rnd4());
+      trend[sym] = tr;
+      return [Math.round((PER[sec[0]] || 4e5) * Math.exp(0.35 * n4())), +(revg - 0.012 - 0.01 * tr + 0.02 * n4()).toFixed(4), +(fcfy * px).toFixed(2), +(revg + 0.008 * tr + 0.015 * n4()).toFixed(4),
+        +((TURN[sec[0]] || 0.6) * Math.exp(0.25 * n4())).toFixed(3), NOSTOCK[ind[1]] ? null : +(3 + 9 * rnd4()).toFixed(2), +(px * (0.15 + 0.45 * rnd4())).toFixed(2), +eps.toFixed(2), +roe.toFixed(4), +(roe - 0.006 * tr + 0.015 * n4()).toFixed(4),
+        Math.round(cap / px), +Math.max(-0.2, Math.min(0.6, gm * (0.3 + 0.12 * zq) + 0.03 * n4())).toFixed(4), iso(end), iso(Math.min(end + (20 + Math.floor(25 * rnd4())) * 864e5, base.getTime() - 864e5))]; }
   } });
   const m = mapTable(headers, data);
-  return {rows: m.rows, meta: {file: '', n: m.rows.length, date: today(), dateFrom: 'load', report: m.report, example: true}};
+  /* A made-up record of the five reports before the latest, built the way the real one is: one earlier "file" at a
+     time, each showing the figures of an earlier period. Each sign drifts toward today's figure along the company's
+     own trend, with some noise. */
+  let track = {}; const want = {}; m.rows.forEach(r => { want[r.sym] = kindOf(r); });
+  for (let q = 5; q >= 1; q--) {
+    const past = m.rows.filter(r => r.lastrep).map(r => { const t = trend[r.sym] || 0, lvl = v => v == null ? null : v * (1 - 0.016 * t * q + 0.012 * n4()), pt = (v, step, noise) => v == null ? null : v - step * t * q + noise * n4();
+      return {sym: r.sym, industry: r.industry, lastrep: monthsBack(r.lastrep, 3 * q), netcash: r.netcash, revgq: pt(r.revgq, 0.005, 0.012), revg: r.revg, rpe: lvl(r.rpe), gm: pt(r.gm, 0.003, 0.003), om: pt(r.om, 0.004, 0.004),
+        fcfps: lvl(r.fcfps), roic: pt(r.roic, 0.004, 0.006), ato: lvl(r.ato), invt: lvl(r.invt), shares: r.shares == null ? null : r.shares / Math.pow(1 + (r.sh || 0), q / 4), ndlev: r.ndlev == null ? null : r.ndlev + 0.07 * t * q + 0.05 * n4(),
+        roe: pt(r.roe, 0.004, 0.006), bvps: lvl(r.bvps), eps: lvl(r.eps)}; });
+    track = trackStep(track, past, want, monthsBack(today(), 3 * q), () => 6);
+  }
+  return {rows: m.rows, track, meta: {file: '', n: m.rows.length, date: today(), dateFrom: 'load', report: m.report, example: true}};
 }
 
 /* ---------- scoring and history ---------- */
@@ -1069,6 +1421,12 @@ function compute() {
     else if (S.hist.cur.date < d) S.hist = {cur, prev: S.hist.cur};
     else if (S.hist.cur.date === d) S.hist.cur = cur;
     S.card = cardStep(S.card, d, RES.rows, m);     /* the scorecard notes who is on each list today; a file already seen adds nothing */
+    /* the record of signs: the figures of each company's latest report, for the A-list and for every company the
+       reader follows or has given a sign of their own (those are kept for longer) */
+    const want = {}, close = s => followed(s) || (S.own[s] || []).length > 0;
+    m.A.forEach(s => { if (BY[s]) want[s] = kindFor(BY[s]); });
+    Object.keys(S.verdicts).concat(Object.keys(S.own)).filter(close).forEach(s => { want[s] = BY[s] ? kindFor(BY[s]) : 'general'; });
+    S.track = trackStep(S.track, RES.rows, want, d, s => close(s) ? C.sign_keep : C.sign_keep_other);
     const watch = Object.keys(S.verdicts).filter(s => /^(Watch|Act|Own)$/.test(S.verdicts[s].v)).length;
     try { localStorage.setItem('ftol-summary-prism', JSON.stringify({n: m.all.filter(x => (S.verdicts[x] || {}).v !== 'Reject').length, sale: RES.can.grade ? m.sale.filter(x => (S.verdicts[x] || {}).v !== 'Reject').length : null, date: d, watch, at: new Date().toISOString()})); } catch (e) {}
     save();
@@ -1076,6 +1434,13 @@ function compute() {
   render();
 }
 const verdictOf = r => (S.verdicts[r.sym] || {}).v || '';
+/* a company the reader follows: one with a Watch, Act or Own verdict */
+const followed = s => /^(Watch|Act|Own)$/.test((S.verdicts[s] || {}).v || '');
+/* the kind of business a company is read as: the reader's own choice, or else Prism's, from the industry */
+const kindFor = r => KINDS[S.kind[r.sym]] ? S.kind[r.sym] : kindOf(r);
+/* the record of earlier reports: the reader's for a real file, a made-up one for the example */
+const trackOf = () => (DATA.meta.example ? DATA.track : S.track) || {};
+const signsOf = r => signsRead(r, kindFor(r), trackOf()[r.sym], S.own[r.sym], DATA.meta.date);
 const inPool = r => S.ui.pool === 'all' || r.pool === 'main' || (S.ui.pool === 'ext' && r.pool === 'ext');
 /* What the table shows:
    'sale' A-list companies whose price is low; 'put' the put desk; 'A' the whole A-list; 'moon' moonshots;
@@ -1166,9 +1531,47 @@ const HELP = {
         : '<p>Today\'s price is ' + price(r.price) + ', ' + (r.price >= 2 * r.ceiling ? 'about ' + (r.price / r.ceiling).toFixed(1) + ' times the ceiling' : pct(r.price / r.ceiling - 1) + ' above the ceiling') + '. At that price you earn ' + want + ' a year only if the cash grows ' + (need >= 0.4 ? 'more than 40%' : 'about ' + pct(need)) + ' a year for ' + C.exp_N + ' years.</p><p>So the price is counting on growth. That is not a reason to sell: the ceiling is cautious on purpose.</p>') +
       (r.slipping === 'slipping' ? '<p>Prism marks this business as slipping, so check first that the cash is holding up.</p>' : '') +
       '<p>It is a "don\'t pay more than this" line. It is not what the share is worth, and not a forecast.</p>'; },
+  signs: () => '<p><b>Is the business winning?</b> A few figures that show whether the business itself is getting better, read again after each report the company makes.</p>' +
+    '<p>Each sign is set against what it was a year before and marked <b>Better</b>, <b>Worse</b> or <b>The same</b>. A small change counts as the same. Tap a sign\'s name for what it measures.</p>' +
+    '<p>The signs fit the kind of business: a consultancy is not read like a chip maker. You can add signs of your own from the company\'s report.</p>' +
+    '<p>Prism does not add the signs up into a score and does not forecast, and they play no part in any list. Whether the company is winning is your call.</p>',
+  sg_kind: b => { const r = rowOf(b);
+    return '<p><b>Read it as.</b> The signs that show a business is winning depend on what kind of business it is. Prism picks the kind from the industry in your file.</p>' +
+      (r ? '<p>' + esc(r.sym) + ' is filed under ' + esc(r.industry || 'no industry') + ', so Prism reads it as ' + KINDS[kindOf(r)].name + '.</p>' : '') +
+      '<p>If that is the wrong kind for this company, choose another. Your choice is remembered, and Prism starts recording the signs that go with it.</p>'; },
+  sg_own: () => '<p><b>Your own signs.</b> Some of the best signs are in no download: new bookings, sales at stores open a year, orders in hand. They are in the company\'s own results.</p>' +
+    '<p>Add one, then type its figure after each report, with the figure a year before from the same report. Type plain numbers, such as 21.3 or 1,250, and use the same unit every time.</p>' +
+    '<p>For something that is not a number, choose "I will judge it myself" and mark each report better, the same or worse.</p><p>Prism keeps what you type and says how each sign stands. It checks nothing against the company\'s report.</p>',
   t_noceil: b => { const r = rowOf(b); return '<p><b>No entry ceiling.</b> ' + (r ? 'Prism shows none for ' + esc(r.sym) + ' because ' + noCeil(r)[1] + '.' : '') + '</p>' +
     '<p>The entry ceiling is the price at which a ' + pct(C.exp_hurdle) + ' yearly return still works on cautious growth. Where that sum can\'t be trusted, Prism leaves it out rather than guess.</p><p>The line below is today\'s share price.</p>'; }
 };
+/* a note for each sign: what it measures, which way is good, how the company stands on it and how big a change counts */
+const SGWHAT = {
+  grow: 'How much sales grew in the latest quarter, against the same quarter a year before. These are reported sales: companies it bought and currency swings are included.',
+  rpe: 'Sales over the past twelve months for each employee. The headcount comes from the annual report, so this sign moves once a year.',
+  gm: 'What is left of each dollar of sales after the direct cost of what was sold, over the past twelve months.',
+  om: 'What is left of each dollar of sales after all the costs of running the business, before interest and tax, over the past twelve months.',
+  cash: 'Spare cash over the past twelve months, for each share. Spare cash is what is left after running the business and investing in it.',
+  roic: 'A year\'s profit after tax, set against all the money that owners and lenders have put into the business.',
+  turn: 'Sales over the past twelve months for each dollar of assets the company holds.',
+  stock: 'How many times a year the company sells through the goods it holds.',
+  shares: 'The number of shares the company has issued. Fewer shares means each one owns more of the business.',
+  debt: 'Debt less cash, divided by a year of earnings before interest, tax and write-downs. Below zero means more cash than debt.',
+  roe: 'A year\'s profit after tax, set against the owners\' own money in the business.',
+  book: 'The owners\' money in the business, which is what it owns less what it owes, for each share.',
+  eps: 'Profit after tax over the past twelve months, for each share.'
+};
+const SGAGO = {
+  year: 'It is set against the figure a year before. Until Prism has a year of its own records for the company, that figure is worked out from the growth figures in the same file.',
+  whole: 'It is set against the figure a year before, once Prism\'s records go back that far. Until then the latest quarter is set against the past year as a whole: higher means sales are speeding up.',
+  avg5: 'It is set against the figure a year before, once Prism\'s records go back that far. Until then it is set against the company\'s own five-year average.',
+  none: 'It is set against the report before, and against a year before once Prism\'s records go back that far. One file alone has nothing to set it against.'
+};
+Object.keys(SIGNS).forEach(k => { HELP['sg_' + k] = b => { const def = SIGNS[k], r = rowOf(b), x = r ? signFromFile(r, trackOf()[r.sym], k) : null;
+  const allow = def.tol[0] === 'rel' ? pct(def.tol[1]) : def.unit === 'x' ? String(def.tol[1]) : def.tol[1] >= 0.01 ? 'one percentage point' : +(def.tol[1] * 100).toFixed(2) + ' of a percentage point';
+  return '<p><b>' + def.name + '.</b> ' + def.ask + '</p><p>' + SGWHAT[k] + ' ' + (def.up ? 'Higher is better.' : 'Lower is better.') + '</p>' +
+    (x && x.now != null && x.year != null ? '<p>' + esc(r.sym) + ': ' + sgNum(def, x.now) + ' now, against ' + sgNum(def, x.year) + ' ' + sgVs(x) + '. ' + (x.vsYear === 'same' ? 'The gap is inside the allowance, so it counts as the same.' : 'That is ' + x.vsYear + '.') + '</p>' : '') +
+    '<p>A change of less than ' + allow + ' counts as the same: smaller moves are mostly rounding.</p><p>' + SGAGO[def.ago || 'none'] + '</p>'; }; });
 Object.keys(FL).forEach(f => { HELP['f_' + f] = () => '<p><b>' + FL[f][0] + '.</b> ' + FL[f][1] + '</p>' + (SEVERE[f] ? '<p>This is a data warning: check the figure before trusting anything else in the row.</p>' : ''); });
 const pop = document.createElement('div'); pop.id = 'helpPop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Help note'); document.body.appendChild(pop);
 let popFor = null;
@@ -1392,6 +1795,118 @@ function dividendLine(r) {
   else if (d.last) a.push('It last went ex-dividend on ' + day(d.last) + (d.freq ? ' and pays ' + DIV_EVERY[d.freq] : '') + '. The next date has not been announced.');
   return '<p class="note"><b>Dividend:</b> ' + a.join(' ') + '</p>';
 }
+/* ---------- signs that a business is winning ---------- */
+/* Which collapsible parts of a company's detail the reader has opened or closed, so that a redraw leaves them alone. */
+const KEEP = {};
+document.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.keep) KEEP[d.dataset.keep] = d.open; }, true);
+const keepOpen = (key, dflt) => (KEEP[key] != null ? KEEP[key] : dflt) ? ' open' : '';
+const hbs = (k, sym) => '<button type="button" class="hlp" data-h="' + k + '" data-sym="' + esc(sym) + '" aria-label="More about this">?</button>';
+const capFirst = t => t.charAt(0).toUpperCase() + t.slice(1);
+/* how a sign's figure is written: always one decimal for a percentage, because the changes that matter are small */
+const sgBig = v => { const a = Math.abs(v); return (v < 0 ? '−' : '') + (a >= 1e9 ? (a / 1e9).toFixed(2) + 'B' : a >= 1e6 ? (a / 1e6).toFixed(1) + 'M' : Math.round(a).toLocaleString('en-US')); };
+const sgNum = (def, v) => v == null || !isFinite(v) ? '–' : def.unit === 'rate' || def.unit === 'pct' ? (v < 0 ? '−' : '') + (Math.abs(v) * 100 + 1e-9).toFixed(1) + '%'
+  : def.unit === 'usd' ? (Math.abs(v) >= 1000 ? money(v) : (v < 0 ? '−' : '') + price(Math.abs(v))) : def.unit === 'x' ? (v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '×' : sgBig(v);
+const sgPer = p => p ? new Date(p + 'T12:00:00').toLocaleDateString('en-US', {month: 'short', year: 'numeric'}) : '';
+/* what a sign's latest figure is set against, and the reading in a word and in a sentence */
+const sgVs = x => x.yearFrom === 'whole' ? 'the past year as a whole' : x.yearFrom === 'avg5' ? 'its five-year average' : 'a year before';
+const SGW = {better: ['good', 'Better'], worse: ['warn', 'Worse'], same: ['mute', 'The same']};
+const sgPill = (x, own) => x.state ? '<span class="pill ' + SGW[x.state][0] + '">' + SGW[x.state][1] + '</span>' : x.now == null ? (!own ? '<span class="pill mute">No figure</span>' : x.period ? '<span class="pill warn">To fill in</span>' : '<span class="pill mute">Waiting</span>') : '<span class="pill mute">Too early</span>';
+/* What has happened since the report before, in a few words: the pill and the "compared with" figure already say how
+   the sign stands against a year before. yearly: a sign that moves only once a year has no report-to-report change. */
+function sgLately(x, yearly) {
+  if (x.judged) return x.now == null ? (x.last ? 'Last marked ' + SGW[x.last.v][1].toLowerCase() + ', for ' + sgPer(x.last.p) : 'Mark it after each report') : x.run >= 2 ? 'The same reading, ' + x.run + ' reports running' : '';
+  if (x.now == null) return x.i != null ? (x.last ? 'Last: ' + x.last.t + ', for ' + sgPer(x.last.p) : 'Type the figure from the company\'s report') : x.last ? 'Last on record: ' + sgPer(x.last.p) : 'No figure in this file';
+  if (yearly) return 'Moves once a year';
+  if (!x.vsPrev) return x.state ? '' : 'Nothing to compare it with yet';
+  return (x.vsPrev === 'better' ? 'Improved' : x.vsPrev === 'worse' ? 'Slipped' : 'No change') + (x.run >= 2 ? ', ' + x.run + ' reports running' : '');
+}
+/* the count of signs that stand better, worse and the same, as tags or as plain words */
+function sgTally(x, pills) {
+  const t = x.tally, none = x.file.filter(s => s.now == null).length, early = t.wait - x.todo - none, a = [];
+  if (t.better) a.push(['good', t.better + ' better']); if (t.worse) a.push(['warn', t.worse + ' worse']); if (t.same) a.push(['mute', t.same + ' the same']);
+  if (early > 0) a.push(['mute', early + ' too early to say']); if (none > 0) a.push(['mute', none + ' with no figure']); if (x.todo) a.push(['warn', x.todo + ' to fill in']);
+  return pills ? a.map(p => '<span class="pill ' + p[0] + '">' + p[1] + '</span>').join(' ') : a.map(p => p[1]).join(' · ');
+}
+/* the field for one of the reader's own signs at one report: a figure to type, or a judgement to choose */
+function sgField(sym, o, i, per, label) {
+  const at = ' data-own="' + i + '" data-per="' + esc(per) + '" data-sym="' + esc(sym) + '" aria-label="' + esc(o.n + ', ' + label) + '"', v = (o.q || {})[per];
+  if (o.up == null) return '<select' + at + '>' + [['', '–'], ['better', 'Better'], ['same', 'The same'], ['worse', 'Worse']].map(a => '<option value="' + a[0] + '"' + (v === a[0] ? ' selected' : '') + '>' + a[1] + '</option>').join('') + '</select>';
+  return '<input type="text" inputmode="decimal" autocomplete="off"' + at + ' value="' + esc(Array.isArray(v) ? v[1] : '') + '">';
+}
+/* every report on record for a company, newest first: Prism's signs as they stood, the reader's own to fill in or correct */
+function sgHist(r, x, own) {
+  const ps = x.periods.slice(0, 13), one = trackOf()[r.sym];
+  let h = '<div class="sgq" style="grid-template-columns:auto repeat(' + ps.length + ',minmax(76px,auto))"><div class="h n">Report to</div>' + ps.map(p => '<div class="h f">' + esc(sgPer(p)) + '</div>').join('');
+  x.file.forEach(s => { const def = SIGNS[s.k], by = {}; signSeries(one, s.k).forEach(pt => { by[pt.p] = pt.v; }); if (x.period) by[x.period] = s.now;
+    h += '<div class="n">' + esc(def.name) + '</div>' + ps.map(p => '<div class="f">' + sgNum(def, by[p]) + '</div>').join(''); });
+  own.forEach((o, i) => { h += '<div class="n">' + esc(o.n) + '</div>' + ps.map(p => '<div class="f">' + sgField(r.sym, o, i, p, 'report to ' + sgPer(p)) + '</div>').join(''); });
+  return h + '</div>';
+}
+/* The box itself. It is open for a company the reader follows and closed, with the count in its heading, for any
+   other. The parts marked data-sp are the ones that change when the reader types a figure of their own: signPatch
+   redraws those alone, so that a field being typed in is never replaced. */
+function signBox(r) {
+  const x = signsOf(r), K = KINDS[x.kind], sym = esc(r.sym), own = S.own[r.sym] || [], auto = kindOf(r), key = 'sg:' + r.sym;
+  const lab = t => '<span class="lab">' + t + ' </span>', fig = t => '<span class="fig">' + t + '</span>';
+  let h = '<details class="dbox sg" data-signs="' + sym + '" data-keep="' + esc(key) + '"' + keepOpen(key, followed(r.sym) || own.length > 0) + '><summary>Is the business winning?' + hb('signs') + '<span data-sp="tally">' + sgTally(x, true) + '</span></summary>';
+  if (OLDER && !RES.can.signs) h += '<p class="note"><span class="pill warn">Load your file again</span> The copy of your file that this browser kept is from before Prism read these figures. Until you do, some signs are missing and no record is kept.</p>';
+  /* not a <label>: one that holds the "?" button would name the button, and leave the menu without a name */
+  h += '<div class="kindrow"><span>Read it as' + hbs('sg_kind', r.sym) + '</span><select data-sgkind="' + sym + '" aria-label="Read it as">' + Object.keys(KINDS).map(k => '<option value="' + (k === auto ? '' : k) + '"' + (k === x.kind ? ' selected' : '') + '>' + esc(capFirst(KINDS[k].name)) + (k === auto ? ' (Prism\'s reading)' : '') + '</option>').join('') + '</select></div>' +
+    '<p class="note">' + esc(K.what) + (K.note ? ' ' + esc(K.note) : '') + '</p>';
+  const when = [];
+  if (x.period) when.push('Latest results: for the period to ' + day(x.period) + (x.out ? ', out ' + day(x.out) : '') + '.');
+  else if (!OLDER) when.push('This file has no report dates, so Prism cannot keep a record from one report to the next.');
+  if (r.earn && r.earnIn != null && r.earnIn >= 0) when.push('Next results ' + day(r.earn) + ', ' + inDays(r.earnIn) + '.');
+  if (when.length) h += '<p class="note">' + (x.fresh ? '<span class="pill new">New report</span> ' : '') + esc(when.join(' ')) + '</p>';
+  const late = (t, sp) => '<div class="rd' + (t ? '' : ' e') + '"' + (sp ? ' data-sp="' + sp + '"' : '') + '>' + (t ? lab('Since the report before:') + esc(t) : '–') + '</div>';
+  h += '<div><div class="sgr h" aria-hidden="true"><span class="n">Sign</span><span class="pl">Reading</span><span class="now">Now</span><span class="cmp">Compared with</span><span class="rd">Since the report before</span></div>';
+  x.file.forEach(s => { const def = SIGNS[s.k];
+    h += '<div class="sgr"><div class="n"><button type="button" class="lnk tip" data-h="sg_' + s.k + '" data-sym="' + sym + '">' + esc(def.name) + '</button><i>' + esc(def.ask) + '</i></div><div class="pl">' + sgPill(s) + '</div>' +
+      '<div class="now">' + lab('Now') + fig(sgNum(def, s.now)) + '</div><div class="cmp">' + (s.year != null ? lab('Compared with') + fig(sgNum(def, s.year)) + ' ' + sgVs(s) : s.prev != null ? lab('Compared with') + fig(sgNum(def, s.prev)) + ' the report before' : '') + '</div>' +
+      late(sgLately(s, !!def.yearly)) + '</div>'; });
+  h += '</div><h5>Your own signs' + hb('sg_own') + '</h5>';
+  if (own.length) { h += '<div>';
+    x.own.forEach(s => { const o = own[s.i], yk = x.period ? ownYearKey(o, x.period) : '';
+      h += '<div class="sgr"><div class="n"><b>' + esc(o.n) + '</b><i>' + (o.up == null ? 'You judge it' : o.up ? 'Higher is better' : 'Lower is better') + ' · <button type="button" class="lnk" data-sgdel="' + sym + '" data-i="' + s.i + '">Remove</button></i></div><div class="pl" data-sp="p' + s.i + '">' + sgPill(s, true) + '</div>' +
+        (x.period ? '<div class="now">' + lab('Now') + sgField(r.sym, o, s.i, x.period, 'now') + '</div><div class="cmp">' + (o.up == null ? '' : lab('Compared with') + sgField(r.sym, o, s.i, yk, 'a year before') + ' a year before') + '</div>' : '<div class="now"></div><div class="cmp"></div>') +
+        late(sgLately(s), 'w' + s.i) + '</div>'; });
+    h += '</div>'; }
+  const sugg = K.own.filter(a => !own.some(o => o.n.toLowerCase() === a[0].toLowerCase()));
+  h += '<p class="note">' + (own.length ? 'Type each figure after a report, with the figure a year before from the same report. Use the same unit every time.' : 'Some of the best signs are in no download, only in the company\'s own report. Add one, then type its figure after each report.') + '</p>' +
+    (own.length >= 8 ? '' : (sugg.length ? '<div class="row" style="gap:6px">' + sugg.map(a => '<button type="button" class="btn sm" data-sgadd="' + sym + '" data-n="' + esc(a[0]) + '" data-up="' + (a[1] ? 1 : 0) + '">+ ' + esc(a[0]) + '</button>').join('') + '</div>' : '') +
+      '<div class="row" style="gap:6px"><input type="text" data-sgname placeholder="A sign of your own" maxlength="60" aria-label="Name of a sign of your own" style="max-width:230px"><select data-sgup aria-label="Which way is good" style="max-width:190px"><option value="1">Higher is better</option><option value="0">Lower is better</option><option value="">I will judge it myself</option></select><button type="button" class="btn sm" data-sgnew="' + sym + '">Add</button></div>');
+  h += '<details data-keep="' + esc('sgq:' + r.sym) + '" data-sph="hist"' + keepOpen('sgq:' + r.sym, false) + (x.periods.length < 2 ? ' hidden' : '') + '><summary>Report by report</summary><div class="sgqw" data-sp="hist">' + sgHist(r, x, own) + '</div></details>';
+  h += '<p class="note">The figures cover the twelve months up to each report, as the file gives them. Sales growth is the latest quarter against the same quarter a year before. ' +
+    (DATA.meta.example ? 'The earlier reports shown here are made up, like the companies. ' : !RES.can.signs ? '' : trackOf()[r.sym] ? 'Prism keeps them for this company from each report, starting with the first file that showed it. ' : 'Prism is not keeping a record for this company. Give it a Watch, Act or Own verdict, or a sign of your own, and it will. ') +
+    'Prism reads the signs. It does not add them up into a score, and it does not forecast.</p>';
+  return h + '</details>';
+}
+/* After the reader types a figure of their own: redraw the readings and the count, and leave every field alone, the one
+   being typed in above all. A part that holds the field in use is skipped; its other fields are brought up to date. */
+function signPatch(sym) {
+  const r = BY[sym]; if (!r) return;
+  const tmp = document.createElement('div'), act = document.activeElement; tmp.innerHTML = signBox(r);
+  document.querySelectorAll('details[data-signs]').forEach(box => { if (box.dataset.signs !== sym) return;
+    tmp.querySelectorAll('[data-sp]').forEach(src => { const dst = box.querySelector('[data-sp="' + src.dataset.sp + '"]'); if (dst && !dst.contains(act)) { dst.innerHTML = src.innerHTML; dst.className = src.className; } });
+    tmp.querySelectorAll('[data-sph]').forEach(src => { const dst = box.querySelector('[data-sph="' + src.dataset.sph + '"]'); if (dst) dst.hidden = src.hidden; });
+    box.querySelectorAll('[data-own][data-per]').forEach(el => { if (el === act) return; const src = tmp.querySelector('[data-own="' + el.dataset.own + '"][data-per="' + el.dataset.per + '"]'); if (src) el.value = src.value; }); });
+  drawWatch(); drawDigest();
+}
+/* Stores what the reader typed for one of their own signs at one report. An empty field removes the entry. Returns
+   false, and stores nothing, when a figure cannot be read as a number. */
+function ownSet(sym, i, per, raw) {
+  const o = (S.own[sym] || [])[i], t = String(raw == null ? '' : raw).trim(); if (!o || !/^\d{4}-\d{2}-\d{2}$/.test(per || '')) return false;
+  o.q = o.q || {};
+  if (!t) { delete o.q[per]; return true; }
+  if (o.up == null) { if (!SGW[t]) return false; o.q[per] = t; return true; }
+  const v = toNumber(t); if (v == null) return false;
+  o.q[per] = [v, t.slice(0, 16)]; return true;
+}
+function ownAdd(sym, name, up) {
+  const a = S.own[sym] = S.own[sym] || [], n = String(name || '').trim().slice(0, 60);
+  if (!n || a.length >= 8 || a.some(o => o.n.toLowerCase() === n.toLowerCase())) return;
+  a.push({n, up: up == null ? null : !!up, q: {}}); KEEP['sg:' + sym] = true; save(); compute();
+}
 /* The A-list box in a row's detail: the six tests with the company's own figures, the reader's own choice, whether the
    price is low, the dividend, and the facts a put seller looks at. */
 function aBox(r) {
@@ -1474,9 +1989,9 @@ function gateBox(r, k) {
 function detailHTML(r) {
   const v = S.verdicts[r.sym] || {};
   let h = '<div style="display:flex;flex-direction:column;gap:10px"><div><b>' + esc(r.sym) + '</b> · ' + esc(r.name || '') + ' · ' + esc(r.sector || '') + (r.industry ? ', ' + esc(r.industry) : '') + ' · ' + money(r.cap) + ' market value · ' + price(r.price) + ' a share</div>';
-  if (!r.scored) h += '<div class="dbox"><h4><span class="pill mute">Set aside</span>' + ASIDE[r.aside] + '</h4><p class="note">' + ASIDE_WHY[r.aside] + '</p></div>' + aBox(r);
+  if (!r.scored) h += '<div class="dbox"><h4><span class="pill mute">Set aside</span>' + ASIDE[r.aside] + '</h4><p class="note">' + ASIDE_WHY[r.aside] + '</p></div>' + aBox(r) + signBox(r);
   else {
-    h += aBox(r);
+    h += aBox(r) + signBox(r);
     if (r.blocks.length) { const B = {lev: 'debt is more than ' + C.blk_lev + ' times EBITDA', dil: 'the share count grew more than ' + pct(C.blk_dil) + ' in a year', shrink: 'sales fell more than ' + pct(C.blk_shrink), burn: 'free cash flow is negative'};
       h += '<div class="dbox"><h4><span class="pill bad">Not now</span>Kept off the five-question lists</h4><p class="note">Reason: ' + r.blocks.map(b => B[b]).join('; ') + '. This is re-tested with every file, so it means "not now", not "never".</p></div>'; }
     h += '<div class="dgrid">' + GK.map(k => gateBox(r, k)).join('');
@@ -1513,9 +2028,9 @@ function setVerdict(sym, patch) {
 function drawWatch() {
   const all = Object.keys(S.verdicts), live = all.filter(s => /^(Watch|Act|Own)$/.test(S.verdicts[s].v)).sort(), n = v => all.filter(s => S.verdicts[s].v === v).length;
   let h = '';
-  if (live.length) { h += '<div class="scroll"><table><tr><th>Company</th><th>Verdict</th><th>Review by</th><th>Entry and trigger</th><th>Since</th><th>Price then</th><th>Price now</th><th>The five questions today</th><th>Entry ceiling</th></tr>';
-    live.forEach(s => { const v = S.verdicts[s], r = BY[s], due = v.review && v.review <= today();
-      h += '<tr class="main" data-sym="' + esc(s) + '" data-look="1"><td><div class="s"><button type="button" class="symb">' + esc(s) + '</button></div><div class="m">' + esc(r ? r.name || '' : 'not in today\'s file') + '</div></td><td>' + esc(v.v) + '</td><td>' + (v.review ? (due ? '<span class="pill warn">Due ' + day(v.review) + '</span>' : day(v.review)) : '–') + '</td><td>' + (v.entry ? '<div class="m w">' + esc(v.entry) + '</div>' : '') + (v.trigger ? '<div class="m i w">' + esc(v.trigger) + '</div>' : '') + (v.entry || v.trigger ? '' : '–') +
+  if (live.length) { h += '<div class="scroll"><table><tr><th>Company</th><th>Verdict</th><th>Review by</th><th>Signs' + hb('signs') + '</th><th>Entry and trigger</th><th>Since</th><th>Price then</th><th>Price now</th><th>The five questions today</th><th>Entry ceiling</th></tr>';
+    live.forEach(s => { const v = S.verdicts[s], r = BY[s], due = v.review && v.review <= today(), x = r ? signsOf(r) : null, tl = x ? sgTally(x, false) : '';
+      h += '<tr class="main" data-sym="' + esc(s) + '" data-look="1"><td><div class="s"><button type="button" class="symb">' + esc(s) + '</button></div><div class="m">' + esc(r ? r.name || '' : 'not in today\'s file') + '</div></td><td>' + esc(v.v) + '</td><td>' + (v.review ? (due ? '<span class="pill warn">Due ' + day(v.review) + '</span>' : day(v.review)) : '–') + '</td><td>' + (x && x.fresh ? '<span class="pill new">New report</span>' : '') + (tl ? '<div class="m w" style="min-width:140px">' + esc(tl) + '</div>' : x && x.fresh ? '' : '–') + '</td><td>' + (v.entry ? '<div class="m w">' + esc(v.entry) + '</div>' : '') + (v.trigger ? '<div class="m i w">' + esc(v.trigger) + '</div>' : '') + (v.entry || v.trigger ? '' : '–') +
         '</td><td class="num">' + day(v.date) + '</td><td class="num">' + price(v.price) + '</td><td class="num">' + (r ? price(r.price) : '–') + '</td><td>' + (r && r.scored ? answers(r) : '–') + '</td><td class="num">' + (r && r.ceiling ? price(r.ceiling) : '–') + '</td></tr>'; });
     h += '</table></div>'; }
   else h += '<p class="note">No verdicts yet. Use the Verdict column in the table above, or open a row to add a thesis and a review date.</p>';
@@ -1552,6 +2067,10 @@ function drawDigest() {
       if (canA && had('sale', x)) a.push('now on sale'); else if (canA && lost('sale', x) && r.alist) a.push('no longer on sale');
       if (had('slip', x)) a.push('now slipping: ' + slipWords(r)); else if (lost('slip', x)) a.push('no longer slipping');
       if (had('under', x)) a.push('price is now under its entry ceiling'); else if (lost('under', x) && r.ceiling) a.push('price is back above its entry ceiling');
+      /* a new report: say how the signs stand, and whether any of the reader's own are waiting for its figures */
+      const sg = signsOf(r), tl = sgTally(sg, false);
+      if (sg.fresh) a.push('new results, for the period to ' + day(sg.period) + (tl ? ': signs ' + tl.replace(/ · /g, ', ') : ''));
+      else if (sg.todo) a.push(sg.todo + (sg.todo === 1 ? ' of your own signs needs a figure' : ' of your own signs need figures') + ' for the report to ' + sgPer(sg.period));
     }
     if (a.length) notes.push('<b>' + esc(x) + '</b> (' + esc(v.v) + '): ' + esc(a.join('; ')) + '.'); });
   const groups = !two ? [] : [['sale', canA], ['put', canA], ['A', canA], ['moon', H.prev.can && H.prev.can.moon], ['all', true]].filter(g => g[1] && ch[g[0]] && (ch[g[0]].in.length || ch[g[0]].out.length)).map(g => g[0]);
@@ -1608,6 +2127,9 @@ function drawHow() {
     '<div><b>What changed.</b> After a second file is loaded, a line above the list says who joined and left the main lists and why, and flags the companies you follow: a review that is due, earnings within ' + C.alert_earn + ' days, a sharp fall, a company that left the A-list or began to slip, and a price that crossed its entry ceiling.</div>' +
     '<div><b>Put desk.</b> A-list companies that are on sale or fell ' + pct(-C.put_drop) + ' or more in a week, and have listed options. Each row shows the days to the next earnings report, marked when it falls within ' + C.put_earn + ' days, and how far the price typically moves in a day. Prism does not know option prices and does not suggest a strike.</div>' +
     '<div><b>Dividends.</b> A company\'s detail says what it pays a year, how many years it has paid and raised it in a row, how much of the company\'s spare cash it takes, and when the share next goes ex-dividend. The put desk marks a company that goes ex-dividend within ' + C.put_earn + ' days, because a call sold on shares you hold is often exercised just before that date. The file gives the next date only once the company has declared it; until then Prism shows the last one and does not guess. Dividends play no part in any test, list or order: the tests already count the cash they are paid from.</div>' +
+    '<div><b>Signs that a business is winning.</b> A company\'s detail has a box, "Is the business winning?", with four or five figures chosen to fit its kind of business: ' + Object.keys(KINDS).length + ' kinds, picked from the industry in your file, and you can choose another. Each figure is set against what it was a year before and marked better, worse or the same; a change inside a small allowance counts as the same. ' +
+      'On the first day the figure a year before is worked out from the file\'s own growth columns. After that Prism keeps the figures of each report: ' + C.sign_keep + ' reports for a company you follow or have given a sign of your own, ' + C.sign_keep_other + ' for the rest of the A-list. You can add signs from the company\'s own report, which no download carries, and type their figures in. ' +
+      'The figures are the file\'s trailing-twelve-month ones, so they move slowly, and sales growth is as reported, with acquisitions and currency in it. Prism does not add the signs up or forecast from them, and they play no part in any test, list or order.</div>' +
     '<div><b>Rising or falling.</b> "Falling" means the price is below its 50-day average and lower than a month ago. "Rising" means it is above its 50-day average. A cheap share that is still falling often gets cheaper.</div>' +
     '<div><b>Moonshots.</b> Companies worth up to ' + money(C.moon_max) + ' with sales of at least ' + money(C.moon_rev) + ', growing ' + pct(C.moon_growth) + ' or more (' + pct(C.moon_growth3) + ' over three years and expected next year, where the file says), a gross margin of at least ' + pct(C.moon_gm) + ', more cash than debt, at least ' + C.moon_runway + ' years of cash at today\'s spending, and a share count growing no more than ' + pct(C.moon_dil) + ' a year. Cyclical industries are left out. Most companies like these disappoint: the tests check that a company can survive, not that its story is true.</div>' +
     '<div><b>Scorecard.</b> With each newer file, Prism notes the companies that have joined each list and their price that day, and how far the typical large company (the middle one) moved since the file before. Later it shows how each list has done against that typical company over the same days. Nothing here has been tested against the past, so this is how the lists earn or lose your trust.</div>' +
@@ -1620,7 +2142,7 @@ function drawHow() {
     '<div><b>Where the multiple comes from.</b> On those terms each $1 a year of spare cash is worth $' + annuity(C.exp_cap, C.exp_hurdle, C.exp_gT, C.exp_N).toFixed(2) + ' today, so the ceiling is ' + annuity(C.exp_cap, C.exp_hurdle, C.exp_gT, C.exp_N).toFixed(1) + ' times the spare cash per share. Pay that, and the first year\'s cash is ' + pct(1 / annuity(C.exp_cap, C.exp_hurdle, C.exp_gT, C.exp_N)) + ' of your money; the growth on top brings the yearly return to about ' + pct(C.exp_hurdle) + '. With no growth at all the multiple would be ' + annuity(0, C.exp_hurdle, C.exp_gT, C.exp_N).toFixed(1) + '. It is a "don\'t pay more than this" line, not what the share is worth and not a forecast.</div>' +
     '<div><b>Set aside and blocked.</b> Banks, insurers, lenders and property companies need different measures and are not scored. A card network or fund manager that reports like an ordinary company is scored. Shell companies, second share classes and very small companies are left out. A scored company is kept off the five-question lists while its cash flow is negative, its debt is above ' + C.blk_lev + ' times EBITDA, its share count grew more than ' + pct(C.blk_dil) + ', or its sales fell more than ' + pct(C.blk_shrink) + '.</div>' +
     '<div><b>Data warnings.</b> Screens like this are easily fooled by figures that are too good: a cash yield above ' + pct(C.flag_fcf) + ', a P/E under ' + C.flag_pe + ', cash larger than the company, or a share count that halved or doubled. Those rows are hidden until you choose to see them. Cyclical industries lose ' + C.cyc_haircut + ' rank points on quality and price, because one good year can flatter both.</div>' +
-    '<div><b>Memory.</b> Your verdicts, A-list choices, settings and scorecard stay in this browser. When you load a later file, Prism tells you which names are new on the list you are looking at. The file itself is kept only in this browser, so the page reopens where you left off.</div>' +
+    '<div><b>Memory.</b> Your verdicts, A-list choices, signs, settings and scorecard stay in this browser. When you load a later file, Prism tells you which names are new on the list you are looking at. The file itself is kept only in this browser, so the page reopens where you left off.</div>' +
     '<div><b>Limits.</b> Every threshold is a starting point, the A-list lines included. None has been tested against later returns, so a place on a list is a reason to read, not a prediction. The figures are one day\'s snapshot of trailing results; they can\'t show customers leaving, lawsuits, management quality or what happens next year. Sector and industry labels are the data provider\'s. This is general information for your own research, not investment advice.</div>';
 }
 
@@ -1638,6 +2160,12 @@ document.addEventListener('click', e => {
   const t = e.target, g = t.closest('.gate'), vs = t.closest('[data-vsave]');
   if (g) { const k = g.dataset.g, i = S.ui.need.indexOf(k); if (i >= 0) S.ui.need.splice(i, 1); else S.ui.need = GK.filter(x => x === k || S.ui.need.includes(x)); S.ui.page = 0; save(); render(); return; }
   if (t.id === 'cardReset') { if (t.dataset.armed) { S.card = null; save(); compute(); } else { t.dataset.armed = '1'; t.textContent = 'Press again to erase the scorecard'; } return; }
+  if (t.id === 'trackReset') { if (t.dataset.armed) { S.track = {}; save(); compute(); delete t.dataset.armed; t.textContent = 'Start the record of signs again'; say('The record of signs starts again with this file. Your own signs were kept.'); } else { t.dataset.armed = '1'; t.textContent = 'Press again to erase the record'; } return; }
+  /* signs of the reader's own: add one that Prism suggests, add one by name, or remove one */
+  const sa = t.closest('[data-sgadd]'), sn = t.closest('[data-sgnew]'), sd = t.closest('[data-sgdel]');
+  if (sa) { ownAdd(sa.dataset.sgadd, sa.dataset.n, sa.dataset.up === '1'); return; }
+  if (sn) { const box = sn.closest('[data-signs]'), nm = box.querySelector('[data-sgname]'), up = box.querySelector('[data-sgup]').value; if (nm.value.trim()) ownAdd(sn.dataset.sgnew, nm.value, up === '' ? null : up === '1'); else nm.focus(); return; }
+  if (sd) { if (sd.dataset.armed) { const a = S.own[sd.dataset.sgdel] || []; a.splice(+sd.dataset.i, 1); if (!a.length) delete S.own[sd.dataset.sgdel]; save(); compute(); } else { sd.dataset.armed = '1'; sd.textContent = 'Press again to remove it and its figures'; } return; }
   if (t.id === 'pgPrev' || t.id === 'pgNext') { S.ui.page += t.id === 'pgNext' ? 1 : -1; OPEN = null; render(); $('tblTitle').scrollIntoView({block: 'start'}); return; }
   if (vs) { const box = vs.closest('[data-vform]'), p = {}; box.querySelectorAll('[data-vf]').forEach(el => { p[el.dataset.vf] = el.value.trim(); }); setVerdict(vs.dataset.vsave, p); return; }
   const tr = t.closest('tr.main');
@@ -1645,7 +2173,12 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => { const t = e.target;
   if (t.classList && t.classList.contains('vsel')) setVerdict(t.dataset.sym, {v: t.value});
-  else if (t.dataset && t.dataset.mine != null) { if (t.value) S.mine[t.dataset.mine] = t.value; else delete S.mine[t.dataset.mine]; save(); compute(); } });
+  else if (t.dataset && t.dataset.mine != null) { if (t.value) S.mine[t.dataset.mine] = t.value; else delete S.mine[t.dataset.mine]; save(); compute(); }
+  else if (t.dataset && t.dataset.sgkind != null) { if (t.value) S.kind[t.dataset.sgkind] = t.value; else delete S.kind[t.dataset.sgkind]; save(); compute(); }
+  /* a figure or a judgement for one of the reader's own signs: kept at once, and the readings around it redrawn */
+  else if (t.dataset && t.dataset.own != null) { const sym = t.dataset.sym, ok = ownSet(sym, +t.dataset.own, t.dataset.per, t.value); t.classList.toggle('bad', !ok);
+    if (ok) { save(); setTimeout(() => signPatch(sym), 0); } else t.title = 'Type a number, such as 21.3 or 1,250.'; } });
+document.addEventListener('keydown', e => { const t = e.target; if (e.key === 'Enter' && t && t.dataset && 'sgname' in t.dataset) { const b = t.closest('[data-signs]').querySelector('[data-sgnew]'); if (b) b.click(); } });
 $('tierB').onchange = e => { S.tierB = e.target.checked; S.ui.page = 0; save(); compute(); };
 $('pool').onchange = e => { S.ui.pool = e.target.value; S.ui.page = 0; save(); render(); };
 $('show').onchange = e => { const v = e.target.value; S.ui.list = v === 'near' ? '' : v; S.ui.slack = v === 'near' ? 1 : 0; S.ui.page = 0; OPEN = null; save(); render(); };
@@ -1784,10 +2317,13 @@ function ftolSpot(el,go,around,top){
   setTimeout(stop,15000);setTimeout(()=>{box.classList.remove('ftol-spot');st.outline=was[0];st.outlineOffset=was[1]},6000);
 }
 /* VAULT:END */
-makeVault({mount: $('vault'), app: 'prism', what: 'your verdicts, A-list choices, settings and scorecard', download: offer,
-  getState: () => ({v: 1, controls: S.controls, noMining: S.noMining, leaveOut: S.leaveOut, verdicts: S.verdicts, hist: S.hist, mine: S.mine, tierB: S.tierB, card: S.card}),
+makeVault({mount: $('vault'), app: 'prism', what: 'your verdicts, A-list choices, signs, settings and scorecard', download: offer,
+  getState: () => ({v: 1, controls: S.controls, noMining: S.noMining, leaveOut: S.leaveOut, verdicts: S.verdicts, hist: S.hist, mine: S.mine, tierB: S.tierB, card: S.card, track: S.track, kind: S.kind, own: S.own}),
   setState: o => { if (!o || o.v !== 1 || !o.verdicts) throw 0; S.controls = o.controls || {}; S.noMining = !!o.noMining; S.leaveOut = o.leaveOut || ''; S.verdicts = o.verdicts; S.hist = o.hist || null;
-    S.mine = o.mine || {}; S.tierB = !!o.tierB; S.card = o.card || null; save(); drawControls(); compute(); }});
+    S.mine = o.mine || {}; S.tierB = !!o.tierB; S.card = o.card || null;
+    /* a copy made before the signs existed has none: what this browser holds is then left as it is */
+    ['track', 'kind', 'own'].forEach(k => { if (o[k] && typeof o[k] === 'object') S[k] = o[k]; });
+    save(); drawControls(); compute(); }});
 
 /* ---------- start ---------- */
 load(); drawControls();
@@ -1800,8 +2336,8 @@ if (SHOW) { const v = SHOW.list;
   if (SORTS[SHOW.sort]) S.ui.sort = SHOW.sort;
   save(); }
 function showFromGuide(go) {
-  if (go.open === 'first') { const tr = document.querySelector('#tbl tr.main'); if (tr) { OPEN = tr.dataset.sym; render(); } }
-  const part = go.el === 'detail' ? document.querySelector('#tbl tr.detail > td') : go.el === 'vform' ? document.querySelector('#tbl tr.detail [data-vform]') : null;
+  if (go.open === 'first') { const tr = document.querySelector('#tbl tr.main'); if (tr) { OPEN = tr.dataset.sym; if (go.el === 'signs') KEEP['sg:' + OPEN] = true; render(); } }
+  const part = go.el === 'detail' ? document.querySelector('#tbl tr.detail > td') : go.el === 'vform' ? document.querySelector('#tbl tr.detail [data-vform]') : go.el === 'signs' ? document.querySelector('#tbl tr.detail [data-signs]') : null;
   const el = part || (typeof go.el === 'string' ? $(go.el) : null);
   /* for an opened company, bring its own row to the top, so the row and the detail under it are read together */
   ftolSpot(el && !el.hidden ? el : null, part ? Object.assign({}, go, {box: 'self'}) : go, '.pick,.card,details,section,header', go.el === 'detail' ? document.querySelector('#tbl tr.main[data-sym="' + OPEN + '"]') : null);

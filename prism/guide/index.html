@@ -173,7 +173,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span><b class="k s">Entry ceiling</b></span><span>The most to pay. The line under it gives today's price and how far that is under or over the ceiling. A later lesson explains it.</span></li>
             <li><span><b class="k s">Verdict</b></span><span>Your own decision about the company. Prism never sets one.</span></li>
           </ul>
-          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the dividend, the five questions and a place for your verdict.</p>
+          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the dividend, the signs that the business is winning, the five questions and a place for your verdict.</p>
           <div class="go"><a class="btn" data-go='{"list":"sale","el":"tblBox","box":"self"}' href="#">Show me the rows →</a><a class="btn" data-go='{"list":"sale","open":"first","el":"detail"}' href="#">Show me a row opened →</a></div>
         </div>
       </details>
@@ -355,11 +355,40 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>For a quick verdict, use the menu in the <b class="k s">Verdict</b> column of any row.</span></li>
             <li><span>For the full record, open the row. Under <b class="k s">Your verdict</b>, fill in <b class="k s">Thesis, in one line</b>, <b class="k s">Why it is cheap</b>, <b class="k">Trigger: what would change this verdict</b> and a <b class="k s">Review by</b> date. Press <b class="k s">Save verdict</b>.</span></li>
             <li><span>If you sell a put to get in, choose <b class="k s">Act</b>, write the strike and expiry under <b class="k">Entry: what you did, or plan to do</b>, and set <b class="k s">Review by</b> to the expiry date. If the shares are assigned to you, change the verdict to <b class="k s">Own</b>, and note any call you sell in the same way.</span></li>
-            <li><span><b class="k s">Your verdicts</b>, below the list, shows the companies you follow, with the review date first. A date that has passed is marked <b class="k s">Due</b>.</span></li>
+            <li><span><b class="k s">Your verdicts</b>, below the list, shows the companies you follow, with the review date first. A date that has passed is marked <b class="k s">Due</b>. The <b class="k s">Signs</b> column counts how each business is doing. The next lesson explains it.</span></li>
           </ol>
           <p class="tip"><b>Good to know.</b> To see rejected companies again, open <b class="k s">More options</b> and tick <b class="k">Show companies I rejected</b>. Change the verdict to bring one back.</p>
           <p class="tip"><b>Good to know.</b> <b class="k s">Download case notes</b> saves your verdicts as a file. <b class="k s">Load case notes</b> reads one back.</p>
           <div class="go"><a class="btn" data-go='{"list":"sale","open":"first","el":"vform"}' href="#">Show me the verdict form →</a><a class="btn" data-go='{"el":"watch"}' href="#">Show me my verdicts →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="signs">
+        <summary><span class="t"><span class="q">Is the business itself winning?</span><span class="where">A few signs, read again after each report</span></span></summary>
+        <div class="body">
+          <p>A low price is one thing. Whether the business is getting better is another. Prism reads a few figures after each report a company makes, and says how each one stands.</p>
+          <ol class="steps">
+            <li><span>Open a company's row and find <b class="k">Is the business winning?</b>. For a company you follow, with a verdict of Watch, Act or Own, it is already open. For any other, tap its heading.</span></li>
+            <li><span><b class="k s">Read it as</b> says what kind of business Prism takes it for. The signs depend on the kind: a consultancy is read on <b class="k s">Sales per employee</b>, a chip maker on <b class="k s">Inventory turns a year</b>. If Prism has the kind wrong, choose another.</span></li>
+            <li><span>Each line is one sign. <b class="k s">Now</b> is the latest figure. <b class="k s">Compared with</b> is what it is set against, most often the figure a year before.</span></li>
+            <li><span><b class="k s">Reading</b> is one word: <b class="k s">Better</b>, <b class="k s">Worse</b> or <b class="k s">The same</b>. A small change counts as the same. <b class="k s">Too early</b> means there is nothing to set the figure against yet.</span></li>
+            <li><span><b class="k">Since the report before</b> says which way the sign moved last, once Prism has two reports on record.</span></li>
+            <li><span>Tap a sign's name for what it measures, and why this company got that reading.</span></li>
+          </ol>
+          <p><b>Signs of your own.</b> Some of the best signs are in no download. They are in the company's own report: new bookings for a consultancy, sales at stores open a year for a chain of shops.</p>
+          <ol class="steps">
+            <li><span>Under <b class="k s">Your own signs</b>, tap one that Prism suggests. Or type a name in <b class="k s">A sign of your own</b>, choose <b class="k s">Higher is better</b>, <b class="k s">Lower is better</b> or <b class="k s">I will judge it myself</b>, and press <b class="k s">Add</b>.</span></li>
+            <li><span>After each report, type the figure beside it, and the figure a year before, which the same report gives. Prism keeps both and gives a reading.</span></li>
+            <li><span>A sign with nothing typed for the latest report is marked <b class="k s">To fill in</b>.</span></li>
+          </ol>
+          <ul class="points">
+            <li>Prism keeps the figures of each report for the companies you follow and for the A-list. <b class="k s">Report by report</b>, at the foot of the box, shows them side by side. You can fill in or correct your own figures for an earlier report there.</li>
+            <li>When a company you follow has reported, the line that begins <b class="k s">Since your last file</b> says so, and <b class="k s">Your verdicts</b> marks it <b class="k s">New report</b>.</li>
+            <li>On the first day, the figure a year before is worked out from the growth figures in your file. After that Prism uses its own record.</li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> Prism does not add the signs up into a score, and it does not forecast. Whether the company is winning is your call. The signs play no part in any list.</p>
+          <p class="tip"><b>Good to know.</b> If the box says <b class="k s">Load your file again</b>, the copy of your file in this browser is from before Prism read these figures. Load the file once more and they appear.</p>
+          <div class="go"><a class="btn" data-go='{"list":"A","open":"first","el":"signs"}' href="#">Show me the signs →</a><a class="btn" data-go='{"el":"watch"}' href="#">Show me my verdicts →</a></div>
         </div>
       </details>
 
@@ -369,7 +398,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
           <p>Once you have loaded a second, newer file, Prism compares the two.</p>
           <ul class="points">
             <li>A line appears between the file card and the list. It begins <b class="k s">Since your last file</b>. Open it to see who joined and who left each main list, with the reason.</li>
-            <li>For the companies you follow, with a verdict of Watch, Act or Own, it flags what needs attention: a review that is due, earnings coming up, a sharp fall this week, a company that left the A-list or began to slip, and a price that crossed its entry ceiling.</li>
+            <li>For the companies you follow, with a verdict of Watch, Act or Own, it flags what needs attention: a review that is due, earnings coming up, new results and how the signs stand after them, a sharp fall this week, a company that left the A-list or began to slip, and a price that crossed its entry ceiling.</li>
             <li>In the list itself, a company that was not there in your previous file carries the tag <b class="k s">New</b>.</li>
           </ul>
           <p class="tip"><b>Good to know.</b> The line is hidden when there is nothing to say, and it never appears with the made-up companies.</p>
@@ -414,11 +443,11 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
       <details class="lesson" id="save">
         <summary><span class="t"><span class="q">Save it and move it</span><span class="where">Lists · case notes · encrypted copies</span></span></summary>
         <div class="body">
-          <p>Your verdicts, A-list choices, settings and scorecard stay in this browser on this device. To keep a copy or move to another device, save a file.</p>
+          <p>Your verdicts, A-list choices, signs, settings and scorecard stay in this browser on this device. To keep a copy or move to another device, save a file.</p>
           <ul class="points">
             <li><b class="k s">Download this list (CSV)</b> saves the list on show, for a spreadsheet.</li>
             <li><b class="k s">Download case notes</b> saves your verdicts.</li>
-            <li><b class="k">Encrypted and online copies</b>, at the bottom of the page, protects a copy of your verdicts, A-list choices, settings and scorecard with a passphrase. Choose a passphrase, then <b class="k">Download an encrypted file</b>. On the private claude.ai link you can also <b class="k s">Save a version online</b>.</li>
+            <li><b class="k">Encrypted and online copies</b>, at the bottom of the page, protects a copy of your verdicts, A-list choices, signs, settings and scorecard with a passphrase. Choose a passphrase, then <b class="k">Download an encrypted file</b>. On the private claude.ai link you can also <b class="k s">Save a version online</b>.</li>
             <li>The screener file is never part of a copy. Load it again on the other device.</li>
           </ul>
           <p class="tip warn"><b>A forgotten passphrase cannot be recovered.</b> Nobody can open an encrypted copy without it. Keep your case notes as an ordinary copy as well.</p>
@@ -435,6 +464,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>Read <b class="k s">A-list on sale</b>, starting with the businesses that are holding up.</span></li>
             <li><span>If you sell puts, look at the <b class="k s">Put desk</b>.</span></li>
             <li><span>Record a verdict on what you read, with a review date.</span></li>
+            <li><span>When a company you follow has reported, open it, read <b class="k">Is the business winning?</b> and type in your own signs from its report.</span></li>
             <li><span>Now and then, open the scorecard.</span></li>
           </ol>
           <div class="go"><a class="btn" data-go='{"list":"sale","el":"loadCard"}' href="#">Show me in Prism →</a></div>
@@ -464,6 +494,8 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <div><dt>Ex-dividend date</dt><dd>The date from which a buyer of the share no longer gets the next dividend. Whoever owns the share the day before does. Prism shows the date once the company has declared it, and does not guess before then.</dd></div>
             <div><dt>Cash-secured put</dt><dd>A promise to buy shares at a set price, the strike, up to a set date, the expiry, in return for a payment now. You keep the cash to pay for them set aside. If the price ends below the strike, the shares are assigned to you.</dd></div>
             <div><dt>Verdict</dt><dd>Your own decision about a company, kept from file to file.</dd></div>
+            <div><dt>Sign</dt><dd>A figure that shows whether a business is getting better, read again after each report. Which signs fit depends on the kind of business.</dd></div>
+            <div><dt>Report</dt><dd>The results a company publishes, most often every three months. Prism files a company's figures under the date its latest reported period ended.</dd></div>
           </dl>
         </div>
       </details>

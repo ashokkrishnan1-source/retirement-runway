@@ -40,6 +40,9 @@ Prism has its own file, run the same way: `node tests/check-prism.js`. It checks
 Prism's engine on invented companies, and holds Prism's guide
 (`prism/guide/index.html`) to the same rule: every menu choice, tag, heading and
 named list it mentions must be on Prism's page, word for word.
+It also works through the signs that a business is winning by hand: the figure a
+year before, the allowance, the record kept from report to report, a share split,
+and the reader's own signs.
 
 ## After the yearly update
 
