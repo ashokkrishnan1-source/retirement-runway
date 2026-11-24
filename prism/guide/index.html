@@ -173,7 +173,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span><b class="k s">Entry ceiling</b></span><span>The most to pay. The line under it gives today's price and how far that is under or over the ceiling. A later lesson explains it.</span></li>
             <li><span><b class="k s">Verdict</b></span><span>Your own decision about the company. Prism never sets one.</span></li>
           </ul>
-          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the five questions and a place for your verdict.</p>
+          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the dividend, the five questions and a place for your verdict.</p>
           <div class="go"><a class="btn" data-go='{"list":"sale","el":"tblBox","box":"self"}' href="#">Show me the rows →</a><a class="btn" data-go='{"list":"sale","open":"first","el":"detail"}' href="#">Show me a row opened →</a></div>
         </div>
       </details>
@@ -199,6 +199,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
           <ol class="steps">
             <li><span>Under <b class="k s">Show</b>, choose <b class="k s">The whole A-list</b>.</span></li>
             <li><span>Open a row. <b class="k">Is it an A-class business?</b> lists the six tests with the company's own figures, and a tick or a cross for each.</span></li>
+            <li><span>Lower down, one line gives the dividend: what it pays a year, how many years it has been paid and raised, and how much of the company's spare cash it takes.</span></li>
             <li><span>Disagree with a grade? Under <b class="k s">My A-list</b>, choose <b class="k s">Always on my A-list</b> or <b class="k s">Never on my A-list</b>. Your choice wins.</span></li>
           </ol>
           <p class="tip"><b>Good to know.</b> A test the file can't answer does not count as a pass. To include companies that miss exactly one test, open <b class="k s">More options</b> and tick <b class="k">Put companies that miss just one of the six tests on the A-list too</b>.</p>
@@ -255,6 +256,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>Under <b class="k s">Show</b>, choose <b class="k s">Put desk</b>.</span></li>
             <li><span>Read the row: how far the price fell this week, how far it moves in a typical day, and where the price stands against the entry ceiling.</span></li>
             <li><span>Check the earnings tag. It gives the days to the next report and turns amber when the report is close. An option that expires after that date carries whatever the report brings.</span></li>
+            <li><span>Look for an ex-dividend tag. It appears when the company has declared its next dividend and the date is near. It matters most if you are assigned and then sell a call: a call that is in the money is often exercised just before that date, and the shares go with the dividend.</span></li>
             <li><span>Read the option prices at your broker. They are not in the file.</span></li>
           </ol>
           <p class="tip"><b>Good to know.</b> Prism never suggests a strike. It has no option prices, and a guess would mislead.</p>
@@ -459,6 +461,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <div><dt>Sector rank</dt><dd>Where a company stands among the companies of its own sector, from 0 to 100.</dd></div>
             <div><dt>Cyclical</dt><dd>An industry whose profits swing with the economy or a commodity price, so one good year can flatter it.</dd></div>
             <div><dt>Data warning</dt><dd>A figure that looks too good to be true. It is usually a one-off or an error.</dd></div>
+            <div><dt>Ex-dividend date</dt><dd>The date from which a buyer of the share no longer gets the next dividend. Whoever owns the share the day before does. Prism shows the date once the company has declared it, and does not guess before then.</dd></div>
             <div><dt>Cash-secured put</dt><dd>A promise to buy shares at a set price, the strike, up to a set date, the expiry, in return for a payment now. You keep the cash to pay for them set aside. If the price ends below the strike, the shares are assigned to you.</dd></div>
             <div><dt>Verdict</dt><dd>Your own decision about a company, kept from file to file.</dd></div>
           </dl>

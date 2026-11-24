@@ -305,7 +305,9 @@ var CONTROLS = {
   /* "What changed": earnings within this many days are called out for companies the reader is following */
   alert_earn: 14,
   /* "One worry, many names": a sector with this share of a list, and at least crowd_min companies, is called out */
-  crowd_share: 0.3, crowd_min: 4
+  crowd_share: 0.3, crowd_min: 4,
+  /* Dividends: one that is lower than a year ago by more than this is said to be lower (less is rounding or currency) */
+  div_down: 0.02
 };
 
 /* Columns the engine understands: [name used here, kind, header spellings with letters and digits only].
@@ -341,7 +343,12 @@ var FIELDS = [
   ['ret1w', 'p', 'return1w'], ['ret1m', 'p', 'return1m'], ['ma50', 'p', '50machg'], ['atr', 'n', 'atr'],
   ['opt', 's', 'options'], ['earn', 'd', 'nextearnings'], ['revgn', 'p', 'revgrnexty'],
   /* for "is the business slipping?" */
-  ['revgq', 'p', 'revgrowthq'], ['oig', 'p', 'opincgrowth'], ['epsgq', 'p', 'epsgrowthq']
+  ['revgq', 'p', 'revgrowthq'], ['oig', 'p', 'opincgrowth'], ['epsgq', 'p', 'epsgrowthq'],
+  /* dividends: shown in a company's detail and on the put desk; never used in a test, a list or an order */
+  ['dy', 'p', 'divyield', 'dividendyield'], ['div', 'n', 'dividend', 'dividendpershare', 'annualdividend'],
+  ['dyrs', 'n', 'divyears', 'dividendyears'], ['dgyrs', 'n', 'divgryears', 'divgrowthyears', 'dividendgrowthyears'],
+  ['fpay', 'p', 'fcfpayout', 'fcfpayoutratio'], ['dg1', 'p', 'divgrowth', 'dividendgrowth'],
+  ['exdiv', 'd', 'exdivdate', 'exdividenddate'], ['dfreq', 's', 'payoutfreq', 'payoutfrequency']
 ];
 var VERIFIED = FIELDS.length;   /* how many columns have a checked first spelling: all of them */
 
@@ -664,7 +671,7 @@ function run(rows, controls, opt) {
   judge(rows, C, opt);
   var has = function (k) { return rows.some(function (r) { return r[k] != null; }); };
   /* which of the newer views this file has the columns for */
-  var can = {grade: has('roic5') && has('py') && has('revg5') && has('ocf') && has('ni'), moon: has('gm') && has('rev') && has('revg')};
+  var can = {grade: has('roic5') && has('py') && has('revg5') && has('ocf') && has('ni'), moon: has('gm') && has('rev') && has('revg'), div: has('dy') || has('div')};
   return {rows: rows, C: C, avail: avail, scored: ref.length, can: can};
 }
 
@@ -729,6 +736,36 @@ function slipOf(r, C) {
 }
 /* 'slipping' with two or more signs, 'steady' with none and at least three judged, 'one' with a single sign, else null */
 function slipState(z) { return !z ? null : (z.n >= 2 ? 'slipping' : (z.n === 1 ? 'one' : (z.known >= 3 ? 'steady' : null))); }
+/* ---------- dividends ---------- */
+/* What the file says about a company's dividend, for the company's detail and for the put desk. Nothing here feeds a
+   test, a list or an order: the tests already count the cash a dividend is paid from.
+   pays: whether it pays one. amount: per share a year. yld: that as a share of the price. times: payments a year.
+   each: a typical payment. years and raised: years paid in a row and years raised in a row (null when none or not
+   known). share: how much of the company's spare cash the dividend takes, from the file's own column or, without
+   one, the dividend set against the free-cash-flow yield worked out here (shareOwn). none: there is no spare cash
+   to pay it from. over: it takes more than the spare cash, or there is none. down: how much lower it is than a year
+   ago, when that is more than div_down and the file does not also count the past year as a year of growth. (The two
+   columns disagree for about a third of the lower ones in a real download: a special payment the year before, a
+   late date or a currency can make one year look lower. Only the cases where they agree are called lower.)
+   A download gives the next ex-dividend date only once the company has declared it; until then the column holds the
+   last one. So next and exIn (days until it) are set for a date still ahead, and last for one that has passed. */
+var DIV_TIMES = {monthly: 12, quarterly: 4, semiannual: 2, annual: 1};
+function dividendOf(r, C, today) {
+  var pays = r.dy > 0 || r.div > 0;
+  var d = {pays: pays, amount: null, yld: null, times: null, freq: null, each: null, years: null, raised: null, share: null, shareOwn: false, none: false, over: false, down: null, exIn: null, next: null, last: null};
+  if (!pays) return d;
+  d.amount = r.div > 0 ? r.div : (r.price > 0 ? r.dy * r.price : null);
+  d.yld = r.dy > 0 ? r.dy : (r.price > 0 ? r.div / r.price : null);
+  var f = r.dfreq == null ? '' : String(r.dfreq).toLowerCase().replace(/[^a-z]/g, '');
+  if (DIV_TIMES[f]) { d.times = DIV_TIMES[f]; d.freq = f; d.each = d.amount != null ? d.amount / d.times : null; }
+  d.years = r.dyrs >= 1 ? r.dyrs : null; d.raised = r.dgyrs >= 1 ? r.dgyrs : null;
+  if (r.fpay != null) { if (r.fpay < 0) d.none = true; else d.share = r.fpay; }
+  else if (d.yld != null && r.fcfy != null) { if (r.fcfy <= 0) d.none = true; else { d.share = d.yld / r.fcfy; d.shareOwn = true; } }
+  d.over = d.none || (d.share != null && d.share > 1);
+  d.down = r.dg1 != null && r.dg1 < -C.div_down && !(r.dgyrs >= 1) ? -r.dg1 : null;
+  if (r.exdiv && today) { var k = daysBetween(today, r.exdiv); if (k >= 0) { d.exIn = k; d.next = r.exdiv; } else d.last = r.exdiv; }
+  return d;
+}
 /* One worry, many names: the sector that holds the largest share of a list, with its biggest industries.
    Returns null unless that sector has at least crowd_min companies and crowd_share of the list. */
 function crowd(rows, C) {
@@ -757,6 +794,7 @@ function judge(rows, C, opt) {
     r.a = null; r.grade = null; r.sale = null; r.onSale = false; r.earnIn = null;
     r.trend = r.ma50 == null || r.ret1m == null ? null : (r.ma50 < 0 && r.ret1m < 0 ? 'down' : (r.ma50 > 0 ? 'up' : 'flat'));
     if (r.earn && opt.today) r.earnIn = daysBetween(opt.today, r.earn);
+    r.dividend = dividendOf(r, C, opt.today);
     if (r.scored) { r.a = gradeOf(r, C); r.grade = r.a.yes === 6 ? 'A' : (r.a.yes === 5 ? 'B' : null); }
     r.slip = slipOf(r, C); r.slipping = slipState(r.slip);
     var pin = pins[r.sym] === 'in' || pins[r.sym] === 'out' ? pins[r.sym] : null;
@@ -886,7 +924,8 @@ const ML = {roic: 'Return on capital', roic5: 'Return on capital, 5-year', gm: '
 const FLABEL = {sym: 'Symbol', name: 'Company name', sector: 'Sector', industry: 'Industry', price: 'Stock price', cap: 'Market cap', vol: 'Average volume', rev: 'Revenue', pe: 'P/E ratio', ev_ebitda: 'EV/EBITDA', lev: 'Debt / EBITDA', cash: 'Total cash', debt: 'Total debt', netcash: 'Net cash', fcfy: 'FCF yield', roic: 'ROIC', revg: 'Revenue growth', fcfg: 'FCF growth', sh: 'Shares change (1 year)', ret1y: 'Return 1 year',
   country: 'Country', exchange: 'Exchange', cik: 'CIK', pdate: 'Price date', split: 'Last split date', ev: 'Enterprise value', fcf: 'Free cash flow', sbc: 'Stock-based compensation', shares: 'Shares outstanding', fpe: 'Forward P/E', ev_fcf: 'EV/FCF', pb: 'P/B ratio', cov: 'Interest coverage', altman: 'Altman Z-score', piotroski: 'Piotroski F-score', analysts: 'Analyst count', eyield: 'Earnings yield', roic5: 'ROIC 5-year', roe: 'ROE', gm: 'Gross margin', om: 'Operating margin', fcfm: 'FCF margin', revg3: 'Revenue growth 3-year', revg5: 'Revenue growth 5-year', epsg: 'EPS growth', buyback: 'Buyback yield', dd: '52-week high change', insider: 'Insider ownership', short: 'Short % of float',
   py: 'Profit years', revg10: 'Revenue growth 10-year', ocf: 'Operating cash flow', ni: 'Net income', ndlev: 'Net debt / EBITDA', pe5: 'P/E 5-year average', pe10: 'P/E 10-year average',
-  ret1w: 'Return 1 week', ret1m: 'Return 1 month', ma50: '50-day average change', atr: 'Average daily range', opt: 'Options', earn: 'Next earnings', revgn: 'Revenue growth next year', revgq: 'Revenue growth latest quarter', oig: 'Operating income growth', epsgq: 'EPS growth latest quarter'};
+  ret1w: 'Return 1 week', ret1m: 'Return 1 month', ma50: '50-day average change', atr: 'Average daily range', opt: 'Options', earn: 'Next earnings', revgn: 'Revenue growth next year', revgq: 'Revenue growth latest quarter', oig: 'Operating income growth', epsgq: 'EPS growth latest quarter',
+  dy: 'Dividend yield', div: 'Dividend per share', dyrs: 'Dividend years', dgyrs: 'Dividend growth years', fpay: 'FCF payout', dg1: 'Dividend growth', exdiv: 'Ex-dividend date', dfreq: 'Payout frequency'};
 /* label, explanation, whether it hides the row by default */
 const FL = {
   fcf_hi: ['Cash yield looks too high', 'A free-cash-flow yield this high is usually a one-off, customer money, a cycle peak or a data error.'],
@@ -969,10 +1008,13 @@ function exampleData() {
     ['Communication Services', [['Telecom Services', 'Telecom'], ['Entertainment', 'Media']], 0.07, 0.08, 0.06, 30], ['Utilities', [['Utilities - Regulated Electric', 'Power']], 0.01, 0.055, 0.05, 22],
     ['Financials', [['Banks - Regional', 'Bank'], ['Insurance Brokers', 'Brokers'], ['Shell Companies', 'Acquisition']], 0.05, 0.10, 0.06, 40], ['Real Estate', [['REIT - Retail', 'Properties']], 0.04, 0.04, 0.04, 15]];
   const headers = ['Symbol', 'Stock Price', 'Market Cap', 'EV/EBITDA', 'FCF Yield', 'Company Name', 'Industry', 'Sector', 'Avg. Volume', 'Return 1Y', 'Revenue', 'PE Ratio', 'Shares Ch. (YoY)', 'Total Cash', 'Total Debt', 'Net Cash', 'Debt / EBITDA', 'ROIC', 'Rev. Growth', 'FCF Growth',
-    'ROIC (5Y)', 'Profit Years', 'Rev. Growth 3Y', 'Rev. Growth 5Y', 'Rev. Growth 10Y', 'Net Income', 'Operating CF', 'ND / EBITDA', 'Int. Cov.', 'PE (5Y)', 'PE (10Y)', '52W High Chg', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR', 'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Gross Margin', 'FCF', 'Rev. Growth (Q)', 'OpInc Growth'];
+    'ROIC (5Y)', 'Profit Years', 'Rev. Growth 3Y', 'Rev. Growth 5Y', 'Rev. Growth 10Y', 'Net Income', 'Operating CF', 'ND / EBITDA', 'Int. Cov.', 'PE (5Y)', 'PE (10Y)', '52W High Chg', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR', 'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Gross Margin', 'FCF', 'Rev. Growth (Q)', 'OpInc Growth',
+    'Div. Yield', 'Dividend', 'Payout Freq.', 'Div. Years', 'Div. Gr. Years', 'Div. Growth', 'FCF Payout', 'Ex-Div Date'];
   /* a second stream of made-up numbers for the newer columns, so the first twenty stay as they were */
   let a2 = 20261120; const rnd2 = () => { a2 |= 0; a2 = a2 + 0x6D2B79F5 | 0; let t = Math.imul(a2 ^ a2 >>> 15, 1 | a2); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const n2 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd2(); return (u - 3) / 0.7071; };
+  /* a third stream for the dividend columns, so that every figure above stays as it was */
+  let a3 = 20261124; const rnd3 = () => { a3 |= 0; a3 = a3 + 0x6D2B79F5 | 0; let t = Math.imul(a3 ^ a3 >>> 15, 1 | a3); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const GM = {Technology: 0.62, Healthcare: 0.6, 'Communication Services': 0.5, 'Consumer Staples': 0.4}, base = new Date(today() + 'T12:00:00Z');
   const data = [], names = {}, syms = {};
   SEC.forEach(sec => { for (let n = 0; n < sec[5]; n++) {
@@ -987,6 +1029,13 @@ function exampleData() {
     if (young) { cap = Math.min(cap, 6e9 + 3e9 * rnd2()); revg = 0.34 + 0.5 * rnd2(); fcfy = rnd2() < 0.5 ? -0.008 - 0.02 * rnd2() : 0.004 + 0.02 * rnd2(); sh = 0.015 + 0.05 * rnd2(); cash = cash2 = cap * (0.1 + 0.1 * rnd2()); debt = 0; net = cash; }
     const row = [sym, +px.toFixed(2), Math.round(cap), fcfy > 0.004 ? +Math.max(2.5, 1 / (fcfy * 1.5 + 0.035) + nrm()).toFixed(2) : null, +fcfy.toFixed(4), nm, ind[0], sec[0], Math.round(cap / px * 0.004), +(0.06 + 0.27 * zt - 0.07 * zv).toFixed(4),
       Math.round(cap / (1.4 + 2.2 * rnd())), fcfy > 0.006 ? +(1 / (fcfy * (0.75 + 0.35 * rnd()))).toFixed(2) : null, +sh.toFixed(4), Math.round(cash2), Math.round(debt), Math.round(cash2 - debt), +Math.max(0, 2.3 - 1.5 * zs + 0.5 * nrm()).toFixed(2), +roic.toFixed(4), +revg.toFixed(4), rnd() < 0.15 ? null : +(revg + 0.22 * nrm()).toFixed(4)];
+    /* Dividends: about six companies in ten with real spare cash pay one. It takes part of that cash (now and then more
+       than all of it), has been paid for some years and raised for fewer, and the share last went ex-dividend in the
+       past three months or goes again in the next six weeks. Young companies pay none. */
+    const dividend = () => { if (young || fcfy <= 0.012 || rnd3() >= 0.62) return [null, null, null, null, null, null, null, null];
+      const takes = rnd3() < 0.06 ? 1.05 + 0.5 * rnd3() : 0.15 + 0.6 * rnd3(), amt = +Math.max(0.04, takes * fcfy * px).toFixed(2), yrs = 1 + Math.floor(rnd3() * 34), up = rnd3() < 0.25 ? 0 : Math.floor(rnd3() * (yrs + 1)), f = rnd3();
+      return [+(amt / px).toFixed(4), amt, f < 0.86 ? 'Quarterly' : f < 0.92 ? 'Semi-Annual' : f < 0.96 ? 'Annual' : 'Monthly', yrs, up, up > 0 ? +(0.02 + 0.1 * rnd3()).toFixed(4) : rnd3() < 0.3 ? +(-0.06 - 0.3 * rnd3()).toFixed(4) : 0,
+        +(amt / px / fcfy).toFixed(4), new Date(base.getTime() + (rnd3() < 0.45 ? 1 + Math.floor(40 * rnd3()) : -3 - Math.floor(80 * rnd3())) * 864e5).toISOString().slice(0, 10)]; };
     /* the newer columns, made to hang together with the ones above: a durable business has years of profit behind it,
        a share price that has fallen (zt low) sits below its own past P/E and its high, and so on */
     const pe = row[11], lev = row[16], q = n2(), ni = pe ? cap / pe : -cap * 0.02, gm = Math.min(0.95, Math.max(0.05, (GM[sec[0]] || 0.33) + 0.08 * zq + 0.04 * n2() + (young ? 0.15 : 0)));
@@ -997,7 +1046,7 @@ function exampleData() {
       +(0.035 * n2() - 0.005).toFixed(4), +m1.toFixed(4), +(0.6 * m1 + 0.02 * n2()).toFixed(4), +(px * (0.018 + 0.02 * rnd2())).toFixed(2), cap >= 4e8 ? 'Yes' : 'No', due.toISOString().slice(0, 10),
       +(0.8 * revg + 0.01 + 0.02 * n2()).toFixed(4), +gm.toFixed(4), Math.round(fcfy * cap),
       /* a share price that has fallen hard sometimes has a business that has slowed behind it */
-      +(revg + 0.03 * n2() - (zt < -0.8 && rnd2() < 0.5 ? 0.6 * Math.abs(revg) + 0.05 : 0)).toFixed(4), +(revg + 0.05 * n2() + 0.03 * zq).toFixed(4)]));
+      +(revg + 0.03 * n2() - (zt < -0.8 && rnd2() < 0.5 ? 0.6 * Math.abs(revg) + 0.05 : 0)).toFixed(4), +(revg + 0.05 * n2() + 0.03 * zq).toFixed(4)]).concat(dividend()));
   } });
   const m = mapTable(headers, data);
   return {rows: m.rows, meta: {file: '', n: m.rows.length, date: today(), dateFrom: 'load', report: m.report, example: true}};
@@ -1097,6 +1146,11 @@ const HELP = {
   t_up: () => '<p><b>Rising.</b> The price is above its 50-day average.</p>',
   t_alist: b => { const r = rowOf(b); return '<p><b>A-list.</b> ' + (r && r.pin === 'in' ? 'You put this company on your A-list.' : 'This company passes all six tests of the business itself: return on capital, years of profit, sales growth, cash earnings, share count and debt.') + '</p><p>Tap the row to see the six tests, or to take it off your list.</p>'; },
   t_earn: b => { const r = rowOf(b); return r && r.earn ? '<p><b>Earnings on ' + esc(day(r.earn)) + '</b>, in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days') + '.</p><p>An option that expires after that date carries whatever the report brings. The tag turns amber when the report is within ' + C.put_earn + ' days.</p>' : '<p>The date of the next earnings report.</p>'; },
+  t_exdiv: b => { const r = rowOf(b), d = r && r.dividend;
+    return (d && d.next ? '<p><b>Ex-dividend on ' + esc(day(d.next)) + '</b>, ' + inDays(d.exIn) + '.</p><p>Whoever owns the share the day before gets the next dividend' + (d.each != null ? ', about ' + price(d.each) + ' a share' : '') + '. From that date a buyer does not, and the price usually opens lower by about that much.</p>'
+        : '<p><b>Ex-dividend date.</b> From that date a buyer of the share no longer gets the next dividend.</p>') +
+      '<p>If you hold the shares and have sold a call that is in the money, the call\'s buyer often takes the shares just before this date, to collect the dividend. A put you have sold earns no dividend.</p>' +
+      '<p>The tag appears when the date has been declared and is within ' + C.put_earn + ' days.</p>'; },
   t_new: () => '<p><b>New.</b> This company was not on this list in your previous file.</p>',
   t_ceil: b => { const r = rowOf(b); if (!r || !r.ceiling) return HELP.ceiling();
     const gc = Math.max(C.exp_floor, Math.min(C.exp_cap, r.histg == null ? 0 : r.histg)), need = impliedGrowth(r.fcfy, Object.assign({}, C, {exp_r: C.exp_hurdle})), want = pct(C.exp_hurdle);
@@ -1134,7 +1188,9 @@ function render() {
     return '<button type="button" class="gate" data-g="' + k + '" aria-pressed="' + on + '"><span class="q">' + GQ[k][0] + '</span><span class="d">' + GQ[k][1] + '</span><span class="c">' + yes.toLocaleString('en-US') + ' yes' + (unk ? ' · ' + unk + ' unknown' : '') + '</span><span class="st">' + (on ? 'Required' : 'Not required') + '</span></button>'; }).join('');
   const need = S.ui.need, k = need.length; if (S.ui.slack && k < 2) S.ui.slack = 0;
   drawTally(base5);
-  $('loadNote').textContent = m.example ? 'To use Prism, download the whole-market screener from your data provider with every column you can get, and load the file here. CSV is fastest; Excel also works. You can drop the file anywhere on this page. It is read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.' : 'Read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.';
+  /* a file kept in this browser from before Prism learned to read some columns has none of their figures */
+  const older = !m.example && m.report && FIELDS.some(f => !(f[0] in m.report.found) && !m.report.missing.includes(f[0]));
+  $('loadNote').textContent = m.example ? 'To use Prism, download the whole-market screener from your data provider with every column you can get, and load the file here. CSV is fastest; Excel also works. You can drop the file anywhere on this page. It is read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.' : (older ? 'Prism reads more columns now than when this file was loaded. Load the file again to use them. ' : '') + 'Read in this browser and never uploaded. Prism lists companies to research. It does not tell you what to buy.';
   const canA = RES.can.grade || RES.rows.some(r => r.alist), cnt = v => n(viewRows(baseFor(v), v).length);
   $('show').innerHTML =
     '<optgroup label="Businesses worth owning">' + (canA ? '<option value="sale">A-list on sale (' + cnt('sale') + ')</option><option value="put">Put desk (' + cnt('put') + ')</option><option value="A">The whole A-list (' + cnt('A') + ')</option>' : '<option value="x" disabled>The A-list needs columns this file lacks</option>') + '</optgroup>' +
@@ -1281,7 +1337,9 @@ function found(r) {
       if (r.ret1w != null && r.ret1w <= C.put_drop) a.push('Down ' + p0(-r.ret1w) + ' this week');
       if (r.atr != null && r.price > 0) a.push((a.length ? 'moves' : 'Moves') + ' about ' + p0(r.atr / r.price) + ' a day');
       if (a.length) h += '<div class="ans">' + a.join(' · ') + '</div>';
-      if (r.earnIn != null && r.earnIn >= 0) pills.push(tag(r.earnIn <= C.put_earn ? 'warn' : 'mute', 't_earn', 'Earnings in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days'), r)); }
+      if (r.earnIn != null && r.earnIn >= 0) pills.push(tag(r.earnIn <= C.put_earn ? 'warn' : 'mute', 't_earn', 'Earnings in ' + r.earnIn + (r.earnIn === 1 ? ' day' : ' days'), r));
+      /* an ex-dividend date that has been declared and is near: it matters to anyone who may end up selling a call */
+      if (r.dividend.exIn != null && r.dividend.exIn <= C.put_earn) pills.push(tag('mute', 't_exdiv', 'Ex-dividend ' + inDays(r.dividend.exIn), r)); }
     if (view === 'A' && r.a && r.roic5 != null && r.py != null) h += '<div class="ans">Earns ' + p0(r.roic5) + ' on its capital · profitable ' + r.py + ' years</div>';
     if (r.onSale) h += '<div class="also">' + (view === 'sale' ? '' : 'On sale: ') + esc(saleWhy(r)) + '</div>';
     if (r.slipping === 'slipping') h += '<div class="ans"><b>Slipping:</b> ' + esc(slipWords(r)) + '.</div>';
@@ -1303,8 +1361,27 @@ function found(r) {
   if (pills.length) h += '<div class="row" style="gap:4px;margin-top:3px">' + pills.join('') + '</div>';
   return h || '<span class="also">–</span>';
 }
+/* "in 12 days", "in 1 day", "today" */
+const inDays = n => n === 0 ? 'today' : 'in ' + n + (n === 1 ? ' day' : ' days');
+/* The dividend line in a company's detail: what it pays, for how long, how much of the spare cash it takes, whether it
+   is lower than a year ago, and when the share next goes ex-dividend. Facts from the file only: the next date is given
+   when the company has declared it, and otherwise the last one, with no guess at the next. */
+const DIV_EVERY = {monthly: 'every month', quarterly: 'every three months', semiannual: 'twice a year', annual: 'once a year'};
+function dividendLine(r) {
+  const d = r.dividend; if (!d || !RES.can.div) return '';
+  if (!d.pays) return '<p class="note"><b>Dividend:</b> the file shows none.</p>';
+  const a = ['pays ' + (d.amount != null ? price(d.amount) + ' a share a year' : 'a dividend') + (d.yld != null ? ', ' + pct(d.yld) + ' of today\'s price' : '') + '.'];
+  if (d.years) a.push('Paid for ' + d.years + (d.years === 1 ? ' year' : ' years') + ' running' + (d.raised === 1 ? ', and raised in the last year' : d.raised ? ', and raised in each of the last ' + d.raised : '') + '.');
+  if (d.none) a.push('<span class="pill warn">Not covered</span> The company has no spare cash at the moment, so the dividend is being paid from savings or borrowing.');
+  else if (d.over) a.push('<span class="pill warn">Not covered</span> It takes more than the company\'s spare cash (' + p0(d.share) + ' of it), so part is being paid from savings or borrowing.');
+  else if (d.share != null) a.push('It takes ' + p0(d.share) + ' of the company\'s spare cash.');
+  if (d.down) a.push('<span class="pill warn">Lower</span> It is ' + p0(d.down) + ' lower than a year ago.');
+  if (d.next) a.push('Next ex-dividend date: ' + day(d.next) + ', ' + inDays(d.exIn) + '.');
+  else if (d.last) a.push('It last went ex-dividend on ' + day(d.last) + (d.freq ? ' and pays ' + DIV_EVERY[d.freq] : '') + '. The next date has not been announced.');
+  return '<p class="note"><b>Dividend:</b> ' + a.join(' ') + '</p>';
+}
 /* The A-list box in a row's detail: the six tests with the company's own figures, the reader's own choice, whether the
-   price is low, and the facts a put seller looks at. */
+   price is low, the dividend, and the facts a put seller looks at. */
 function aBox(r) {
   const T = r.a ? r.a.t : null, mark = v => v === true ? '✓' : v === false ? '✗' : '?', lv = r.ndlev != null ? r.ndlev : r.lev;
   const kv = a => '<div class="kv">' + a.map(x => '<span>' + esc(x[0]) + '</span><b>' + mark(x[1]) + '</b><i>' + esc(x[2]) + '</i>').join('') + '</div>';
@@ -1330,8 +1407,10 @@ function aBox(r) {
       [r.roic != null && r.roic5 != null ? 'Return on capital is ' + pct(r.roic) + ' now, ' + pct(r.roic5) + ' over five years' : 'No return on capital to compare', good(z.s.returns), 'a sign under ' + pct(C.slip_roic) + ' of it'],
       [r.revgn != null && z.pace != null ? 'Analysts expect sales to grow ' + pct(r.revgn) + ' next year' : 'No forecast in the file', good(z.s.forecast), 'a sign if far below'],
       [r.oig != null ? 'Operating profit ' + (r.oig < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.oig)) + ' over the year' : r.epsgq != null ? 'Earnings per share ' + (r.epsgq < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.epsgq)) + ' in the latest quarter' : 'No profit trend in the file', good(z.s.profit), 'a sign if down ' + pct(C.slip_profit)]]); }
+  h += dividendLine(r);
   if (r.alist) { const a = [];
     if (r.earnIn != null) a.push('next earnings ' + day(r.earn) + (r.earnIn >= 0 ? ', in ' + r.earnIn + ' days' : ''));
+    if (r.dividend.next) a.push('ex-dividend ' + day(r.dividend.next) + ', ' + inDays(r.dividend.exIn));
     if (r.atr != null && r.price > 0) a.push('the price moves about ' + pct(r.atr / r.price) + ' a day');
     if (r.ret1w != null) a.push((r.ret1w < 0 ? 'down ' : 'up ') + pct(Math.abs(r.ret1w)) + ' this week');
     if (r.opt) a.push(/^n/i.test(r.opt) ? 'no listed options' : 'options are listed');
@@ -1516,6 +1595,7 @@ function drawHow() {
     '<div><b>One worry, many names.</b> When one sector fills ' + pct(C.crowd_share) + ' or more of the on-sale list, the put desk or the moonshots, Prism says so. Several companies marked down by the same worry are one bet.</div>' +
     '<div><b>What changed.</b> After a second file is loaded, a line above the list says who joined and left the main lists and why, and flags the companies you follow: a review that is due, earnings within ' + C.alert_earn + ' days, a sharp fall, a company that left the A-list or began to slip, and a price that crossed its entry ceiling.</div>' +
     '<div><b>Put desk.</b> A-list companies that are on sale or fell ' + pct(-C.put_drop) + ' or more in a week, and have listed options. Each row shows the days to the next earnings report, marked when it falls within ' + C.put_earn + ' days, and how far the price typically moves in a day. Prism does not know option prices and does not suggest a strike.</div>' +
+    '<div><b>Dividends.</b> A company\'s detail says what it pays a year, how many years it has paid and raised it in a row, how much of the company\'s spare cash it takes, and when the share next goes ex-dividend. The put desk marks a company that goes ex-dividend within ' + C.put_earn + ' days, because a call sold on shares you hold is often exercised just before that date. The file gives the next date only once the company has declared it; until then Prism shows the last one and does not guess. Dividends play no part in any test, list or order: the tests already count the cash they are paid from.</div>' +
     '<div><b>Rising or falling.</b> "Falling" means the price is below its 50-day average and lower than a month ago. "Rising" means it is above its 50-day average. A cheap share that is still falling often gets cheaper.</div>' +
     '<div><b>Moonshots.</b> Companies worth up to ' + money(C.moon_max) + ' with sales of at least ' + money(C.moon_rev) + ', growing ' + pct(C.moon_growth) + ' or more (' + pct(C.moon_growth3) + ' over three years and expected next year, where the file says), a gross margin of at least ' + pct(C.moon_gm) + ', more cash than debt, at least ' + C.moon_runway + ' years of cash at today\'s spending, and a share count growing no more than ' + pct(C.moon_dil) + ' a year. Cyclical industries are left out. Most companies like these disappoint: the tests check that a company can survive, not that its story is true.</div>' +
     '<div><b>Scorecard.</b> With each newer file, Prism notes the companies that have joined each list and their price that day, and how far the typical large company (the middle one) moved since the file before. Later it shows how each list has done against that typical company over the same days. Nothing here has been tested against the past, so this is how the lists earn or lose your trust.</div>' +

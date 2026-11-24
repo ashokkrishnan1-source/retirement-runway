@@ -12,7 +12,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `.github/workflows/pages.yml` | On every push to `main`: runs the rules check, builds, deploys to GitHub Pages. A failing check blocks deployment. |
 | `guide/index.html`, `prism/guide/index.html` | The companion guides to Runway and to Prism: pages of short lessons on how to use each tool (see "The guides" below). No engine and no data of their own. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page (236 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page (266 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -189,7 +189,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (236 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (266 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -254,6 +254,31 @@ format as the other tools; no AI, no live data.
   shows each list's median change since joining against that index over the same days. Price only; a company that
   left the file or split its shares is dropped. It says plainly when the history is under three months. This is
   the only test any Prism threshold has had: never describe a list as proven.
+- **Dividends (`dividendOf`, `dividendLine`).** The owner asked on 2026-11-24 whether showing dividends would help.
+  A trial on his file said: not as a column or a test, but in two places, and he approved those two.
+  1. A line in a company's detail: what it pays a year and what share of the price that is, how many years it has
+     been paid and raised in a row, how much of the company's spare cash it takes ("Not covered" when that is more
+     than all of it, or when there is none), "Lower" when it is lower than a year ago, and the next ex-dividend date.
+  2. On the put desk, a tag "Ex-dividend in N days" when the date has been declared and is within `put_earn` days.
+     Its note says why a put seller cares: once assigned and holding, a call sold in the money is often exercised
+     just before that date. The put seller's line in the detail names the date too.
+  Rules, each for a reason found on his file:
+  - Dividends feed no test, list or order (a check asserts it). The A-list is not an income list (most of it pays
+    one, but the typical yield is small), and the entry ceiling already counts the cash a dividend is paid from.
+  - The file gives the next ex-dividend date only once the company has declared it; until then the column holds the
+    last one. Prism shows the last date and how often the company pays, and never guesses the next.
+  - "Lower" is said only when the file's one-year growth is negative and its count of growth years is zero. The two
+    columns disagree for about a third of the lower ones (a special payment the year before, a late date, a currency).
+  - The share of spare cash is the file's `FCF Payout`; where that is blank, the dividend over Prism's own
+    free-cash-flow yield. On his file the two agree closely.
+  - `Last Div.` is not read: it can be a special payment. A typical payment is the yearly amount over the number of
+    payments a year.
+  Offered and not built: an ex-dividend alert under "What changed" for companies he follows, a yield column in the
+  rows, dividends in the scorecard (the typical yield is about the same on both sides, so leaving them out distorts
+  little).
+- **A stored file from before a column was added.** The file kept in the browser holds only the columns Prism read
+  when it was loaded. When Prism has learned more since, the file card says to load the file again (`older` in
+  `render`), and until then the new facts are simply absent.
 - **Fee businesses in financial industries.** In Credit Services, Asset Management, Capital Markets and Financial
   Conglomerates, a company is scored like any other when the file gives it EBITDA-based figures (a card network,
   a fund manager); a lender gets none and stays set aside. Banks and insurers are always set aside.
@@ -265,8 +290,9 @@ format as the other tools; no AI, no live data.
   five verdict names come from his case-notes headings: don't add trade types as verdicts. Separate strike and
   expiry boxes, with each file showing the distance from the strike, were offered and are not built.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
-- `FIELDS`: the first spelling of each of the 66 columns was checked against the owner's real downloads (a
-  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 66 headings.
+- `FIELDS`: the first spelling of each of the 74 columns was checked against the owner's real downloads (a
+  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 74 headings.
+  The last eight are the dividend columns, added on 2026-11-24.
   Later spellings are guesses for other files, and a match on one is reported on the page as "matched by name
   only". What the full file taught us, so nobody has to find it twice:
   - Statement figures are already in US dollars, whatever currency the company reports in.

@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'prism', 'index.html'), 'utf8');
 const eng = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
-const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes};')();
+const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes,dividendOf};')();
 let pass = 0, fail = 0;
 const check = (name, actual, expected, tol) => {
   const ok = typeof expected === 'number' ? Math.abs(actual - expected) <= (tol == null ? 1e-6 : tol) : JSON.stringify(actual) === JSON.stringify(expected);
@@ -54,7 +54,7 @@ check('date: text date', E.toDate('2026-11-04'), '2026-11-04');
 }
 
 console.log('--- The provider\'s full download ---');
-// The headings of the 66 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
+// The headings of the 74 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
 // them. Headings only: the values below are invented.
 { const FULL = ['Symbol', 'Company Name', 'Sector', 'Industry', 'Stock Price', 'Market Cap', 'Avg. Volume', 'Revenue', 'PE Ratio', 'EV/EBITDA',
     'Debt / EBITDA', 'Total Cash', 'Total Debt', 'Net Cash', 'FCF Yield', 'ROIC', 'Rev. Growth', 'FCF Growth', 'Shares Ch. (YoY)', 'Return 1Y',
@@ -62,14 +62,17 @@ console.log('--- The provider\'s full download ---');
     'Int. Cov.', 'Z-Score', 'F-Score', 'Analysts', 'Earnings Yield', 'ROIC (5Y)', 'ROE', 'Gross Margin', 'Oper. Margin', 'FCF Margin',
     'Rev. Growth 3Y', 'Rev. Growth 5Y', 'EPS Growth', 'Buyback Yield', '52W High Chg', 'Shares Insiders', 'Short % Float',
     'Profit Years', 'Rev. Growth 10Y', 'Operating CF', 'Net Income', 'ND / EBITDA', 'PE (5Y)', 'PE (10Y)', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR',
-    'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Rev. Growth (Q)', 'OpInc Growth', 'EPS Growth (Q)'];
+    'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Rev. Growth (Q)', 'OpInc Growth', 'EPS Growth (Q)',
+    'Div. Yield', 'Dividend', 'Div. Years', 'Div. Gr. Years', 'FCF Payout', 'Div. Growth', 'Ex-Div Date', 'Payout Freq.'];
   // look-alike headings that are also in the download and must not be mistaken for the ones above
-  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth (Q)', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', 'ROE (5Y)', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date'];
+  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth (Q)', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', 'ROE (5Y)', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date',
+    'Div. Growth 3Y', 'Div. Growth 5Y', 'Div. Growth 10Y', 'Payout Ratio', 'Payment Date', 'Last Div.', 'Shareh. Yield'];
   const row = FULL.map(() => ''), set = (h, v) => { row[FULL.indexOf(h)] = v; };
   set('Symbol', 'zzz.x'); set('Stock Price', '40'); set('Market Cap', '2000000000'); set('FCF Yield', '9.00%'); set('FCF', '100000000'); set('ROIC', '12.50%');
   set('Shares Ch. (YoY)', '-0.21%'); set('CIK Code', '0000123456'); set('Price Date', '2026-11-19'); set('Ent. Value', '2500000000'); set('Int. Cov.', '-4.5');
   set('Z-Score', '2.75'); set('F-Score', '7'); set('52W High Chg', '-10.88%'); set('Short % Float', '0.82%');
   set('Profit Years', '35'); set('50MA Chg %', '-4.18%'); set('Options', 'Yes'); set('Next Earnings', '2027-01-27'); set('ND / EBITDA', '-0.0356');
+  set('Div. Yield', '2.50%'); set('Dividend', '1'); set('Div. Years', '12'); set('Div. Gr. Years', '5'); set('FCF Payout', '40.00%'); set('Div. Growth', '-11.80%'); set('Ex-Div Date', '2026-12-01'); set('Payout Freq.', 'Semi-Annual');
   const m = E.mapTable(FULL.concat(DECOYS), [row.concat(DECOYS.map(() => '99'))]), r = m.rows[0];
   check('full download: every column Prism reads is found', Object.keys(m.report.found).length, E.FIELDS.length);
   check('full download: none missing', m.report.missing, []);
@@ -83,6 +86,7 @@ console.log('--- The provider\'s full download ---');
   check('full download: profit years', r.py, 35); check('full download: "-4.18%" against the 50-day average', r.ma50, -0.0418, 1e-12);
   check('full download: options and the next earnings date', [r.opt, r.earn], ['Yes', '2027-01-27']); check('full download: net debt over EBITDA can be negative', r.ndlev, -0.0356);
   check('full download: percentages carry a % sign, so no whole-number conversion', m.report.percentUnits, false);
+  check('full download: the dividend columns', [r.dy, r.div, r.dyrs, r.dgyrs, r.fpay, Math.round(r.dg1 * 1e6) / 1e6, r.exdiv, r.dfreq], [0.025, 1, 12, 5, 0.4, -0.118, '2026-12-01', 'Semi-Annual']);
   // a spelling that is only a guess is reported as one: "Ticker" and "Enterprise Value" are not the provider's headings
   check('a guessed spelling is reported', E.mapTable(['Ticker', 'Enterprise Value'], [['x', '5']]).report.guessed, ['sym', 'ev']);
   // The yield is free cash flow over the whole company's market value: 100m / 2,000m = 5%, though the file's column says 9%
@@ -357,6 +361,47 @@ check('F0: weakest ordinary company fails quality', by.F0.g.Q, false);
   const rr = E.run(u, {}, {}).rows; check('repair list: weak returns, cash flow up 40%', rr.find(r => r.sym === 'FIXA').lists.includes('repair'), true);
   check('repair list: unknown sales growth is not a pass', rr.find(r => r.sym === 'FIXB').lists.includes('repair'), false); }
 check('engine has no reference to the page', /\b(document|window|localStorage)\b/.test(eng), false);
+
+console.log('--- Dividends ---');
+{ // What the file says about a dividend. Worked by hand; the companies are invented.
+  const C = E.CONTROLS, T = '2026-11-19', dv = (o, t) => E.dividendOf(Object.assign({price: 100}, o), C, t === undefined ? T : t);
+  // $2 a share a year on a $100 share is 2%; four payments of $0.50; 19 Nov to 1 Dec is 12 days
+  let d = dv({dy: 0.02, div: 2, dfreq: 'Quarterly', dyrs: 12, dgyrs: 5, fpay: 0.4, dg1: 0.05, exdiv: '2026-12-01'});
+  check('dividend: it pays, $2 a year, 2% of the price', [d.pays, d.amount, d.yld], [true, 2, 0.02]);
+  check('dividend: quarterly, so about $0.50 each time', [d.times, d.freq, d.each], [4, 'quarterly', 0.5]);
+  check('dividend: paid 12 years running, raised 5', [d.years, d.raised], [12, 5]);
+  check('dividend: takes 40% of the spare cash, by the file\'s own column', [d.share, d.shareOwn, d.none, d.over], [0.4, false, false, false]);
+  check('dividend: not lower than a year ago', d.down, null);
+  check('dividend: goes ex-dividend in 12 days', [d.exIn, d.next, d.last], [12, '2026-12-01', null]);
+  // the date in the file is the last one until the next is declared: nothing is guessed
+  d = dv({dy: 0.02, div: 2, exdiv: '2026-11-12'}); check('dividend: a date that has passed is the last one, with no next', [d.exIn, d.next, d.last], [null, null, '2026-11-12']);
+  d = dv({dy: 0.02, div: 2, exdiv: '2026-11-19'}); check('dividend: ex-dividend today counts as still ahead', [d.exIn, d.next], [0, '2026-11-19']);
+  d = dv({dy: 0.02, div: 2, exdiv: '2026-12-01'}, null); check('dividend: without the file\'s date, no days are worked out', [d.exIn, d.next, d.last], [null, null, null]);
+  // no payout column: the dividend against the yield worked out here. 3% against 5% is 60%; against 2% it is 150%
+  d = dv({dy: 0.03, fcfy: 0.05}); check('dividend: 3% paid from a 5% cash yield takes 60%', [d.share, d.shareOwn, d.over], [0.6, true, false], 1e-12);
+  d = dv({dy: 0.03, fcfy: 0.02}); check('dividend: 3% paid from a 2% cash yield takes 150%, more than there is', [Math.round(d.share * 1e6) / 1e6, d.over, d.none], [1.5, true, false]);
+  d = dv({dy: 0.03, fcfy: -0.01}); check('dividend: with no spare cash it is not covered', [d.share, d.none, d.over], [null, true, true]);
+  d = dv({dy: 0.03, fpay: -0.4, fcfy: 0.05}); check('dividend: a negative payout in the file means no spare cash', [d.share, d.none, d.over], [null, true, true]);
+  d = dv({dy: 0.03, fpay: 1.4}); check('dividend: 140% of the spare cash is more than there is', [d.share, d.over, d.none], [1.4, true, false]);
+  d = dv({dy: 0.03}); check('dividend: with neither figure, nothing is said about the cash', [d.share, d.over], [null, false]);
+  // lower than a year ago: 15% counts, 1% is rounding or currency
+  check('dividend: 15% lower than a year ago', dv({dy: 0.03, dg1: -0.15}).down, 0.15); check('dividend: 1% lower is not called lower', dv({dy: 0.03, dg1: -0.01}).down, null);
+  // when the file also counts the past year as a year of growth, the two columns disagree and nothing is claimed
+  check('dividend: lower by one column, raised by the other: not called lower', dv({dy: 0.03, dg1: -0.15, dgyrs: 3}).down, null);
+  check('dividend: lower, and no year of growth: called lower', dv({dy: 0.03, dg1: -0.15, dgyrs: 0}).down, 0.15);
+  // either figure will do: a 2.5% yield on an $80 share is $2 a year; $3 a year on a $60 share is 5%
+  check('dividend: the amount from the yield', E.dividendOf({dy: 0.025, price: 80}, C, T).amount, 2, 1e-12); check('dividend: the yield from the amount', E.dividendOf({div: 3, price: 60}, C, T).yld, 0.05, 1e-12);
+  d = dv({dy: 0.04, div: 4, dfreq: 'Semi-Annual'}); check('dividend: twice a year, $2 each', [d.times, d.each], [2, 2]);
+  d = dv({dy: 0.04, div: 4, dfreq: 'Irregular'}); check('dividend: an unknown rhythm gives no payment size', [d.times, d.freq, d.each], [null, null, null]);
+  d = dv({dy: 0.04, div: 4, dyrs: 0, dgyrs: 0}); check('dividend: no years to speak of', [d.years, d.raised], [null, null]);
+  d = dv({dy: null, div: 0, dyrs: 9, exdiv: '2026-12-01'}); check('dividend: a company that pays none', [d.pays, d.amount, d.years, d.exIn], [false, null, null, null]);
+  // dividends play no part in any test, list or order: the same companies, with and without them, land in the same places
+  const plain = E.run(universe(), {}, {today: T}), rich = E.run(universe().map((r, i) => Object.assign(r, {dy: 0.09, div: 9, dyrs: 40, dgyrs: 40, fpay: i % 2 ? 3 : 0.1, dg1: -0.5, exdiv: '2026-11-25', dfreq: 'Quarterly'})), {}, {today: T});
+  const key = r => [r.sym, r.Q, r.V, r.P, r.T, r.g, r.n5, r.lists, r.grade, r.alist, r.onSale, r.put, r.moon, r.slipping, r.ceiling, r.blocks];
+  check('dividend: every company is graded and listed the same with or without one', rich.rows.map(key), plain.rows.map(key));
+  check('dividend: the lists are the same', E.memberships(rich.rows, ['Q', 'V', 'S', 'P', 'T']), E.memberships(plain.rows, ['Q', 'V', 'S', 'P', 'T']));
+  check('dividend: every company carries its dividend facts', [rich.rows.every(r => r.dividend && r.dividend.pays && r.dividend.exIn === 6), plain.rows.every(r => r.dividend && !r.dividend.pays)], [true, true]);
+  check('dividend: the file is known to have dividend columns, or not', [rich.can.div, plain.can.div], [true, false]); }
 
 console.log('--- The guide keeps step with the page ---');
 { // prism/guide/index.html is a page of lessons about Prism. It must not drift from it. Every name it sets as a label
