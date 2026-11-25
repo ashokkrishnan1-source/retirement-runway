@@ -35,6 +35,9 @@ a total. The run ends with an error code if anything fails.
   (`guide/index.html`) names must be on the page, word for word, and the guide
   must carry no tax figures of its own. If you rename something on the page, this
   check tells you which line of the guide to change.
+- **A note for every line:** each row of the comparison, each line beside the tax
+  building and each column of the conversion and year-by-year tables has a name
+  that opens a note. The check fails if one is added without its note.
 
 Prism has its own file, run the same way: `node tests/check-prism.js`. It checks
 Prism's engine on invented companies, and holds Prism's guide

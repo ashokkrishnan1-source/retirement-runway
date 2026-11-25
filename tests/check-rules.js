@@ -314,5 +314,23 @@ console.log('--- The guide keeps step with the page ---');
   check('every view is named in the guide', views.filter(v => !names.includes(v[1])).length, 0, 0);
   // Opening at a place: the page must read the note the guide leaves.
   check('the page reads the note the guide leaves', /ftolShow\('runway'\)/.test(html) && /data-tool="runway"/.test(guide) && /localStorage\.setItem\('ftol-show'/.test(guide) ? 1 : 0, 1, 0); }
+console.log('--- A note for every line of the answers ---');
+{ // The owner asked for Runway to be explained line by line, as Prism had been: a line that needs a guide is not
+  // finished. Each row of the comparison, each line under the tax building and each column of the two big tables
+  // has a name that opens its note.
+  const i = html.indexOf('<script id="engine">'), j = html.indexOf('</script>', i), ui = html.slice(j);
+  const help = ui.slice(ui.indexOf('const HELP={'), ui.indexOf('const hb=k=>'));
+  const has = k => new RegExp('\\n  ' + k + ':').test(help);
+  const used = [...new Set((ui.match(/'([cbvl]_[a-z0-9]+)'/g) || []).map(x => x.slice(1, -1)))];
+  check('every name in the answers has its note', used.filter(k => !has(k)).length, 0, 0);
+  const count = p => used.filter(k => k.startsWith(p)).length;
+  check('the nine rows of the comparison each open a note', count('c_'), 9, 0);
+  check('the nine lines under the tax building each open a note', count('b_'), 9, 0);
+  check('the seven columns of the conversion table each open a note', count('v_'), 7, 0);
+  check('the sixteen columns of the year-by-year table each open a note', count('l_'), 16, 0);
+  check('no note is left without a use', (help.match(/\n  ([cbvl]_[a-z0-9]+):/g) || []).map(x => x.trim().slice(0, -1)).filter(k => !used.includes(k)).length, 0, 0);
+  check('the names open notes the same way the ? marks do', /closest\('\.hlp, \.nm'\)/.test(ui) ? 1 : 0, 1, 0);
+  check('a note that gives the deductions builds them from the rules', /b_ded:\(\)=>\{const F=RULES\.fed;/.test(help) && /full\(F\.mfj\.std\)/.test(help) && /full\(RULES\.senior\.amount\)/.test(help) ? 1 : 0, 1, 0);
+  check('the guide has a lesson for the comparison, the building and both tables', ['id="rows"', 'id="floors"', 'id="convcols"', 'id="ledgercols"'].filter(x => !guide.includes(x)).length, 0, 0); }
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exitCode = fail ? 1 : 0;

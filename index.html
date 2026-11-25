@@ -142,6 +142,7 @@ label.btn{display:inline-flex;align-items:center;cursor:pointer}
 .lt{display:flex;align-items:center;flex-wrap:wrap}
 .hlp{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;margin-left:6px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg2);font:600 10.5px/1 var(--body);cursor:pointer;vertical-align:1px;letter-spacing:0;text-transform:none;flex:none}
 .hlp:hover{border-color:var(--fg3);color:var(--fg)}
+button.lnk{font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;text-decoration:underline dotted var(--fg3);text-underline-offset:3px}
 #helpPop{position:absolute;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.16);font-size:13px;line-height:1.5;color:var(--fg2)}
 #helpPop b{color:var(--fg)}
 details.explain{border:1px solid var(--line);border-radius:8px;padding:10px 14px}
@@ -1938,23 +1939,24 @@ function compareLines(){
   const rmd1=s=>{const r=s.rmdStartRow!==null?s.rows[s.rmdStartRow]:null;return r?r.rmd/r.fi:0};
   const first=s=>{const r=s.rows.find(x=>x.retired&&!x.working)||s.rows[0];return r};
   const lines=[
-    ['Tax in first retired year',s=>{const r=first(s);return (r.fed+r.state)/r.fi},'min'],
-    ['Lifetime taxes',s=>s.taxReal,'min'],
-    ['Moved to Roth (total)',s=>s.convReal,'max'],
-    ['IRA when RMDs start',ira75,'min'],
-    ['First required withdrawal',rmd1,'min'],
-    ['Money left at the end',s=>s.end.total/s.end.fe,'max'],
-    ['After-tax value to heirs',s=>s.legacy,'max'],
-    ['Health insurance and Medicare surcharges',s=>s.healthReal||0,'min'],
-    ['Runs short',s=>s.shortReal,'min'],
+    /* label, figure, which way is better, and the note that the label opens on the page */
+    ['Tax in first retired year',s=>{const r=first(s);return (r.fed+r.state)/r.fi},'min','c_tax1'],
+    ['Lifetime taxes',s=>s.taxReal,'min','c_life'],
+    ['Moved to Roth (total)',s=>s.convReal,'max','c_conv'],
+    ['IRA when RMDs start',ira75,'min','c_ira'],
+    ['First required withdrawal',rmd1,'min','c_rmd1'],
+    ['Money left at the end',s=>s.end.total/s.end.fe,'max','c_end'],
+    ['After-tax value to heirs',s=>s.legacy,'max','c_heirs'],
+    ['Health insurance and Medicare surcharges',s=>s.healthReal||0,'min','c_health'],
+    ['Runs short',s=>s.shortReal,'min','c_short'],
   ];
   return lines;
 }
 function drawCompare(){
   const {sims}=LAST;const keys=['typical','brk','smart'];const lines=compareLines();
   let h='<tr><th></th>'+keys.map(k=>'<th>'+STRATS[k]+(k===strat?' ●':'')+'</th>').join('')+'</tr>';
-  lines.forEach(([lab,f,dir])=>{const v=keys.map(k=>f(sims[k]));const best=dir==='min'?Math.min(...v):Math.max(...v);const allEq=v.every(x=>Math.abs(x-v[0])<1);
-    h+='<tr><td>'+lab+'</td>'+v.map(x=>'<td class="'+(!allEq&&Math.abs(x-best)<1?'best':'')+'">'+(lab==='Runs short'?(x<1?'never':money(x)):money(x))+'</td>').join('')+'</tr>'});
+  lines.forEach(([lab,f,dir,note])=>{const v=keys.map(k=>f(sims[k]));const best=dir==='min'?Math.min(...v):Math.max(...v);const allEq=v.every(x=>Math.abs(x-v[0])<1);
+    h+='<tr><td>'+nm(note,lab)+'</td>'+v.map(x=>'<td class="'+(!allEq&&Math.abs(x-best)<1?'best':'')+'">'+(lab==='Runs short'?(x<1?'never':money(x)):money(x))+'</td>').join('')+'</tr>'});
   document.getElementById('compare').innerHTML=h;
 }
 
@@ -2007,15 +2009,15 @@ function drawBuilding(){
   else if(gainsOver>1000&&r.qT>0&&r.conv<1)tipTxt='<b>'+full(d(Math.min(gainsOver,r.qT)))+' of gains sit above the 0% line</b> and are taxed at 15%. Each extra dollar of ordinary income here costs about '+Math.round((r.marg+.15)*100)+'¢.';
   else tipTxt='<b>The free floors are full.</b> Your bracket is '+pct(r.marg)+'; the next $1 of income actually costs about '+Math.round((r.margEff||r.marg)*100)+'¢ in federal and state tax'+(r.qT>0?' (it also pushes gains above the 0% line)':'')+'.';
   document.getElementById('bfacts').innerHTML=[
-    ['Spending covered',full(d(r.need))],
-    ['Total income (AGI)',full(d(r.agi))],['Taxable income (after deductions)',full(d(r.taxable))],
-    ['Deductions',full(d(r.ded))],
-    ['Received tax-free',full(d(Math.max(0,free)))],
-    ['Roth conversion',full(d(r.conv))],
-    ['Federal tax',full(d(r.fed)),'em'],
-    ['State tax',full(d(r.state))],
-    ['Effective rate on spending',r.need>0?((r.fed+r.state)/r.need*100).toFixed(1)+'%':'–'],
-  ].map(x=>'<div class="r '+(x[2]||'')+'"><span>'+x[0]+'</span><span>'+x[1]+'</span></div>').join('')+'<div class="callout">'+tipTxt+'</div>';
+    ['Spending covered',full(d(r.need)),'','b_need'],
+    ['Total income (AGI)',full(d(r.agi)),'','b_agi'],['Taxable income (after deductions)',full(d(r.taxable)),'','b_taxable'],
+    ['Deductions',full(d(r.ded)),'','b_ded'],
+    ['Received tax-free',full(d(Math.max(0,free))),'','b_free'],
+    ['Roth conversion',full(d(r.conv)),'','b_conv'],
+    ['Federal tax',full(d(r.fed)),'em','b_fed'],
+    ['State tax',full(d(r.state)),'','b_state'],
+    ['Effective rate on spending',r.need>0?((r.fed+r.state)/r.need*100).toFixed(1)+'%':'–','','b_eff'],
+  ].map(x=>'<div class="r '+x[2]+'"><span>'+nm(x[3],x[0])+'</span><span>'+x[1]+'</span></div>').join('')+'<div class="callout">'+tipTxt+'</div>';
 }
 
 /* ---------- conversion plan ---------- */
@@ -2025,7 +2027,7 @@ function drawConv(){
   if(!rows.length){note.textContent='No conversions fit under your limit. This usually means other income (Social Security, RMDs, wages) already fills the free floors, or you are still working.';tb.innerHTML='';return}
   const totTax=rows.reduce((a,r)=>a+(r.fed+r.state)/r.fi,0), totC=rows.reduce((a,r)=>a+r.conv/r.fi,0);
   note.textContent=convLabel(LAST.cfg)+'. That means '+rows.length+' years of conversions moving '+money(totC)+' to Roth, in today\'s dollars. Total tax in those years, spending included: '+money(totTax)+'. The first row is the number to give your tax preparer for '+rows[0].Y+'. Redo it each November.';
-  let h='<tr><th>Year</th><th>Ages</th><th>Convert</th><th>Gains realized</th><th>Federal tax</th><th>Bracket</th><th>Next $1 costs</th><th>IRA left</th><th>Roth</th></tr>';
+  let h='<tr><th>Year</th><th>Ages</th>'+[['v_conv','Convert'],['v_gains','Gains realized'],['v_fed','Federal tax'],['v_bracket','Bracket'],['v_next','Next $1 costs'],['v_ira','IRA left'],['v_roth','Roth']].map(x=>'<th>'+nm(x[0],x[1])+'</th>').join('')+'</tr>';
   rows.forEach((r,i)=>{h+='<tr class="'+(i===0?'mark':'')+'"><td>'+r.Y+'</td><td>'+r.age.map((a,j)=>r.alive[j]?a:'–').join(' / ')+'</td><td>'+full(dv(r.conv,r))+'</td><td>'+money(dv(r.gains,r))+'</td><td>'+full(dv(r.fed,r))+'</td><td>'+pct(r.marg)+'</td><td>'+Math.round((r.margEff||0)*100)+'¢</td><td>'+money(dvb(r.trad,r))+'</td><td>'+money(dvb(r.roth,r))+'</td></tr>'});
   tb.innerHTML=h;
 }
@@ -2117,7 +2119,7 @@ function drawSS(){
 /* ---------- ledger ---------- */
 function drawLedger(){
   const rows=LAST.base.rows;
-  let h='<tr><th>Year</th><th>Ages</th><th>Wages</th><th>Pension</th><th>Social Security</th><th>Spending</th><th>Required withdrawal</th><th>From brokerage</th><th>From IRA</th><th>From Roth</th><th>Roth conversion</th><th>Federal tax</th><th>State tax</th><th>401(k)/IRA</th><th>Roth</th><th>Brokerage</th><th>Cash</th><th>Total</th></tr>';
+  let h='<tr><th>Year</th><th>Ages</th>'+[['l_wages','Wages'],['l_pen','Pension'],['l_ss','Social Security'],['l_need','Spending'],['l_rmd','Required withdrawal'],['l_brk','From brokerage'],['l_ira','From IRA'],['l_roth','From Roth'],['l_conv','Roth conversion'],['l_fed','Federal tax'],['l_state','State tax'],['l_btrad','401(k)/IRA'],['l_broth','Roth'],['l_bbrk','Brokerage'],['l_bcash','Cash'],['l_total','Total']].map(x=>'<th>'+nm(x[0],x[1])+'</th>').join('')+'</tr>';
   rows.forEach((r,i)=>{const c=v=>v>1?money(dv(v,r)):'–';
     h+='<tr class="'+(r.short>0?'short':'')+(i===bIdx?' mark':'')+'"><td>'+r.Y+'</td><td>'+r.age.map((a,j)=>r.alive[j]?a:'–').join(' / ')+'</td><td>'+c(r.wages)+'</td><td>'+c(r.pen||0)+'</td><td>'+c(r.ss)+'</td><td>'+c(r.need)+'</td><td>'+c(r.rmd)+'</td><td>'+c(r.draw.brk)+'</td><td>'+c(r.draw.trad)+'</td><td>'+c(r.draw.roth)+'</td><td>'+c(r.conv)+'</td><td>'+c(r.fed)+'</td><td>'+c(r.state)+'</td><td>'+money(dvb(r.trad,r))+'</td><td>'+money(dvb(r.roth,r))+'</td><td>'+money(dvb(r.brk,r))+'</td><td>'+money(dvb(r.cash,r))+'</td><td>'+(r.short>0?'short '+money(dv(r.short,r)):money(dvb(r.total,r)))+'</td></tr>'});
   document.getElementById('ledger').innerHTML=h;
@@ -2423,17 +2425,65 @@ const HELP={
   safe:'The most you could spend each year, in today\'s dollars, and still have money last in 85% of the simulated markets. Many planners aim for 85% to 90%. See <b>We spend it all</b> under What if… for other confidence levels.',
   lifetax:'Federal plus state tax over your whole plan, compared with spending from the IRA first, in today\'s dollars. Tax paid on your wages is included in both.',
   rmd1:'Required minimum distributions force money out of pre-tax accounts each year from 73 or 75. Smaller ones mean more control over your tax bracket later.',
-  compare:'All three plans use the same savings, spending and investments. Judge them mainly on <b>Lifetime taxes</b> and <b>After-tax value to heirs</b>. The IRA rows always favor spending from the IRA first, since that drains it fastest.',
+  compare:'All three plans use the same savings, spending and investments. Judge them mainly on <b>Lifetime taxes</b> and <b>After-tax value to heirs</b>. The IRA rows always favor spending from the IRA first, since that drains it fastest. Tap a row\'s name for what it means.',
   ssgrid:'After-tax value left to heirs for each pair of claiming ages under the plan you\'re viewing. It accounts for the earnings test, spousal benefits and the survivor keeping the larger check. The full 62 to 70 grid is under What if….',
   whatif:'Each calculator tests a change on a copy of your plan. The headline stays the same unless you click Apply. Simulated calculators use 250 to 400 markets.',
   details:'Everything from here down can show today\'s dollars, adjusted for inflation, or future dollars, the actual amounts in each year, like your statements and tax returns will show.',
-  building:'Think of your tax return as a building. Deductions are the tax-free ground floor. Ordinary income fills the floors first; capital gains and qualified dividends sit on top and are taxed at 0% while they stay under the dashed line. Unused room expires on December 31.',
-  convplan:'The conversion amount for each year under your settings. The highlighted first row is the number to give your tax preparer. Redo it each November, when you can see most of the year\'s income.',
+  building:'Think of your tax return as a building. Deductions are the tax-free ground floor. Ordinary income fills the floors first; capital gains and qualified dividends sit on top and are taxed at 0% while they stay under the dashed line. Unused room expires on December 31. Tap the name of any line beside the building for what it means.',
+  convplan:'The conversion amount for each year under your settings. The highlighted first row is the number to give your tax preparer. Redo it each November, when you can see most of the year\'s income. Tap a column\'s name for what it holds.',
   balances:'Account balances under average returns. The grey band shows the 10th to 90th percentile of 1,000 simulated markets: 8 in 10 simulations land inside it.',
   taxes:'Federal plus state tax each year under each plan. Conversions raise tax now to lower required withdrawals, and the survivor\'s single-filer taxes, later.',
-  ledger:'Every year of the plan under the plan you\'re viewing. Download the CSV to work with it in a spreadsheet.'
+  ledger:'Every year of the plan under the plan you\'re viewing. Tap a column\'s name for what it holds. Download the CSV to work with it in a spreadsheet.',
+  /* Every line of the answers. On 2026-11-25 the owner asked for Runway to be explained line by line, as Prism had
+     been the day before: a line that needs a guide is not finished. So each row of the comparison (c_), each line
+     under the tax building (b_), and each column of the conversion table (v_) and of the year-by-year table (l_) has
+     a name that opens its note. Any figure a note gives comes from RULES. */
+  c_tax1:'<b>Tax in first retired year.</b> Federal plus state income tax in the first year when nobody in the household is working, in today\'s dollars. It shows what each plan costs straight away: conversions raise it, and living on brokerage money lowers it. A low figure here is not the aim. Judge by <b>Lifetime taxes</b>.',
+  c_life:'<b>Lifetime taxes.</b> Federal plus state income tax added up over every year of the plan, in today\'s dollars. Tax on your pay while you still work is in it, the same for all three plans. Lower is better. This is one of the two rows to judge the plans by.',
+  c_conv:'<b>Moved to Roth (total).</b> Every Roth conversion of the plan added up, in today\'s dollars. Only the plan with conversions has any. More is not better by itself: what counts is the tax paid to move the money against the tax saved later, and that shows in <b>Lifetime taxes</b> and <b>After-tax value to heirs</b>.',
+  c_ira:()=>'<b>IRA when RMDs start.</b> What is left in your pre-tax accounts, 401(k) and traditional IRA, in the year the tax rules start forcing money out of them. That is at '+RULES.rmd.ages[1][1]+' or '+RULES.rmd.ages[0][1]+', depending on your birth year. Those forced withdrawals are called required minimum distributions, or RMDs. The larger this balance, the larger they are, and the tax on them. It is always lowest when you spend from the IRA first, so do not judge the plans by this row alone.',
+  c_rmd1:'<b>First required withdrawal.</b> What the rules make you take out of pre-tax accounts in that first year, whether you need the money or not. It is taxed as income, and the share you must take grows each year after. Like the row above, it is always lowest when you spend from the IRA first.',
+  c_end:'<b>Money left at the end.</b> Everything in all your accounts in the last year of the plan, in today\'s dollars, before any tax your heirs would pay on it.',
+  c_heirs:()=>'<b>After-tax value to heirs.</b> The same money as your heirs would receive it. Roth, brokerage and cash count in full. Pre-tax accounts count after the tax your heirs would pay on them, at the heirs\' tax rate in your numbers ('+(LAST?LAST.cfg.heirTax:S.heirTax)+'%). Higher is better. This is the other row to judge the plans by.',
+  c_health:'<b>Health insurance and Medicare surcharges.</b> What the plan pays over its life for health cover that depends on your income: the premiums of a marketplace plan before Medicare, after any subsidy, and Medicare surcharges after. In today\'s dollars. A plan that shows more income in a year can lose a subsidy or meet a surcharge. The <b>Health</b> view shows the years.',
+  c_short:'<b>Runs short.</b> Spending the plan could not pay for, added up over the years after the money ran out, in today\'s dollars. "never" means the money lasts when markets give your average return every year. The headline says how the plan does in rough markets.',
+  b_need:'<b>Spending covered.</b> What you spend this year after tax: your yearly spending, health cover before Medicare, and any one-off expense you entered. The year\'s tax comes on top of it.',
+  b_agi:'<b>Total income (AGI).</b> Adjusted gross income: what your tax return counts as income before deductions. It holds pay, pension, interest, dividends, the gain part of investments you sold, withdrawals and conversions from pre-tax accounts, and the taxed part of Social Security. Roth withdrawals are not in it, and neither is savings you had already paid tax on. Medicare surcharges and marketplace subsidies are worked out from a figure very close to this one.',
+  b_taxable:'<b>Taxable income (after deductions).</b> Total income less deductions. It is the amount the tax brackets apply to: in the building, everything above the tax-free ground floor.',
+  b_ded:()=>{const F=RULES.fed;return '<b>Deductions.</b> The part of your income that is not taxed at all: the ground floor of the building. Runway uses the standard deduction. In '+RULES.meta.taxYear+' that is '+full(F.mfj.std)+' for a couple or '+full(F.single.std)+' single, plus '+full(F.mfj.add65)+' for each spouse aged 65 or over ('+full(F.single.add65)+' if single). Through '+RULES.senior.lastYear+' there is up to '+full(RULES.senior.amount)+' more for each person 65 or over, which shrinks at higher incomes. In later years of the plan the first two amounts rise with inflation.'},
+  b_free:'<b>Received tax-free.</b> Money that came in this year without adding to your taxable income: Roth withdrawals, cash, your own money coming back when you sell brokerage investments (only the gain is taxed), and the part of Social Security that is not taxed.',
+  b_conv:'<b>Roth conversion.</b> What moves from pre-tax accounts into Roth this year. It counts as income this year and is never taxed again, for you or for your heirs.',
+  b_fed:'<b>Federal tax.</b> Federal income tax for the year on everything above: the brackets on ordinary income, and the tax on any capital gains and dividends that sit above the 0% gains line.',
+  b_state:'<b>State tax.</b> Income tax for the state you live in that year, under simplified rules. <b>State taxes</b>, in your numbers, shows the rules used.',
+  b_eff:'<b>Effective rate on spending.</b> This year\'s federal and state tax as a share of what you spend. It is the plain cost, in tax, of paying for your life this year. Use it to compare one year with another, and one plan with another.',
+  v_conv:'<b>Convert.</b> The amount to move from pre-tax accounts into Roth that year under your conversion rule. The highlighted first row is this year\'s: it is the number to give your tax preparer.',
+  v_gains:'<b>Gains realized.</b> The gain part of the brokerage investments sold that year to pay the bills and the tax. Gains count as income. They are taxed at 0% while your taxable income stays under the 0% gains line, so a conversion that is too large pushes them into tax.',
+  v_fed:'<b>Federal tax.</b> Federal income tax for that whole year, with the conversion in it.',
+  v_bracket:'<b>Bracket.</b> The federal tax bracket that your ordinary income reaches that year: the rate on its top dollar.',
+  v_next:'<b>Next $1 costs.</b> What one more dollar taken from pre-tax accounts would cost that year: the extra federal and state tax, and any extra health cost that depends on income. It can be well above the bracket, because an extra dollar can also make more of your Social Security taxable, push capital gains above the 0% gains line, or shrink a marketplace subsidy. Where this figure is high, converting more that year is expensive.',
+  v_ira:'<b>IRA left.</b> What is left in pre-tax accounts, 401(k) and traditional IRA, at the end of that year.',
+  v_roth:'<b>Roth.</b> The Roth balance at the end of that year. It grows tax-free from then on.',
+  l_wages:'<b>Wages.</b> Pay from work that year, before tax.',
+  l_pen:'<b>Pension.</b> Pension payments received that year, before tax.',
+  l_ss:'<b>Social Security.</b> Benefits received that year, before tax. Part of it can count as taxable income, depending on your other income.',
+  l_need:'<b>Spending.</b> What you spend that year after tax: your yearly spending, health cover before Medicare, and any one-off expense. It rises with inflation, and falls to your survivor share after the first death.',
+  l_rmd:()=>'<b>Required withdrawal.</b> What the tax rules make you take from pre-tax accounts that year, from '+RULES.rmd.ages[1][1]+' or '+RULES.rmd.ages[0][1]+' depending on your birth year. It is taxed as income whether you spend it or not. What you do not need is put into the brokerage account.',
+  l_brk:'<b>From brokerage.</b> What you take from taxable investment accounts that year by selling investments. Only the gain part of a sale is taxed.',
+  l_ira:'<b>From IRA.</b> What you take from pre-tax accounts that year, required withdrawals included. All of it is taxed as income.',
+  l_roth:'<b>From Roth.</b> What you take from Roth accounts that year. It is tax-free and does not count as income.',
+  l_conv:'<b>Roth conversion.</b> What moves from pre-tax accounts into Roth that year. It is taxed as income that year. It is not spent: it stays invested, in the Roth.',
+  l_fed:'<b>Federal tax.</b> Federal income tax for that year.',
+  l_state:'<b>State tax.</b> State income tax for that year, under the simplified rules shown with <b>State taxes</b> in your numbers.',
+  l_btrad:'<b>401(k)/IRA.</b> The balance of your pre-tax accounts at the end of that year.',
+  l_broth:'<b>Roth.</b> The balance of your Roth accounts at the end of that year.',
+  l_bbrk:'<b>Brokerage.</b> The balance of your taxable investment accounts at the end of that year.',
+  l_bcash:'<b>Cash.</b> The balance of your cash and savings at the end of that year. The plan leaves your cash floor alone until every other account is empty.',
+  l_total:'<b>Total.</b> All four balances together at the end of that year. If the money has run out, this cell shows how much of the year\'s spending could not be paid.'
 };
 const hb=k=>'<button type="button" class="hlp" data-h="'+k+'" aria-label="More about this">?</button>';
+/* A name in the answers that opens its own note: a row of the comparison, a line under the tax building, a column of
+   the conversion table or of the year-by-year table. (Declared as a function so that the drawing code above can use it.) */
+function nm(k,name){return '<button type="button" class="lnk nm" data-h="'+k+'">'+name+'</button>'}
 function addHelpButtons(){
   const add=(el,k,atEnd)=>{if(!el||el.querySelector('.hlp'))return;const t=document.createElement('span');t.innerHTML=hb(k);const b=t.firstChild;
     if(atEnd||!el.firstChild||el.firstChild.nodeType!==3){el.appendChild(b);return}
@@ -2447,7 +2497,7 @@ function addHelpButtons(){
 }
 const pop=document.createElement('div');pop.id='helpPop';pop.hidden=true;pop.setAttribute('role','dialog');document.body.appendChild(pop);
 let popFor=null;
-document.addEventListener('click',e=>{const b=e.target.closest('.hlp');
+document.addEventListener('click',e=>{const b=e.target.closest('.hlp, .nm');
   if(b){e.preventDefault();e.stopPropagation();if(popFor===b&&!pop.hidden){pop.hidden=true;popFor=null;return}
     const v=HELP[b.dataset.h];pop.innerHTML=typeof v==='function'?v():v;pop.hidden=false;popFor=b;
     const r=b.getBoundingClientRect(),w=Math.min(340,document.documentElement.clientWidth-32);pop.style.width=w+'px';

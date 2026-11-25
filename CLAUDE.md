@@ -14,7 +14,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/research/` | Prism's research from the filings: `edgar.js` fetches a company's filings from the regulator, `READING.md` tells the reader what to write, `brief.js` checks every quoted passage and packs the research file, `desk.js` shapes the queue that comes out of the claude.ai link's store and the briefs that go back into it (see "Research from the filings" under Prism). Needs network access to the regulator and a contact given at run time. |
 | `tools/cheatsheet.js`, `tools/cheatsheet.css` | Builds Prism's two-page cheat sheet as a PDF (see "The cheat sheet" under Prism). Not part of the checks or the workflow. |
 | `tools/guide-pdf.js`, `tools/guide-print.css` | Prints a guide as a PDF, from the guide's own lessons (see "A guide on paper" under "The guides"). Not part of the checks or the workflow. |
-| `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, and checks that the guide names only what is on the page (116 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
+| `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, checks that the guide names only what is on the page, and checks that every line of the answers has its note (125 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
 | `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (507 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
@@ -89,6 +89,22 @@ publication date, generated from `RULES`.
 - Colors are CSS tokens on `:root` with dark-mode overrides; chart palettes were checked for color-blind
   safety; layout must work at phone width without sideways scrolling.
 - Every input and result can carry a `?` help note (`HELP` map): what it is, the assumption, typical values.
+- **A note for every line of the answers (`nm`; the `c_`, `b_`, `v_` and `l_` notes).** On 2026-11-25 the owner asked
+  for "a detailed moron's guide on similar lines" for Runway, the day after Prism got one. The same rule applies: **a
+  line that needs a guide is not finished.** Runway's inputs already had their notes; the answers did not. So the
+  nine rows of "Compare the three plans" (`c_`), the nine lines beside "Your tax building" (`b_`), the seven columns
+  of the "Roth conversion plan" table (`v_`) and the sixteen of "Year by year" (`l_`) each have an underlined name
+  that opens a note: what the line holds, how to read it, and which way is better. "Next $1 costs" was the line most
+  in need of one.
+  - The names are buttons with class `nm` (not `tip`: in this page `.tip` is the chart's hover box). `nm(key, name)`
+    is a declared function so the drawing code above it can use it. The click that opens a `?` note opens these too.
+  - A note that gives a figure builds it from `RULES`: the required-withdrawal ages, and the deductions (standard,
+    the amounts at 65 and over, the senior deduction and its last year).
+  - The downloads (report, CSV, PDF) keep plain labels: they read `compareLines()` and the rows, not the page.
+  - A check holds that every name has its note, that none is left over, and the count of each group. **When a row,
+    a line or a column is added to the answers, give it its note.**
+  - The three other views (This year, Health, Legacy) explain their figures in place, with a line under each box and
+    a paragraph under each table, so their names open no note. The guide goes through them box by box.
 - **The owner's bar (said on 2026-11-20): a tool must make life easier, not become "a nobel prize initiative".**
   He found the 20-tab workbook his Claude-chat Prism produces too complex. So: the answer comes first on the page,
   in plain words; dials and extras sit collapsed below or behind one "More options" box; no codes or letter
@@ -136,8 +152,11 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   list and nothing else. Keep it that way.
   - Runway: look around with the sample couple, put in your own numbers, read your answer; which account pays the
     bills, Roth conversions, this year, Social Security, health, legacy, the what-if calculators, where the numbers
-    come from; saving and the yearly check-up. Its first lesson tells a reader who already has numbers to press
-    Show example, which keeps them (see the section above).
+    come from; then "The answers, line by line" (the comparison row by row, the tax building line by line, the
+    conversion table and the year-by-year table column by column), which the owner asked for on 2026-11-25; saving
+    and the yearly check-up. The lessons on this year, health and legacy go through their boxes one by one. Its
+    first lesson tells a reader who already has numbers to press Show example, which keeps them (see the section
+    above).
   - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
     holding up or slipping), the entry ceiling, the put desk, the five questions, the nine named lists, moonshots,
     whether the management is any good, what its filings say, why a company isn't listed; then "A company's page,
@@ -195,7 +214,9 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   copy cannot say something else. Left out: the "Show me" links and the notes about them, which need the page.
   - It needs Playwright. The page numbers on the first page need `pdftotext`: the guide is printed once, each
     lesson's label ("Lesson 12") is looked up in the result, and it is printed again with the numbers filled in.
-  - Prism's came to 20 US Letter pages and Runway's to 11. Only Prism's was asked for and sent.
+  - Prism's came to 20 US Letter pages (sent 2026-11-24). Runway's came to 17 once it had its line-by-line part
+    (sent 2026-11-25).
+  - Offered and not built: a two-page cheat sheet for Runway, like Prism's.
   - The PDF is never committed. **He keeps the copy he was sent: after a change to the guide that matters to a
     reader, print it again and send him the new one.** A lesson written with paper in mind reads better on screen
     too: a run of five measures in one paragraph was hard to read in print, and became one measure to a line.
