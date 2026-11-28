@@ -631,6 +631,24 @@ format as the other tools; no AI, no live data.
   research brief" button. Offered on 2026-11-20 and not chosen then: put arithmetic (he types strike, expiry and
   premium; Prism works out the return on cash, the breakeven and what it assumes), a one-line market thermometer
   (share of the A-list on sale, tracked across files), and a "heavily shorted" caution tag.
+- **Further down the price (the owner's wish, 2026-11-28; offered, not built).** After reading two companies with the
+  sheets (one he owns that is priced above its entry ceiling and below his cost, one he would buy at a lower price),
+  he wrote: "Wish Prism could do deeper analysis and take me further down each direction before I go manual." Of the
+  directions Prism opens, the business and its management have something further behind them (the notes, the signs,
+  "Deeper dive"); the price has only the entry ceiling and one line on what today's price implies. Worked for him in
+  chat from his file, and offered as a build:
+  - **What each price counts on**, under "What the price implies": a short ladder of prices (the year's high,
+    today's price, the entry ceiling, the year's low, and **a price of his own**: his cost, or a put strike less its
+    premium). For each, the growth it needs (`impliedGrowth` on the yields scaled by price) and what he would earn a
+    year at that price if spare cash grows only at the cautious rate (the entry ceiling's sum turned round).
+  - **Where the price stands**: the year's low and high with their dates, and the 50- and 200-day averages.
+  - Beside what the price needs: what analysts expect for sales and profit over the next year and the next three.
+  - The file has the columns (`52W Low`, `52W Low Date`, `52W High Date`, `200 MA`, `Rev Gr. Next 3Y`,
+    `EPS Gr. Next Y`, `EPS Gr. Next 3Y`); Prism does not read them yet, so he would load his file again once.
+  - What stays out: the provider's own "fair value" figures and analysts' price targets. On the company he owns, three
+    such figures in his own file ran from under half the price to well above it: a single "valuation" is fragile,
+    and a ladder of "what must be true at this price" is Prism's way.
+  Wait for his word before building. Put arithmetic (below) would sit naturally beside it.
 - Deliberately left out, and said so to the owner: estimated option premiums (not in the file; a guess would
   mislead), analyst ratings and price targets, more chart indicators, any combined score.
 
