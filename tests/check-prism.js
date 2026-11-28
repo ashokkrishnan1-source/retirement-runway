@@ -54,7 +54,7 @@ check('date: text date', E.toDate('2026-11-04'), '2026-11-04');
 }
 
 console.log('--- The provider\'s full download ---');
-// The headings of the 102 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
+// The headings of the 104 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
 // them. Headings only: the values below are invented.
 { const FULL = ['Symbol', 'Company Name', 'Sector', 'Industry', 'Stock Price', 'Market Cap', 'Avg. Volume', 'Revenue', 'PE Ratio', 'EV/EBITDA',
     'Debt / EBITDA', 'Total Cash', 'Total Debt', 'Net Cash', 'FCF Yield', 'ROIC', 'Rev. Growth', 'FCF Growth', 'Shares Ch. (YoY)', 'Return 1Y',
@@ -66,13 +66,15 @@ console.log('--- The provider\'s full download ---');
     'Div. Yield', 'Dividend', 'Div. Years', 'Div. Gr. Years', 'FCF Payout', 'Div. Growth', 'Ex-Div Date', 'Payout Freq.',
     'Rev / Employee', 'Empl. Growth', 'FCF / Share', 'GP Growth', 'Asset Turnover', 'Inv. Turnover', 'BV / Share', 'EPS', 'ROE (5Y)', 'Last Report Date', 'Last Earnings',
     'ROA', 'Equity', 'Assets', 'CapEx', 'Investing CF', 'Debt Growth (YoY)', 'Goodwill', '10K Date',
-    '52W Low', '52W Low Date', '52W High', '52W High Date', '50 MA', '200 MA', 'Rev Gr. This Y', 'EPS Gr. This Y', 'EPS Gr. Next Y'];
+    '52W Low', '52W Low Date', '52W High', '52W High Date', '50 MA', '200 MA', 'Rev Gr. This Y', 'EPS Gr. This Y', 'EPS Gr. Next Y',
+    'Tax Rate', 'OpInc Growth (Q)'];
   // look-alike headings that are also in the download and must not be mistaken for the ones above
-  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth (Q)', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date',
+  const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth 3Y', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date',
     'Div. Growth 3Y', 'Div. Growth 5Y', 'Div. Growth 10Y', 'Payout Ratio', 'Payment Date', 'Last Div.', 'Shareh. Yield',
     'Prof / Employee', 'Empl. Change', 'Employees', 'FCF Growth (Q)', 'GP Growth 3Y', 'GP Growth (Q)', 'WC Turnover', 'TBV / Share', 'EPS Growth (Qtrs)', 'Est. EPS', 'ROA (5Y)', 'Earnings Time',
     'Debt Growth (QoQ)', 'Debt Growth (3Y)', 'Financing CF', 'LT Assets', 'Curr. Assets', 'Debt / Equity', 'ROCE', 'TBV',
-    '52W Low Chg', 'ATH', 'ATH Date', 'ATL', '20 MA', '150 MA', '50vs200 MA', '20MA Chg %', 'Rev Gr. Next 3Y', 'Rev Gr. This Q', 'EPS Gr. Next 3Y', 'EPS Gr. Next Q', 'EPS Gr. This Q', 'Est. Rev. Growth', 'Est. EPS Growth'];
+    '52W Low Chg', 'ATH', 'ATH Date', 'ATL', '20 MA', '150 MA', '50vs200 MA', '20MA Chg %', 'Rev Gr. Next 3Y', 'Rev Gr. This Q', 'EPS Gr. Next 3Y', 'EPS Gr. Next Q', 'EPS Gr. This Q', 'Est. Rev. Growth', 'Est. EPS Growth',
+    'Income Tax', 'Tax / Revenue', 'Pretax Margin', 'OpInc Growth 5Y'];
   const row = FULL.map(() => ''), set = (h, v) => { row[FULL.indexOf(h)] = v; };
   set('Symbol', 'zzz.x'); set('Stock Price', '40'); set('Market Cap', '2000000000'); set('FCF Yield', '9.00%'); set('FCF', '100000000'); set('ROIC', '12.50%');
   set('Shares Ch. (YoY)', '-0.21%'); set('CIK Code', '0000123456'); set('Price Date', '2026-11-19'); set('Ent. Value', '2500000000'); set('Int. Cov.', '-4.5');
@@ -82,6 +84,7 @@ console.log('--- The provider\'s full download ---');
   set('Rev / Employee', '250000'); set('Empl. Growth', '2.00%'); set('FCF / Share', '4.125'); set('GP Growth', '-3.50%'); set('Asset Turnover', '0.85'); set('Inv. Turnover', '6.2'); set('BV / Share', '18.75'); set('EPS', '-1.2'); set('ROE (5Y)', '14.00%'); set('Last Report Date', '2026-09-30'); set('Last Earnings', '2026-11-05');
   set('ROA', '1.25%'); set('Equity', '900'); set('Assets', '10000'); set('CapEx', '-200'); set('Investing CF', '-500'); set('Debt Growth (YoY)', '10.00%'); set('Goodwill', '300'); set('10K Date', '2026-02-13');
   set('52W Low', '31.5'); set('52W Low Date', '2026-10-29'); set('52W High', '44.88'); set('52W High Date', '2026-05-14'); set('50 MA', '41.745'); set('200 MA', '38.2'); set('Rev Gr. This Y', '12.50%'); set('EPS Gr. This Y', '145.25%'); set('EPS Gr. Next Y', '-8.75%');
+  set('Tax Rate', '-6.50%'); set('OpInc Growth (Q)', '-18.25%');
   const m = E.mapTable(FULL.concat(DECOYS), [row.concat(DECOYS.map(() => '99'))]), r = m.rows[0];
   check('full download: every column Prism reads is found', Object.keys(m.report.found).length, E.FIELDS.length);
   check('full download: none missing', m.report.missing, []);
@@ -99,7 +102,8 @@ console.log('--- The provider\'s full download ---');
   check('full download: the columns behind the signs', [r.rpe, r.emplg, r.fcfps, Math.round(r.gpg * 1e6) / 1e6, r.ato, r.invt, r.bvps, r.eps, Math.round(r.roe5 * 1e6) / 1e6, r.lastrep, r.lastearn], [250000, 0.02, 4.125, -0.035, 0.85, 6.2, 18.75, -1.2, 0.14, '2026-09-30', '2026-11-05']);
   check('full download: the columns behind a bank\'s tests and the use of cash', [r.roa, r.equity, r.assets, r.capex, r.invcf, Math.round(r.debtg * 1e6) / 1e6, r.goodwill, r.tenk], [0.0125, 900, 10000, -200, -500, 0.1, 300, '2026-02-13']);
   check('full download: where the price stands and what analysts expect', [r.low52, r.low52d, r.high52, r.high52d, r.ma50v, r.ma200v, Math.round(r.revgt * 1e6) / 1e6, Math.round(r.epsgt * 1e6) / 1e6, Math.round(r.epsgn * 1e6) / 1e6], [31.5, '2026-10-29', 44.88, '2026-05-14', 41.745, 38.2, 0.125, 1.4525, -0.0875]);
-  check('the engine reads 102 columns', E.FIELDS.length, 102);
+  check('full download: the tax rate and the latest quarter\'s operating profit', [Math.round(r.tax * 1e6) / 1e6, Math.round(r.oigq * 1e6) / 1e6], [-0.065, -0.1825]);
+  check('the engine reads 104 columns', E.FIELDS.length, 104);
   // a spelling that is only a guess is reported as one: "Ticker" and "Enterprise Value" are not the provider's headings
   check('a guessed spelling is reported', E.mapTable(['Ticker', 'Enterprise Value'], [['x', '5']]).report.guessed, ['sym', 'ev']);
   // The yield is free cash flow over the whole company's market value: 100m / 2,000m = 5%, though the file's column says 9%
@@ -489,6 +493,52 @@ console.log('--- What each price counts on ---');
   check('page: the reader\'s prices are kept, and saved in the encrypted copy', /myp: \{\}/.test(ui) && /myp: S\.myp/.test(ui) && /\['track', 'kind', 'own', 'rivals', 'myp'\]/.test(ui), true);
   check('page: the box names no fair value and no price target', /fair value|price target|analysts' target/i.test(ui.slice(ui.indexOf('function priceBox'), ui.indexOf('/* ---------- research from the filings'))), false);
   check('page: Prism suggests no price or strike of its own', /Prism does not suggest a price or a strike/.test(ui), true);
+}
+
+console.log('--- Two cautions a year\'s figures hide ---');
+{ // A tax rate below zero in a year of profit: the profit is larger than it was before tax. And operating profit down
+  // 10% or more in the latest quarter while the year as a whole is not falling (not down more than 5%).
+  const T = '2026-11-12', plain = E.run(universe(), {}, {today: T});
+  const set = (sym, o) => E.run(universe().map(r => r.sym === sym ? Object.assign(r, o) : r), {}, {today: T}).rows.find(r => r.sym === sym).flags;
+  check('the invented company is scored, so it can carry a caution', plain.rows.find(r => r.sym === 'STAR').scored, true);
+  check('tax credit: a tax rate of -5% with a profit', set('STAR', {tax: -0.05, ni: 100}).includes('taxcredit'), true);
+  check('tax credit: not with tax paid, not with a loss, not without a figure', [set('STAR', {tax: 0.05, ni: 100}), set('STAR', {tax: -0.05, ni: -100}), set('STAR', {tax: null, ni: 100}), set('STAR', {tax: -0.05})].map(f => f.includes('taxcredit')), [false, false, false, false]);
+  check('quarter down: down 12% in the quarter in a year that is up 30%', set('STAR', {oigq: -0.12, oig: 0.30}).includes('qdown'), true);
+  check('quarter down: down exactly 10% counts, down 8% does not', [set('STAR', {oigq: -0.10, oig: 0.30}), set('STAR', {oigq: -0.08, oig: 0.30})].map(f => f.includes('qdown')), [true, false]);
+  check('quarter down: not said when the year is already falling by more than 5% (that is a weak spot instead)', [set('STAR', {oigq: -0.12, oig: -0.10}), set('STAR', {oigq: -0.12, oig: -0.04})].map(f => f.includes('qdown')), [false, true]);
+  check('quarter down: said when the file has no yearly figure', set('STAR', {oigq: -0.12}).includes('qdown'), true);
+  check('quarter down: a quarter that is up says nothing', set('STAR', {oigq: 0.4, oig: 0.3}).includes('qdown'), false);
+  // cautions only: with both on every company, nothing is hidden, graded or listed differently
+  const rich = E.run(universe().map(r => Object.assign(r, {tax: -0.2, ni: 50, oigq: -0.5})), {}, {today: T}), poor = E.run(universe().map(r => Object.assign(r, {ni: 50})), {}, {today: T});
+  const key = r => [r.sym, r.Q, r.V, r.P, r.T, r.g, r.n5, r.lists, r.grade, r.alist, r.onSale, r.put, r.moon, r.slipping, r.impg, r.ceiling, r.blocks, r.hold];
+  check('cautions: every scored company carries both', rich.rows.filter(r => r.scored).every(r => r.flags.includes('taxcredit') && r.flags.includes('qdown')), true);
+  check('cautions: a company that is not scored carries neither', rich.rows.filter(r => !r.scored).every(r => !r.flags.length), true);
+  check('cautions: every company is graded, listed and shown the same with or without them', rich.rows.map(key), poor.rows.map(key));
+  check('cautions: the lists are the same', E.memberships(rich.rows, ['Q', 'V', 'S', 'P', 'T']), E.memberships(poor.rows, ['Q', 'V', 'S', 'P', 'T']));
+  const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));
+  const FL = new Function(ui.match(/const FL = \{[\s\S]*?\n\};/)[0] + '\nreturn FL;')(), FSHORT = new Function(ui.match(/const FSHORT = \{[^\n]*\};/)[0] + '\nreturn FSHORT;')(), SEVERE = new Function(ui.match(/const SEVERE = \{[^\n]*\};/)[0] + '\nreturn SEVERE;')();
+  check('page: each caution has its words and its short tag', ['taxcredit', 'qdown'].filter(k => !FL[k] || FL[k].length !== 2 || !FSHORT[k]), []);
+  check('page: neither is a data warning that hides a row', [SEVERE.taxcredit, SEVERE.qdown], [undefined, undefined]);
+  check('page: every caution the engine can raise has its words', ['fcf_hi', 'pe_lo', 'nc_hi', 'sh_odd', 'basis', 'peak', 'cyc', 'taxcredit', 'qdown', 'foreign', 'altman'].filter(k => !FL[k] || !FSHORT[k]), []);
+}
+
+console.log('--- Take it to a chat ---');
+{ // The brief is put together on the page from what the engine found. These checks hold its rules: what it may carry,
+  // what it must leave out, and that the page hands it over without sending anything anywhere.
+  const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));
+  const fn = ui.slice(ui.indexOf('function chatBrief(r) {'), ui.indexOf('function chatBox(r) {'));
+  check('brief: the page has it', fn.length > 2000, true);
+  check('brief: it leaves out the reader\'s verdict and notes', /S\.verdicts|verdictOf|\.thesis|\.notes|S\.own\b/.test(fn), false);
+  check('brief: it says where the figures come from and asks for them to be checked', /come from one data file dated/.test(fn) && /check them against the company\\'s own reports/.test(fn), true);
+  check('brief: it asks for sources, and for what could not be checked', /Give a source for each fact/.test(fn) && /Say plainly what you could not check/.test(fn), true);
+  check('brief: it asks for no recommendation, no price target and no fair value', /recommend|should I buy|buy or sell|price target|fair value|what is it worth/i.test(fn), false);
+  check('brief: a made-up company says that it is one', /A made-up company from the example in Prism/.test(fn), true);
+  check('brief: the four questions always asked', ['What does it sell, and to whom?', 'Who are its real competitors', 'Who runs it, and for how long?', 'What would have to go right'].filter(q => !fn.includes(q)), []);
+  check('brief: questions chosen by what was found', ['Why did the price fall?', 'in the latest quarter, though it is up over the year', 'lifted by a tax credit', 'Stock pay takes', 'bad loans, its deposits and its reserves', 'cyclical industry'].filter(q => !fn.includes(q)), []);
+  check('page: the box is offered right under the Deeper dive line', /diveLine\(r\) \+ chatBox\(r\)/.test(ui), true);
+  check('page: it can be copied or saved, and has its note', /data-briefcopy=/.test(ui) && /data-briefsave=/.test(ui) && /\n  chat: \(\) =>/.test(ui) && /hb\('chat'\)/.test(ui), true);
+  check('page: the brief goes nowhere by itself (no fetch, no request, in the whole page script)', /\bfetch\(|XMLHttpRequest|sendBeacon|new WebSocket/.test(ui.replace(/\/\* VAULT:START[\s\S]*?VAULT:END \*\//, '')), false);
+  check('page: the note says nothing checks what a chat says', /nothing checks what it says/.test(ui), true);
 }
 
 console.log('--- Dividends ---');
@@ -974,7 +1024,7 @@ console.log('--- The guide keeps step with the page ---');
   const sorts = Object.keys(new Function(ui.match(/const SORTS = \{[\s\S]*?\n\};/)[0] + '\nreturn SORTS;')());
   check('guide: the page has nine named lists', Object.keys(LI).length, 9);
   check('guide: the engine and the page agree on the named lists', Object.keys(LI).slice().sort(), E.LISTS.slice().sort());
-  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs', 'run', 'owners', 'stand', 'price'];
+  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs', 'run', 'owners', 'stand', 'price', 'chat'];
   const gos = all(/<a\b[^>]*\bdata-go='([^']+)'[^>]*>([\s\S]*?)<\/a>/g, guide).map(x => [JSON.parse(x[1]), plain(x[2])]);
   const bad = gos.filter(([g]) => (g.list !== undefined && !lists.includes(g.list)) || (g.sort !== undefined && !sorts.includes(g.sort)) || (g.open !== undefined && g.open !== 'first') ||
     (g.box !== undefined && g.box !== 'self') || !g.el || !(parts.includes(g.el) || html.includes('id="' + g.el + '"')) || (parts.includes(g.el) && g.open !== 'first'));

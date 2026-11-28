@@ -15,7 +15,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/cheatsheet.js`, `tools/cheatsheet.css` | Builds Prism's two-page cheat sheet as a PDF (see "The cheat sheet" under Prism). Not part of the checks or the workflow. |
 | `tools/guide-pdf.js`, `tools/guide-print.css` | Prints a guide as a PDF, from the guide's own lessons (see "A guide on paper" under "The guides"). Not part of the checks or the workflow. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, checks that the guide names only what is on the page, and checks that every line of the answers has its note (125 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (573 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (601 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -160,7 +160,8 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
     holding up or slipping), the entry ceiling, what a price is counting on (added 2026-11-28), the put desk, the
     five questions, the nine named lists, moonshots,
-    whether the management is any good, what its filings say, why a company isn't listed; then "A company's page,
+    whether the management is any good, what its filings say, how to dig further with an AI chat (added
+    2026-11-28), why a company isn't listed; then "A company's page,
     line by line" (what each of the six tests asks, the lines of "Is the price low?" and "Is the business
     slipping?", the lines of "What is the price counting on?", the figures behind the five questions), which the
     owner asked for on 2026-11-24 as "a more detailed guide"; verdicts (and how to note a put), the signs that a business is winning, what changed, the scorecard;
@@ -184,9 +185,9 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   calculator and the id of a part of the page. Prism: `{"list", "sort", "open", "el", "box"}`: a list of the Show
   menu (`""` is the five-question list, `"near"` the near misses), an order, `"open":"first"` to open the first
   company, and a part of the page (`"detail"` and `"vform"` are the opened company's detail and its verdict form;
-  `"price"`, `"signs"`, `"run"`, `"owners"` and `"stand"` are its boxes "What is the price counting on?", "Is the
-  business winning?", "How well is it run?", "How does it treat its owners?" and, when research is loaded, "Where
-  does it stand?";
+  `"chat"`, `"price"`, `"signs"`, `"run"`, `"owners"` and `"stand"` are its boxes "Take it to a chat", "What is the
+  price counting on?", "Is the business winning?", "How well is it run?", "How does it treat its owners?" and, when
+  research is loaded, "Where does it stand?";
   `"box":"self"` outlines the part itself and not the panel around it). Any may be left out. On a tap the guide
   writes this as a note in `localStorage` key `ftol-show`, with the tool's name. The tool reads its own note once
   as it loads (`ftolShow`, while it is under a minute old), sets its view, and calls `ftolSpot`, which opens any
@@ -234,7 +235,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (573 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (601 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -574,13 +575,14 @@ format as the other tools; no AI, no live data.
   five verdict names come from his case-notes headings: don't add trade types as verdicts. Separate strike and
   expiry boxes, with each file showing the distance from the strike, were offered and are not built.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
-- `FIELDS`: the first spelling of each of the 102 columns was checked against the owner's real downloads (a
-  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 102 headings.
+- `FIELDS`: the first spelling of each of the 104 columns was checked against the owner's real downloads (a
+  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 104 headings.
   Twenty-seven were added on 2026-11-24: eight dividend columns, eleven for the signs, and eight for the
   banks' tests, the record against rivals and the use of cash. Nine more on 2026-11-28, for "What is the price
   counting on?": the year's low and high with their dates, the 50- and 200-day averages, and analysts' forecasts
   for this financial year (sales, profit per share) and the next (profit per share; next year's sales was read
-  already).
+  already). Two more the same day, for the two cautions: the tax rate, and the latest quarter's growth in
+  operating profit.
   Later spellings are guesses for other files, and a match on one is reported on the page as "matched by name
   only". What the full file taught us, so nobody has to find it twice:
   - Statement figures are already in US dollars, whatever currency the company reports in.
@@ -611,7 +613,7 @@ format as the other tools; no AI, no live data.
   followed companies. On the owner's file the saved state is about 90 KB on the first day (the scorecard is two
   thirds of it) and the record of signs grows to about 50 KB.
 - The built-in example carries made-up values for the newer columns too. Each batch of columns has its own random
-  stream (six so far), so every earlier figure stays as it was. It includes a few young fast growers so the
+  stream (seven so far), so every earlier figure stays as it was. It includes a few young fast growers so the
   moonshot list has something to show, and a made-up record of five earlier reports for every company
   (`DATA.track`, built by running the real `trackStep` on made-up earlier figures), so the signs have a history to
   show. Adding an operating margin moved one company off one named list; the main lists did not change.
@@ -622,7 +624,8 @@ format as the other tools; no AI, no live data.
   sheet for me to download", to refresh his memory "on the 'show' and 'order' and whatever else you are doing":
   "a moron's guide to Prism". It is a two-page US Letter PDF. Page 1 is the lists: what to do with each new file,
   Show, Order, what counts, the tags. Page 2 is one company: a row, the boxes inside, verdicts and how to note a
-  put, further down the page, research, saving, three things to remember.
+  put, further down the page, "Past what a file can say" (the chat first, then the Deeper dive), saving, three
+  things to remember.
   - `node tools/cheatsheet.js <out.pdf>` builds it, with Playwright. It stops if a name on the sheet is not on
     Prism's page, if a list, an order or a verdict has no line on the sheet, or if the text no longer fits two
     pages. The pass marks come from the page's `CONTROLS`. The row it pictures is a made-up company of the example.
@@ -633,8 +636,8 @@ format as the other tools; no AI, no live data.
   - Keep it to two pages: when a line goes in, another comes out. The guide teaches; the sheet only reminds.
 - Not built yet (ask the owner): scoring property companies (the figure they are judged on, funds from
   operations, is an empty column in the download), asking banks the five questions, ten-year divergence, adjusting for
-  share splits (the scorecard drops a split company instead), the owner's industry and override maps, a "copy a
-  research brief" button. Offered on 2026-11-20 and not chosen then: put arithmetic (he types strike, expiry and
+  share splits (the scorecard drops a split company instead), the owner's industry and override maps. (The "copy a
+  research brief" button of his requirements is built: see "Take it to a chat".) Offered on 2026-11-20 and not chosen then: put arithmetic (he types strike, expiry and
   premium; Prism works out the return on cash, the breakeven and what it assumes), a one-line market thermometer
   (share of the A-list on sale, tracked across files), and a "heavily shorted" caution tag.
 - **What is the price counting on? (`needsAt`, `earnAt`, `priceLadder`, `priceStand`, `forecastRead`; `priceBox`,
@@ -698,12 +701,47 @@ format as the other tools; no AI, no live data.
       annual report. Offered: have the Deeper dive read those two as well (the regulator has both).
     - *Not Prism's to give*: news and press from the web, a grade for the managers, a single fair value. The chat's
       own figures were not checked here.
-  - Offered on 2026-11-28 and not built: reading the latest quarterly report and results release in a Deeper dive;
-    two cautions that the chat caught and the file also shows (a profit lifted by a tax credit: the file's tax rate
-    is below zero for about 94 large companies in profit; and the latest quarter's operating profit falling while
-    the year's is up, which "Is the business slipping?" does not see: 15 of 141 on the A-list); working the entry
-    ceiling itself on spare cash after stock pay; a mark under "What changed" when a followed company's price
-    crosses one of his own prices. Put arithmetic (above) would sit beside the box.
+  - Offered on 2026-11-28 and still waiting for his word: working the entry ceiling itself on spare cash after stock
+    pay; a mark under "What changed" when a followed company's price crosses one of his own prices; reading the
+    latest quarterly report and the results release in a Deeper dive (he chose the chat instead, see the next
+    bullet, so do not build this unless he asks). Put arithmetic (above) would sit beside the box.
+- **Take it to a chat (`chatBrief`, `chatBox`): where Prism stops and an AI chat takes over.** Asked whether the
+  Deeper dive should read more, he answered (2026-11-28): "Probably cheaper if prism can get me closer to the edge
+  and I can use chatGPT or claude chat to interactively dig deeper towards conclusions?" It is: a chat he already
+  pays for costs nothing more for each company, and it can read the news and the latest results, which the Deeper
+  dive cannot. So the division of labour is now:
+  1. **Prism, from the file, at no cost:** everything a file can say, and the questions it cannot answer.
+  2. **A chat of his own** (ChatGPT, Claude): the digging, and his conclusions. Unchecked.
+  3. **Deeper dive:** for the few companies he wants on record in Prism, with every passage checked.
+  - **The box.** "Take it to a chat" is a fold at the top of an opened company, right under the Deeper dive line:
+    the two are the two ways on from what a file can say. It holds a brief in plain text, with "Copy the brief" (the
+    browser's clipboard, then the older way, then the text left selected: a claude.ai page may not be allowed the
+    first) and "Save it as a file" (a `.txt`). The made-up companies get one too, which says that it is made up.
+  - **The brief** is put together on the page, with no AI: who the company is and the date of the file; the six
+    tests with its figures and the pass marks; its sector ranks; the signs of a low price and of slipping; what the
+    price is counting on (the most to pay, with and without stock pay, cash or debt, the year's range, the
+    averages, analysts' forecasts, his own prices); the signs of its latest report; its standing in its industry;
+    its owners and dividend; the cautions. Then "What my screener cannot tell me": up to six questions chosen by
+    what was found (a low set after results, a quarter that turned down, a tax credit, a weak forecast, weak
+    spots, a data warning, readings that differ, heavy stock pay, a bank, heavy debt, a cyclical industry) and four
+    that are always asked (what it sells, its competitors, who runs it, what would make or break it). It ends by
+    asking for a source for each fact, for what could not be checked, and for facts kept apart from judgement.
+  - **Rules** (checks hold them): the brief leaves out his verdict, his notes and his own signs; it asks for no
+    recommendation, no price target and no fair value (what he asks the chat next is his business); the page sends
+    nothing anywhere, he carries the text over himself; the note says that nothing checks what a chat says. It is
+    one company at a time and stays that way: the provider's terms allow snippets, not the file.
+  - Typing a price of his own brings the brief up to date as well (`pricePatch`).
+  - On his file a brief runs from about 2,000 to 6,000 characters, with four to ten questions.
+  - **Two cautions a year's figures hide (`taxcredit`, `qdown`).** His chat with another AI caught both, his file
+    shows both, and Prism showed neither. "Profit lifted by a tax credit" (tag "Tax credit"): a tax rate below zero
+    in a year of profit, so the P/E flatters the company; 81 large scored companies on his file, one on the A-list.
+    "Latest quarter down" (tag "Quarter down"): operating profit down `flag_q` or more in the latest quarter while
+    the year is not falling; 98 large scored companies, 8 on the A-list. The Profit line of "Is the business
+    slipping?" now gives the latest quarter beside the year. **Both are cautions only: they hide no row and change
+    no test, list or order (a check asserts it), and the slipping sign still reads the year.** Making the quarter a
+    weak spot would change the mark of about 15 A-list companies, so it waits for his word.
+  - Offered and not built: the reading's findings, where a company was read, added to its brief; a brief for a
+    company he owns that asks what has changed since he bought.
 - Deliberately left out, and said so to the owner: estimated option premiums (not in the file; a guess would
   mislead), analyst ratings and price targets, more chart indicators, any combined score.
 

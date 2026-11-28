@@ -56,7 +56,10 @@ The sums of "What is the price counting on?" are worked by hand too: the growth 
 price needs, what a buyer at that price would earn, the same with stock pay
 counted as a cost, where the price stands against the year's low and high, and
 what analysts expect. A check holds that none of it moves a company on or off
-any list.
+any list. The same goes for the two cautions (a profit lifted by a tax credit, a
+latest quarter that turned down), and the brief that an opened company prepares
+for an AI chat is held to its rules: it leaves out the reader's verdict and
+notes, asks for sources, asks for no recommendation, and is sent nowhere.
 
 ## After the yearly update
 

@@ -127,7 +127,7 @@ const tags =
   tagRow(pill('mute', 'Bank or insurer'), 'Six tests of its own. No entry ceiling.') +
   tagRow(pill('warn', 'Earnings in 12 days', 'Earnings in '), 'Put desk. Amber within ' + C.put_earn + ' days.') +
   tagRow(pill('mute', 'Ex-dividend in 9 days', 'Ex-dividend '), 'Put desk. Declared, and within ' + C.put_earn + ' days.') +
-  tagRow(pill('mute', 'Cyclical') + ' ' + pill('warn', 'P/E?'), 'Cautions. Tap one for what to check.');
+  tagRow(pill('mute', 'Tax credit') + ' ' + pill('mute', 'Quarter down') + ' ' + pill('warn', 'P/E?'), 'Cautions. Tap one for what to check.');
 
 const page1 =
   '<section class="page"><header class="top"><div><div class="kick">Financial Tools of Life · Prism</div><h1>Prism cheat sheet</h1><div class="sub">What to tap, and what it means.</div></div>' +
@@ -184,14 +184,14 @@ const verdicts =
   '<p class="fine">The file has no option prices, and Prism never suggests a strike.</p></div>';
 VERDICTS.forEach(v => named.push(v));
 const further = '<dl class="pairs wide">' +
-  '<dt>' + k('More options') + '</dt><dd>Under Show: ' + k('Company size') + ', a finder, tick boxes.</dd>' +
+  '<dt>' + k('More options') + '</dt><dd>' + k('Company size') + ', a finder, tick boxes.</dd>' +
   '<dt>' + k('Look up any stock') + '</dt><dd>Why a company is not on a list.</dd>' +
   '<dt>' + k('Scorecard: how the lists have done') + '</dt><dd>Each list against the typical large company. Price only.</dd></dl>';
 const research =
+  '<p class="fine"><b>Quick, nothing more to pay:</b> ' + k('Take it to a chat') + ', at the top of a company. ' + k('Copy the brief') + ' into ChatGPT or Claude. Unchecked: ask it for sources.</p>' +
   '<ol class="mini">' +
-  '<li>Open a company and press ' + k('Deeper dive') + ', at the top. It joins the queue.</li>' +
-  '<li>In a Claude Code session for these tools, say "read my queue": about 15 minutes and $0.50 to $1 a company.</li>' +
-  '<li>The research arrives in Prism by itself.</li></ol>' +
+  '<li><b>Checked, and kept in Prism:</b> press ' + k('Deeper dive') + '. It joins the queue.</li>' +
+  '<li>In a Claude Code session for these tools, say "read my queue": about 15 minutes and $0.50 to $1 a company.</li></ol>' +
   '<p class="fine">Off the claude.ai link: ' + k('Download the queue') + ', then ' + k('Load a research file') + '. ' + pill('warn', 'A newer annual report is out') + ' means: press ' + k('Read again') + '.</p>';
 const saving =
   '<ul class="dots"><li>Verdicts, A-list choices, signs, settings and scorecard stay in this browser, with your last file.</li>' +
@@ -206,7 +206,7 @@ const page2 =
   '</div><div class="col">' +
   '<div class="sec"><h2>Verdicts <small>Yours. Prism never sets one.</small></h2>' + verdicts + '</div>' +
   '<div class="sec"><h2>Further down the page</h2>' + further + '</div>' +
-  '<div class="sec"><h2>' + k('Research from the filings') + ' <small>The one part that needs AI.</small></h2>' + research + '</div>' +
+  '<div class="sec"><h2>Past what a file can say <small>The part that needs AI.</small></h2>' + research + '</div>' +
   '</div></div>' +
   '<footer class="rem"><b>Three things to remember</b><ol><li>Prism lists companies to research. It does not tell you what to buy.</li>' +
   '<li>Every pass mark is a starting point. None has been tested against later returns. A place on a list is a reason to read, not a prediction.</li>' +

@@ -353,6 +353,8 @@ var CONTROLS = {
   cyc_haircut: 15,
   /* data warnings */
   flag_fcf: 0.25, flag_sh: 0.5, flag_pe: 2, flag_nc: 1,
+  /* a caution, not a warning: operating profit down this much in the latest quarter while the year still looks fine */
+  flag_q: 0.10,
   /* what the price implies */
   exp_r: 0.10, exp_hurdle: 0.12, exp_N: 10, exp_gT: 0.025, exp_cap: 0.06, exp_floor: -0.05, exp_perf: 0.20,
   /* shortlists */
@@ -464,7 +466,10 @@ var FIELDS = [
      year's sales). Shown in a company's detail; never used in a test, a list or an order. */
   ['low52', 'n', '52wlow'], ['low52d', 'd', '52wlowdate'], ['high52', 'n', '52whigh'], ['high52d', 'd', '52whighdate'],
   ['ma50v', 'n', '50ma'], ['ma200v', 'n', '200ma'],
-  ['revgt', 'p', 'revgrthisy'], ['epsgt', 'p', 'epsgrthisy'], ['epsgn', 'p', 'epsgrnexty']
+  ['revgt', 'p', 'revgrthisy'], ['epsgt', 'p', 'epsgrthisy'], ['epsgn', 'p', 'epsgrnexty'],
+  /* for two cautions: a profit lifted by a tax credit, and a latest quarter that has turned down. Cautions are
+     shown; they hide no row and feed no test, list or order. */
+  ['tax', 'p', 'taxrate', 'effectivetaxrate'], ['oigq', 'p', 'opincgrowthq']
 ];
 var VERIFIED = FIELDS.length;   /* how many columns have a checked first spelling: all of them */
 
@@ -851,6 +856,11 @@ function run(rows, controls, opt) {
     if (r.fcfy > 0.08 && r.ey > 0 && r.fcfy > 2 * r.ey) r.flags.push('basis');
     r.peak = r.cyc && ((r.ret1y != null && r.ret1y >= 0.25) || (r.fcfg != null && r.fcfg >= 0.5));
     if (r.peak) r.flags.push('peak'); else if (r.cyc) r.flags.push('cyc');
+    /* Two things a year's figures hide. A tax rate below zero with a profit means the profit is larger than it was
+       before tax: a tax credit lifted it. And operating profit can fall in the latest quarter while the twelve
+       months as a whole are still up, so that "Is the business slipping?", which reads the year, sees nothing. */
+    if (r.tax != null && r.tax < 0 && r.ni > 0) r.flags.push('taxcredit');
+    if (r.oigq != null && r.oigq <= -C.flag_q && (r.oig == null || r.oig >= -C.slip_profit)) r.flags.push('qdown');
     if (r.country && !/^(united states|usa|us)$/i.test(r.country)) r.flags.push('foreign');
     if (r.altman != null && r.altman < 1.8 && r.netcash != null && r.netcash < 0) r.flags.push('altman');
     /* what the price implies */
@@ -1565,7 +1575,7 @@ const FLABEL = {sym: 'Symbol', name: 'Company name', sector: 'Sector', industry:
   dy: 'Dividend yield', div: 'Dividend per share', dyrs: 'Dividend years', dgyrs: 'Dividend growth years', fpay: 'FCF payout', dg1: 'Dividend growth', exdiv: 'Ex-dividend date', dfreq: 'Payout frequency',
   rpe: 'Revenue per employee', emplg: 'Employee growth', fcfps: 'FCF per share', gpg: 'Gross profit growth', ato: 'Asset turnover', invt: 'Inventory turnover', bvps: 'Book value per share', eps: 'EPS', roe5: 'ROE 5-year', lastrep: 'Last report date', lastearn: 'Last earnings date',
   roa: 'ROA', equity: 'Shareholders\' equity', assets: 'Total assets', capex: 'Capital expenditures', invcf: 'Investing cash flow', debtg: 'Debt growth (1 year)', goodwill: 'Goodwill', tenk: 'Annual report date',
-  low52: '52-week low', low52d: '52-week low date', high52: '52-week high', high52d: '52-week high date', ma50v: '50-day average', ma200v: '200-day average', revgt: 'Revenue growth this year (forecast)', epsgt: 'EPS growth this year (forecast)', epsgn: 'EPS growth next year (forecast)'};
+  low52: '52-week low', low52d: '52-week low date', high52: '52-week high', high52d: '52-week high date', ma50v: '50-day average', ma200v: '200-day average', revgt: 'Revenue growth this year (forecast)', epsgt: 'EPS growth this year (forecast)', epsgn: 'EPS growth next year (forecast)', tax: 'Tax rate', oigq: 'Operating income growth latest quarter'};
 /* label, explanation, whether it hides the row by default */
 const FL = {
   fcf_hi: ['Cash yield looks too high', 'A free-cash-flow yield this high is usually a one-off, customer money, a cycle peak or a data error.'],
@@ -1575,11 +1585,13 @@ const FL = {
   basis: ['Cash flow far above earnings', 'Free cash flow is more than twice reported earnings. Check working capital and one-offs.'],
   peak: ['Cyclical, after a strong year', 'Profits in this industry swing with a cycle. After a strong year, today\'s cash flow may be a peak.'],
   cyc: ['Cyclical industry', 'Profits in this industry swing with a cycle or a commodity price.'],
+  taxcredit: ['Profit lifted by a tax credit', 'The company booked tax back this year instead of paying it, so its profit is larger than it was before tax. A normal year would show less. The P/E, and what the price implies on earnings, look better than they are.'],
+  qdown: ['Latest quarter down', 'Operating profit fell in the latest quarter, against the same quarter a year before, though over the twelve months it is still up. A year\'s figures have not caught up with that. Read the latest results.'],
   foreign: ['Based outside the US', 'Check currency, withholding tax and whether cash can reach shareholders.'],
   altman: ['Weak Altman score', 'An Altman Z-score under 1.8 with net debt signals financial strain.']
 };
 const SEVERE = {fcf_hi: 1, pe_lo: 1, nc_hi: 1, sh_odd: 1};
-const FSHORT = {fcf_hi: 'Cash yield?', pe_lo: 'P/E?', nc_hi: 'Cash over value', sh_odd: 'Share count?', basis: 'Cash over earnings', peak: 'Cycle peak?', cyc: 'Cyclical', foreign: 'Non-US', altman: 'Weak Altman'};
+const FSHORT = {fcf_hi: 'Cash yield?', pe_lo: 'P/E?', nc_hi: 'Cash over value', sh_odd: 'Share count?', basis: 'Cash over earnings', peak: 'Cycle peak?', cyc: 'Cyclical', taxcredit: 'Tax credit', qdown: 'Quarter down', foreign: 'Non-US', altman: 'Weak Altman'};
 const ASIDE = {financial: 'Banks, insurers and lenders', property: 'Property companies', shell: 'Shell companies', class: 'Second share classes', micro: 'Too small to score', nocap: 'No market value in the file', unknown: 'No sector or industry', excluded: 'Left out by you'};
 const ASIDE_WHY = {financial: 'Banks, insurers and lenders are not asked the five questions: debt is their raw material, so those cash-flow tests would mislead. Prism grades them for the A-list on six tests of their own.', property: 'Property companies are judged on rents, property values and debt, not on these cash-flow tests.', shell: 'A shell company has no operating business yet.', class: 'Another share class of the same company trades more, and that one is scored.', micro: 'Its market value is under the smallest size scored here.', nocap: 'The file has no market value for it.', unknown: 'The file gives no sector or industry for it.', excluded: 'You chose to leave it out in Settings.'};
 const BUCKET = {decline: 'Decline', stagnation: 'No growth', moderate: 'Moderate growth', high: 'High growth', perfection: 'Perfection'};
@@ -1672,7 +1684,7 @@ function exampleData() {
     'Div. Yield', 'Dividend', 'Payout Freq.', 'Div. Years', 'Div. Gr. Years', 'Div. Growth', 'FCF Payout', 'Ex-Div Date',
     'Rev / Employee', 'Empl. Growth', 'FCF / Share', 'GP Growth', 'Asset Turnover', 'Inv. Turnover', 'BV / Share', 'EPS', 'ROE', 'ROE (5Y)', 'Shares', 'Oper. Margin', 'Last Report Date', 'Last Earnings',
     'ROA', 'Equity', 'Assets', 'CapEx', 'Investing CF', 'Debt Growth (YoY)', 'Goodwill', '10K Date', 'Shares Insiders', 'Buyback Yield', 'SBC',
-    '52W High', '52W High Date', '52W Low', '52W Low Date', '50 MA', '200 MA', 'Rev Gr. This Y', 'EPS Gr. This Y', 'EPS Gr. Next Y'];
+    '52W High', '52W High Date', '52W Low', '52W Low Date', '50 MA', '200 MA', 'Rev Gr. This Y', 'EPS Gr. This Y', 'EPS Gr. Next Y', 'Tax Rate', 'OpInc Growth (Q)'];
   /* a second stream of made-up numbers for the newer columns, so the first twenty stay as they were */
   let a2 = 20261120; const rnd2 = () => { a2 |= 0; a2 = a2 + 0x6D2B79F5 | 0; let t = Math.imul(a2 ^ a2 >>> 15, 1 | a2); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const n2 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd2(); return (u - 3) / 0.7071; };
@@ -1693,6 +1705,9 @@ function exampleData() {
   /* a sixth stream, for where the price stands and what analysts expect */
   let a6 = 20261128; const rnd6 = () => { a6 |= 0; a6 = a6 + 0x6D2B79F5 | 0; let t = Math.imul(a6 ^ a6 >>> 15, 1 | a6); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const n6 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd6(); return (u - 3) / 0.7071; };
+  /* a seventh stream, for the tax rate and the latest quarter's operating profit */
+  let a7 = 20261129; const rnd7 = () => { a7 |= 0; a7 = a7 + 0x6D2B79F5 | 0; let t = Math.imul(a7 ^ a7 >>> 15, 1 | a7); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const n7 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd7(); return (u - 3) / 0.7071; };
   const IX = h => headers.indexOf(h);
   const data = [], names = {}, syms = {};
   SEC.forEach(sec => { for (let n = 0; n < sec[5]; n++) {
@@ -1747,7 +1762,11 @@ function exampleData() {
       d.push(+high.toFixed(2), ago(dd > -0.03 ? Math.floor(8 * rnd6()) : 25 + Math.floor(330 * rnd6())), +(px * (1 - lowBy)).toFixed(2),
         onRes ? iso(Math.min(Date.parse(out) + Math.floor(3 * rnd6()) * 864e5, base.getTime())) : ago(lowBy < 0.05 ? Math.floor(9 * rnd6()) : 20 + Math.floor(335 * rnd6())),
         +(px / (1 + m50)).toFixed(2), +(px / Math.max(0.4, 1 + 0.45 * r1 + 0.03 * n6())).toFixed(2), +gt.toFixed(4),
-        pe ? +(gt + 0.03 + 0.08 * n6()).toFixed(4) : null, pe ? +(rnd6() < 0.08 ? -0.04 - 0.14 * rnd6() : gn + 0.02 + 0.07 * n6()).toFixed(4) : null); }
+        pe ? +(gt + 0.03 + 0.08 * n6()).toFixed(4) : null, pe ? +(rnd6() < 0.08 ? -0.04 - 0.14 * rnd6() : gn + 0.02 + 0.07 * n6()).toFixed(4) : null);
+      /* Now and then a profit was lifted by a tax credit, and now and then the latest quarter turned down in a year
+         that still looks fine. */
+      { const og = d[IX('OpInc Growth')], credit = rnd7() < 0.05, turn = rnd7() < 0.08;
+        d.push(ni > 0 ? +(credit ? -0.03 - 0.25 * rnd7() : Math.max(0.02, 0.21 + 0.05 * n7())).toFixed(4) : null, +(turn && og > 0 ? -0.11 - 0.25 * rnd7() : og + 0.08 * n7()).toFixed(4)); } }
   } });
   const m = mapTable(headers, data);
   /* A made-up record of the five reports before the latest, built the way the real one is: one earlier "file" at a
@@ -1877,6 +1896,11 @@ const HELP = {
     '<p>The answers are in the annual report and the proxy statement, which companies file with the regulator. Reading them takes a reader, and Prism has no AI. So the reading is done outside this page, by Claude, and comes back as a research file that Prism shows.</p>' +
     '<p><b>Deeper dive</b>, at the top of an opened company, puts it in the queue. On your claude.ai link the queue is kept online, in a part only you can read: say "read my queue" in a Claude Code session for these tools, and the research arrives here by itself. Anywhere else, press <b>Download the queue</b>, hand the file over, and <b>Load a research file</b> when it comes back.</p>' +
     '<p>Every finding carries the passage it rests on, copied from the filing, with a link. A program checked each passage against the filing; a finding whose passage was not there was thrown away. It is still an AI reading: check what matters to you. It is research, not advice.</p>',
+  chat: () => '<p><b>Take it to a chat.</b> Prism works from one file and has no AI. So there are things it cannot tell you: why a price fell, what a company\'s rivals are doing, whether its managers are any good.</p>' +
+    '<p>An AI chat can dig into those with you, if it has somewhere to start. This box puts what Prism found about the company, its figures and the questions it leaves open, into one block of text. Copy it, paste it into ChatGPT, Claude or another AI chat, and ask what you like.</p>' +
+    '<p>If you already pay for a chat it costs nothing more, and it can look at the news and the latest results. But nothing checks what it says. Ask for its sources, and look up the figures that matter in the company\'s own reports.</p>' +
+    '<p><b>Deeper dive</b> is the other way on. It is slower and uses your Claude plan, but every finding comes back to this page with the passage it rests on, checked against the filing.</p>' +
+    '<p>Prism sends nothing anywhere: you carry the text over yourself. It leaves out your verdict and your notes.</p>',
   dive: () => '<p><b>Deeper dive.</b> Puts this company in the queue to have its annual report and proxy statement read: where it stands among its rivals, what its managers did with its cash, how they pay themselves.</p>' +
     '<p>Prism cannot read them itself: it has no AI. Claude reads the queue in a Claude Code session for these tools, when you say "read my queue". What it finds comes back to this page: a box called "Where does it stand?", and more in the two boxes on management.</p>' +
     '<p>A reading takes about a quarter of an hour a company and uses your Claude plan. So queue the few companies you are close to acting on, not a whole list.</p>' +
@@ -2034,7 +2058,8 @@ Object.assign(HELP, {
       '<p>It is a forecast, and forecasts are often wrong. It is one sign among four, no more.</p>'; },
   s_profit: b => { const r = rowOf(b), z = r && r.slip; if (!z) return ''; const op = r.oig != null && r.lane !== 'financial', v = op ? r.oig : r.epsgq;
     return '<p><b>Profit.</b> ' + (op ? 'Whether operating profit rose or fell over the year. Operating profit is what is left of sales after the costs of running the business.' : 'Whether the profit for each share rose or fell in the latest quarter, against the same quarter a year before.') + '</p>' +
-      '<p>' + (v != null ? esc(r.sym) + ': it ' + (v < 0 ? 'fell ' : 'rose ') + pct(Math.abs(v)) + '. ' : 'The file gives no profit trend for ' + esc(r.sym) + '. ') + 'It counts as a weak spot when it fell ' + pct(C.slip_profit) + ' or more.' + (z.s.profit === true ? ' That is so here.' : z.s.profit === false ? ' That is not so here.' : '') + '</p>'; },
+      '<p>' + (v != null ? esc(r.sym) + ': it ' + (v < 0 ? 'fell ' : 'rose ') + pct(Math.abs(v)) + '. ' : 'The file gives no profit trend for ' + esc(r.sym) + '. ') + 'It counts as a weak spot when it fell ' + pct(C.slip_profit) + ' or more.' + (z.s.profit === true ? ' That is so here.' : z.s.profit === false ? ' That is not so here.' : '') + '</p>' +
+      (op && r.oigq != null ? '<p>In the latest quarter alone it ' + (r.oigq < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.oigq)) + ', against the same quarter a year before. The sign is read on the year. A quarter that turns down by ' + pct(C.flag_q) + ' or more while the year still looks fine is shown as a caution, "Latest quarter down", and not as a weak spot: one quarter can be noise.</p>' : ''); },
   rank: () => '<p><b>Sector rank.</b> Where the company stands on each measure among the companies of its own sector worth ' + money(C.size_min) + ' or more. 0 is the weakest and 100 the best: 77 means it does better than about 77 in every 100.</p>' +
     '<p>The answer to the question comes from the average of these ranks, and a yes needs ' + C.gate + ' or better. For "' + GQ.T[0] + '" a weaker share price ranks higher.</p>' +
     '<p>Prism ranks within the sector because a margin that is good for a supermarket is poor for a software company. A cyclical industry has ' + C.cyc_haircut + ' points taken off quality and price, because one good year can flatter both.</p>'
@@ -2393,7 +2418,7 @@ const hbs = (k, sym) => '<button type="button" class="hlp" data-h="' + k + '" da
 const capFirst = t => t.charAt(0).toUpperCase() + t.slice(1);
 /* how a sign's figure is written: always one decimal for a percentage, because the changes that matter are small */
 const sgBig = v => { const a = Math.abs(v); return (v < 0 ? '−' : '') + (a >= 1e9 ? (a / 1e9).toFixed(2) + 'B' : a >= 1e6 ? (a / 1e6).toFixed(1) + 'M' : Math.round(a).toLocaleString('en-US')); };
-const sgNum = (def, v) => v == null || !isFinite(v) ? '–' : def.unit === 'rate' || def.unit === 'pct' ? (v < 0 ? '−' : '') + (Math.abs(v) * 100 + 1e-9).toFixed(1) + '%'
+const sgNum = (def, v) => v == null || !isFinite(v) ? '–' : def.unit === 'rate' || def.unit === 'pct' ? (v < 0 && Math.abs(v) >= 0.0005 ? '−' : '') + (Math.abs(v) * 100 + 1e-9).toFixed(1) + '%'
   : def.unit === 'usd' ? (Math.abs(v) >= 1000 ? money(v) : (v < 0 ? '−' : '') + price(Math.abs(v))) : def.unit === 'x' ? (v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '×' : sgBig(v);
 const sgPer = p => p ? new Date(p + 'T12:00:00').toLocaleDateString('en-US', {month: 'short', year: 'numeric'}) : '';
 /* what a sign's latest figure is set against, and the reading in a word and in a sentence */
@@ -2647,6 +2672,121 @@ function priceBox(r) {
   h += '<p class="note">These are sums and facts from one file. Prism does not forecast and does not say what a share is worth. Nothing in this box plays a part in any list.</p>';
   return h + '</details>';
 }
+/* ---------- take it to a chat ----------
+   The owner's direction of 2026-11-28: Prism should take him as far as a file can, at no cost, and he digs on from
+   there in a chat with an AI he already pays for. So an opened company can hand itself over: one block of plain text
+   with what Prism found (its own figures, dated) and the questions Prism cannot answer, chosen by what it found. He
+   copies it and pastes it into the chat. Prism has no AI and sends nothing anywhere: the text is put together here,
+   from the file. What goes in: this company's figures and the prices he typed. What stays out: his verdict and notes. */
+function chatBrief(r) {
+  const L = [], li = t => L.push('- ' + t), sec = t => L.push('', t);
+  const graded = !!(r.a && r.a.lender), bank = r.lane === 'financial', T = r.a ? r.a.t : null, nf = 'no figure in my file';
+  const P = x => x == null || !isFinite(x) ? nf : pct(x), says = v => v === true ? 'Passes.' : v === false ? 'Misses.' : 'My file cannot say.';
+  const moved = (x, up, down) => Math.abs(x) < 0.0005 ? 'unchanged' : (x < 0 ? down : up) + ' ' + pct(Math.abs(x));
+  const lad = priceLadder(r, C, myPrices(r.sym)), st = priceStand(r, C, DATA.meta.date), f = forecastRead(r, C), now = lad.rungs.find(x => x.k === 'now');
+  const lv = r.ndlev != null ? r.ndlev : r.lev, payShare = r.sbc != null && r.fcf > 0 ? Math.abs(r.sbc) / r.fcf : null;
+  if (DATA.meta.example) L.push('(A made-up company from the example in Prism. It does not exist: load your own file for a real one.)', '');
+  L.push('I am researching ' + (r.name || r.sym) + ' (' + r.sym + (r.industry ? '; industry: ' + r.industry : '') + (r.country && r.flags.includes('foreign') ? '; based in ' + r.country : '') + '). It is worth ' + money(r.cap) + ' on the market, at ' + price(r.price) + ' a share.');
+  L.push('Below is what my stock screener found. Its figures come from one data file dated ' + day(DATA.meta.date) + ', and cover the past twelve months unless I say otherwise. Start from them, check them against the company\'s own reports, and tell me where they are wrong or out of date.');
+  /* the business: the six tests, with the company's figures and the pass marks */
+  if (T) { sec('THE BUSINESS ITSELF, PRICE LEFT OUT: ' + r.a.yes + ' of 6 tests passed' + (graded ? ' (the tests for a bank or an insurer)' : ''));
+    li(graded ? 'Return on its owners\' money: ' + P(r.roe5) + ' a year over five years, ' + P(r.roe) + ' now. Pass marks: ' + pct(C.a_roe5) + ' and ' + pct(C.a_roe) + '. ' + says(T.returns)
+      : 'Return on capital: ' + P(r.roic5) + ' a year over five years, ' + P(r.roic) + ' now. Pass marks: ' + pct(C.a_roic5) + ' and ' + pct(C.a_roic) + '. ' + says(T.returns));
+    li('Years of profit in a row: ' + (r.py == null ? nf : r.py) + '. Pass mark: ' + C.a_years + '. ' + says(T.profitable));
+    li('Sales growth: ' + P(r.revg5) + ' a year over five years' + (r.revg10 != null ? ', ' + pct(r.revg10) + ' over ten' : '') + '. Pass mark: ' + pct(C.a_grow) + '. ' + says(T.grows));
+    li(graded ? 'Return on everything it holds: ' + (r.roa == null ? nf : (r.roa * 100).toFixed(2) + '%') + '. Pass mark: ' + pct(C.a_roa) + '. ' + says(T.assets)
+      : 'Cash from operations: ' + (r.ni == null || r.ocf == null ? nf : r.ni <= 0 ? 'set against a loss' : pct(r.ocf / r.ni) + ' of profit') + '. Pass mark: ' + pct(C.a_cash) + ' of profit. ' + says(T.cash));
+    li('Share count over the year: ' + (r.sh == null ? nf : moved(r.sh, 'up', 'down')) + '. Pass mark: growth of no more than ' + pct(C.a_dil) + '. ' + says(T.shares));
+    li(graded ? 'Its owners\' money as a share of what it holds: ' + P(r.eqa) + '. Pass mark: ' + pct(C.a_equity) + '. ' + says(T.cushion)
+      : r.netcash != null && r.netcash >= 0 ? 'Debt: it has more cash than debt, by ' + money(r.netcash) + '. Passes.'
+      : 'Debt' + (r.ndlev != null ? ', after its cash' : '') + ': ' + (lv == null ? nf : lv.toFixed(1) + ' times EBITDA') + (r.cov != null ? '; operating profit covers the interest ' + r.cov.toFixed(r.cov < 10 ? 1 : 0) + ' times' : '') + '. Pass marks: ' + C.a_lev + ' times or less, covered ' + C.a_cov + ' times. ' + says(T.debt)); }
+  else { const why = {financial: 'it is a bank, an insurer or a lender that is too small for the tests it keeps for them', property: 'it is a property company, and my file lacks the figure those are judged on', shell: 'it is a shell company', class: 'it is a second class of share of a company that is listed under another symbol', micro: 'it is too small', nocap: 'my file gives no market value for it', unknown: 'my file gives it no sector or industry', excluded: 'I have left it out'};
+    sec('THE BUSINESS ITSELF'); li('My screener does not grade this company: ' + (why[r.aside] || 'it sets it aside') + '.'); }
+  if (r.g) { const rk = v => v == null ? 'no rank' : String(Math.round(v)); sec('AGAINST ITS SECTOR (a rank out of 100, where 100 is best)');
+    li('Quality of the business: ' + rk(r.Q) + '. Low price: ' + rk(r.V) + '. Growth per share: ' + rk(r.P) + '. Out of favour: ' + rk(r.T) + '.'); }
+  if (r.sale) { const z = r.sale, sg = v => v === true ? 'a sign' : v === false ? 'no sign' : 'my file cannot say';
+    sec('IS THE PRICE LOW? ' + (r.onSale ? 'Yes' : 'No') + ': ' + z.n + ' of 3 signs, and 2 are needed');
+    li('Against its own past: ' + (r.pe > 0 && z.ownPE ? 'a P/E of ' + r.pe.toFixed(1) + ', and a long-run average of ' + (z.ownPE >= C.sale_pecap ? 'over ' + C.sale_pecap : z.ownPE.toFixed(1)) : r.pe > 0 ? 'a P/E of ' + r.pe.toFixed(1) + ', with no long-run average to set it against' : 'it has no P/E') + ': ' + sg(z.own) + '.');
+    li('Against its growth: ' + (z.imp != null && z.rec != null ? 'the price needs growth of ' + gtxt(z.imp) + ', and its sales have grown ' + pct(z.rec) + ' a year' : 'nothing to compare') + ': ' + sg(z.implied) + '.');
+    li('Against its high: ' + (r.dd != null ? pct(-r.dd) + ' below the highest price of the past year' : 'no 52-week high') + ': ' + sg(z.high) + '.'); }
+  if (r.slip && r.slip.known) { const z = r.slip, w = v => v === true ? 'weak' : v === false ? 'fine' : 'my file cannot say', s = r.slipping;
+    sec('IS THE BUSINESS SLIPPING? ' + (s === 'slipping' ? 'Yes: ' + z.n + ' of 4 signs' : s === 'one' ? 'One sign of 4, and two would count' : s === 'steady' ? 'No sign of 4' : 'Too little in my file to say'));
+    li('Sales in the latest quarter: ' + (r.revgq != null ? moved(r.revgq, 'up', 'down') : nf) + (z.pace != null ? '. Its usual pace is ' + pct(z.pace) + ' a year' : '') + ': ' + w(z.s.growth) + '.');
+    li((bank ? 'Return on its owners\' money: ' + P(r.roe) + ' now, ' + P(r.roe5) : 'Return on capital: ' + P(r.roic) + ' now, ' + P(r.roic5)) + ' over five years: ' + w(z.s.returns) + '.');
+    li('Sales forecast for next year: ' + (r.revgn != null ? moved(r.revgn, 'up', 'down') : nf) + ': ' + w(z.s.forecast) + '.');
+    li((r.oig != null && !bank ? 'Operating profit over the year: ' + moved(r.oig, 'up', 'down') + (r.oigq != null ? '. In the latest quarter: ' + moved(r.oigq, 'up', 'down') : '') : r.epsgq != null ? 'Profit per share in the latest quarter: ' + moved(r.epsgq, 'up', 'down') : 'Profit trend: ' + nf) + ': ' + w(z.s.profit) + '.'); }
+  /* the price: what it needs, the most to pay, where it stands, what analysts expect, the reader's own prices */
+  sec('WHAT THE PRICE IS COUNTING ON');
+  if (lad.basis) li('At ' + price(r.price) + ' the price is fair only if its ' + (graded ? 'earnings' : 'cash flow and earnings') + ' ' + (now.needs >= 0.4 ? 'grow more than 40%' : now.needs <= -0.15 ? 'shrink more than 15%' : (now.needs < 0 ? 'shrink ' : 'grow ') + pct(Math.abs(now.needs))) + ' a year for ' + C.exp_N + ' years, for a ' + pct(C.exp_r) + ' yearly return.');
+  if (r.ceiling) li('The most I would pay, for ' + pct(C.exp_hurdle) + ' a year if its spare cash ' + cautiousWords(lad.g) + ': ' + price(r.ceiling) + '. Today\'s price is ' + ceilWords(r, 'that') + '.' + (lad.ceilPay != null && lad.ceilPay <= r.ceiling * (1 - C.lad_pay) ? ' With stock pay counted as a cost: ' + price(lad.ceilPay) + '.' : ''));
+  else if (r.scored || graded) li('My screener works out no "most to pay" for it, because ' + noCeil(r)[1] + '.');
+  if (!bank && r.sbc != null && Math.abs(r.sbc) > 0) li('Stock pay: ' + money(Math.abs(r.sbc)) + ' in new shares over the year' + (payShare != null ? ', ' + p0(payShare) + ' of its spare cash' : '') + (r.rev > 0 ? ', ' + pct(Math.abs(r.sbc) / r.rev) + ' of its sales' : '') + '.');
+  if (!bank && r.netcash != null && r.cap > 0) li(r.netcash >= 0 ? 'It holds ' + money(r.netcash) + ' more cash than debt, ' + price(r.netcash / r.cap * r.price) + ' a share.' : 'It owes ' + money(-r.netcash) + ' more than it holds in cash, ' + price(-r.netcash / r.cap * r.price) + ' a share.');
+  if (st.low != null && st.high != null) li('The past year\'s range: ' + price(st.low) + (st.lowD ? ' on ' + day(st.lowD) : '') + ' to ' + price(st.high) + (st.highD ? ' on ' + day(st.highD) : '') + '.' + (st.afterResults != null ? ' The low was set ' + afterWords(st.afterResults) + (r.lastearn ? ', on ' + day(r.lastearn) : '') + '.' : '') + (st.atLow ? ' Today\'s price is at the year\'s low.' : ''));
+  else if (st.high != null) li('It is ' + pct(Math.max(0, st.below)) + ' below the highest price of the past year, ' + price(st.high) + '.');
+  { const a = [], ch = [[r.ret1w, 'a week'], [r.ret1m, 'a month'], [r.ret1y, 'a year']].filter(x => x[0] != null).map(x => (x[0] < 0 ? 'down ' : 'up ') + pct(Math.abs(x[0])) + ' in ' + x[1]);
+    if (st.vs50 != null) a.push(pct(Math.abs(st.vs50)) + (st.vs50 < 0 ? ' below' : ' above') + ' its 50-day average'); if (st.vs200 != null) a.push(pct(Math.abs(st.vs200)) + (st.vs200 < 0 ? ' below' : ' above') + ' its 200-day average');
+    if (a.length || ch.length) li((a.length ? 'The price is ' + a.join(' and ') + '. ' : '') + (ch.length ? 'It is ' + ch.join(', ') + '.' : '')); }
+  if (f.any) { const s = f.salesNow != null || f.salesNext != null, e = f.epsNow != null || f.epsNext != null;
+    li('Analysts' + (f.n != null ? ' (' + f.n + ' follow it)' : '') + ' expect' + (s ? ' sales to ' + twoYears(f.salesNow, f.salesNext, 'grow', 'fall') : '') + (e ? (s ? ', and' : '') + ' profit per share to ' + twoYears(f.epsNow, f.epsNext, 'rise', 'fall') : '') + '.'); }
+  { const mine = lad.rungs.filter(x => x.k === 'mine');
+    if (mine.length) li('Prices I am weighing: ' + mine.map(x => price(x.p) + (x.needs != null ? ' (' + (x.needs < -0.0005 ? 'fair even if cash and earnings shrink ' + (x.needs <= -0.15 ? 'more than 15%' : pct(-x.needs)) : 'needs growth of ' + needTxt(x.needs)) + ' a year' + (x.earn != null ? '; would earn ' + earnTxt(x.earn) + ' a year' + (x.pay != null ? ', or ' + earnTxt(x.pay) + ' with stock pay counted' : '') : '') + ')' : '')).join('; ') + '.'); }
+  /* the signs of its latest report, and its standing in its industry */
+  { const x = signsOf(r), rows = x.file.filter(s => s.now != null);
+    if (rows.length) { sec('HOW THE BUSINESS IS DOING' + (x.period ? ', by its latest results (the period to ' + day(x.period) + (x.out ? ', out ' + day(x.out) : '') + ')' : ''));
+      rows.forEach(s => { const def = SIGNS[s.k]; li(def.name + ': ' + sgNum(def, s.now) + (s.year != null ? ', against ' + sgNum(def, s.year) + ' ' + sgVs(s) : s.prev != null ? ', against ' + sgNum(def, s.prev) + ' the report before' : '') + ': ' + (s.state ? SGW[s.state][1].toLowerCase() : 'too early to say') + '.'); }); } }
+  { const x = runRead(r, PEERS, C, picksFor(r), BY), ms = x ? x.measures.filter(m => m.v != null && m.word) : [];
+    if (ms.length) { sec('AGAINST ITS INDUSTRY: the ' + x.of + ' companies in my file under "' + r.industry + '"');
+      const fig = (m, v) => m.k === 'debt' && v < 0 ? 'more cash than debt' : runNum(m, v);
+      ms.forEach(m => li(m.name + ': ' + fig(m, m.v) + ', against ' + fig(m, m.median) + ' for the typical one: ' + RUNW[m.word][1].toLowerCase() + '.')); } }
+  { const o = ownersRead(r), d = r.dividend, a = [];
+    if (o.insider != null) a.push('Its directors and officers own ' + (o.insider * 100).toFixed(o.insider < 0.01 ? 2 : 1).replace(/\.0$/, '') + '% of it.');
+    if (o.back != null && o.back < 0) a.push('It raised ' + money(-o.back) + ' over the year by selling new shares.');
+    else if (o.handed != null && o.handed > 0) a.push('Over the year it handed its owners ' + money(o.handed) + (o.paid > 0 && o.back > 0 ? ' (' + money(o.paid) + ' in dividends, ' + money(o.back) + ' in buybacks)' : o.paid > 0 ? ' in dividends' : ' in buybacks') + (o.handedShare != null ? ', ' + p0(o.handedShare) + ' of its ' + (o.of === 'profit' ? 'profit' : 'spare cash') : '') + '.');
+    else if (o.handed === 0) a.push('It paid no dividend and bought back no shares over the year.');
+    if (d && d.pays) a.push('Dividend: ' + (d.amount != null ? price(d.amount) + ' a share a year' : 'it pays one') + (d.yld != null ? ', ' + pct(d.yld) + ' of the price' : '') + (d.years ? ', paid ' + d.years + (d.years === 1 ? ' year' : ' years') + ' running' : '') + (d.over ? '. It takes more than the company\'s spare cash' : d.share != null ? '. It takes ' + p0(d.share) + ' of the spare cash' : '') + '.');
+    if (a.length) { sec('ITS OWNERS'); a.forEach(li); } }
+  { const a = r.flags.filter(x => x !== 'cyc' || !r.flags.includes('peak')).map(x => FL[x][0] + '. ' + FL[x][1]);
+    if (bank) a.push('My file cannot show a bank\'s or an insurer\'s bad loans, deposits or reserves.');
+    if (r.blocks && r.blocks.length) { const B = {lev: 'debt is more than ' + C.blk_lev + ' times EBITDA', dil: 'the share count grew more than ' + pct(C.blk_dil) + ' in a year', shrink: 'sales fell more than ' + pct(C.blk_shrink), burn: 'free cash flow is negative'}; a.push('For now my screener keeps it off its lists of cheap, out-of-favour companies: ' + r.blocks.map(b => B[b]).join('; ') + '.'); }
+    if (a.length) { sec('CAUTIONS'); a.forEach(li); } }
+  /* the questions the file cannot answer: first those that what was found points at, then the ones always worth asking */
+  const first = [], Q = t => first.push(t), deep = st.below != null && st.below >= 0.25;
+  if (st.afterResults != null) Q('Why did the price fall? The lowest price of the year came ' + afterWords(st.afterResults) + (r.lastearn ? ' (' + day(r.lastearn) + ')' : '') + '. What did the company report, and what did it say about the year ahead?');
+  else if (deep || (r.ret1m != null && r.ret1m <= -0.15)) Q('Why has the price fallen' + (deep ? ' ' + pct(st.below) + ' from its high' : ' so far in a month') + '? Was it one event or a slow loss of favour, and has anything changed in the business itself?');
+  if (r.flags.includes('qdown')) Q('Operating profit fell ' + pct(-r.oigq) + ' in the latest quarter, though it is up over the year. What changed in that quarter, and is it likely to last?');
+  if (r.flags.includes('taxcredit')) Q('This year\'s profit was lifted by a tax credit. What would the company have earned on a normal tax bill, and what is its P/E on that footing?');
+  { const a = [], pace = r.slip ? r.slip.pace : null;
+    if (f.epsNext != null && f.epsNext < 0) a.push('profit per share to fall ' + pct(-f.epsNext) + ' next year');
+    if (f.salesNext != null && pace != null && r.slip.s.forecast === true) a.push('sales to ' + (f.salesNext < 0 ? 'fall ' : 'grow only ') + pct(Math.abs(f.salesNext)) + ' next year, against a usual ' + pct(pace));
+    if (a.length) Q('Analysts expect ' + a.join(', and ') + '. Why? Has the company given an outlook of its own?'); }
+  { const w = r.slip ? SLIP.filter(k => r.slip.s[k] === true && k !== 'forecast').map(k => SW[k]) : [];
+    if (w.length) Q('My screener marks ' + (w.length === 1 ? 'a weak spot' : 'these weak spots') + ': ' + w.join(', ') + '. ' + (w.length === 1 ? 'Is it' : 'For each one: is it') + ' a passing matter, or the start of something lasting?'); }
+  r.flags.filter(x => SEVERE[x]).forEach(x => Q('My file shows "' + FL[x][0].toLowerCase() + '", which is often a one-off or an error in the data. What is behind it?'));
+  if (r.impgSpread > 0.1) Q('Its cash flow and its reported profit tell very different stories about the price. Why do they differ so much?');
+  if (!bank && payShare != null && payShare >= 0.15) Q('Stock pay takes ' + p0(payShare) + ' of its spare cash. Is that rising or falling, and how much has the share count grown over five years?');
+  if (bank) Q('How do its bad loans, its deposits and its reserves stand, and how did it come through the last hard stretch for its kind of business?');
+  else if (r.netcash != null && r.netcash < 0 && lv != null && lv > 2) Q('After its cash it owes ' + lv.toFixed(1) + ' times its EBITDA. When does that debt fall due, and at what rates?');
+  if (r.cyc) Q('It is in a cyclical industry. Where in the cycle is it now, and what did a bad year look like for it?');
+  const ask = first.slice(0, 6).concat([
+    'What does it sell, and to whom? How do its sales split by product and by customer, and does any one of them make up a large part?',
+    'Who are its real competitors, how does it stand against them, and is anything new threatening to replace what it sells?',
+    'Who runs it, and for how long? What have they done with its cash (acquisitions, buybacks, dividends), and how are they paid?',
+    'What would have to go right for an owner to do well from here, and what would break it?']);
+  sec('WHAT MY SCREENER CANNOT TELL ME'); ask.forEach((t, i) => L.push((i + 1) + '. ' + t));
+  L.push('', 'How I would like you to answer: take the questions in order and keep each answer short. I will ask for more where I want it. Give a source for each fact, the company\'s own reports first. Say plainly what you could not check. Keep facts apart from your own judgement.');
+  return L.join('\n');
+}
+/* The box that holds the brief: closed until tapped, right under the line that offers a Deeper dive, because the two
+   are the two ways on from what a file can say. */
+function chatBox(r) {
+  const sym = esc(r.sym), key = 'chat:' + r.sym;
+  return '<details class="dbox fold" data-chat="' + sym + '" data-keep="' + esc(key) + '"' + keepOpen(key, false) + '><summary>Take it to a chat' + hb('chat') + '<span style="margin-left:6px;font:400 13px var(--body);color:var(--fg2)">A brief to paste into ChatGPT, Claude or another AI chat</span></summary>' +
+    '<p class="note">This is as far as a file can take you. Below is what Prism found about ' + sym + ', with the questions it cannot answer, as one block of text. Paste it into an AI chat and dig on from there.</p>' +
+    '<textarea readonly rows="12" spellcheck="false" data-brief="' + sym + '" aria-label="A brief on ' + sym + ' for an AI chat" style="font:12.5px/1.5 var(--mono)">' + esc(chatBrief(r)) + '</textarea>' +
+    '<div class="row"><button type="button" class="btn sm primary" data-briefcopy="' + sym + '">Copy the brief</button><button type="button" class="btn sm" data-briefsave="' + sym + '">Save it as a file</button><span class="note" data-briefmsg aria-live="polite"></span></div>' +
+    '<p class="note">It holds this company\'s figures from your file, and any prices of your own. Your verdict and your notes are left out. A chat can be wrong, and nothing checks what it says: ask it for its sources. Write what you conclude in your verdict, lower down.</p></details>';
+}
 /* After the reader types a price of their own: only that company's price box is drawn again, wherever it is on show
    (in the list, and under "Look up any stock"). The rest of the company's detail is left alone, so a verdict being
    written is not lost. If the reader had moved on to another of the price boxes, the cursor is put back in it. */
@@ -2657,6 +2797,8 @@ function pricePatch(sym) {
     const tmp = document.createElement('div'); tmp.innerHTML = priceBox(r); const nb = tmp.firstElementChild; if (!nb) return;
     nb.open = true; box.replaceWith(nb);
     if (at >= 0) { const ins = nb.querySelectorAll('[data-myp]'); if (ins.length) ins[Math.min(at, ins.length - 1)].focus(); } });
+  /* the brief for a chat names the reader's prices, so its text is brought up to date as well */
+  document.querySelectorAll('textarea[data-brief]').forEach(ta => { if (ta.dataset.brief === sym) ta.value = chatBrief(r); });
 }
 /* ---------- research from the filings ---------- */
 /* A research file is made outside this page (tools/research in the repository): filings fetched from the regulator,
@@ -2871,7 +3013,7 @@ function aBox(r) {
       r.lane === 'financial' ? ['s_returns', 'Returns', ': ' + (r.roe != null && r.roe5 != null ? 'return on its owners\' money is ' + pct(r.roe) + ' now, ' + pct(r.roe5) + ' over five years' : 'no return on the owners\' money to compare'), good(z.s.returns), 'a sign under ' + pct(C.slip_roic) + ' of it']
         : ['s_returns', 'Returns', ': ' + (r.roic != null && r.roic5 != null ? 'return on capital is ' + pct(r.roic) + ' now, ' + pct(r.roic5) + ' over five years' : 'no return on capital to compare'), good(z.s.returns), 'a sign under ' + pct(C.slip_roic) + ' of it'],
       ['s_forecast', 'Forecast', ': ' + (r.revgn != null && z.pace != null ? 'analysts expect sales to ' + (r.revgn < 0 ? 'fall ' : 'grow ') + pct(Math.abs(r.revgn)) + ' next year' : 'no forecast in the file'), good(z.s.forecast), 'a sign if far below'],
-      ['s_profit', 'Profit', ': ' + (r.oig != null && r.lane !== 'financial' ? 'operating profit ' + (r.oig < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.oig)) + ' over the year' : r.epsgq != null ? 'earnings per share ' + (r.epsgq < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.epsgq)) + ' in the latest quarter' : 'no profit trend in the file'), good(z.s.profit), 'a sign if down ' + pct(C.slip_profit)]], ['fine', 'weak']); }
+      ['s_profit', 'Profit', ': ' + (r.oig != null && r.lane !== 'financial' ? 'operating profit ' + (r.oig < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.oig)) + ' over the year' + (r.oigq != null ? '; in the latest quarter it ' + (r.oigq < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.oigq)) : '') : r.epsgq != null ? 'earnings per share ' + (r.epsgq < 0 ? 'fell ' : 'rose ') + pct(Math.abs(r.epsgq)) + ' in the latest quarter' : 'no profit trend in the file'), good(z.s.profit), 'a sign if down ' + pct(C.slip_profit)]], ['fine', 'weak']); }
   h += dividendLine(r);
   if (r.alist) { const a = [];
     if (r.earnIn != null) a.push('next earnings ' + day(r.earn) + (r.earnIn >= 0 ? ', in ' + r.earnIn + ' days' : ''));
@@ -2926,7 +3068,7 @@ function gateBox(r, k) {
 }
 function detailHTML(r) {
   const v = S.verdicts[r.sym] || {};
-  let h = '<div style="display:flex;flex-direction:column;gap:10px"><div><b>' + esc(r.sym) + '</b> · ' + esc(r.name || '') + ' · ' + esc(r.sector || '') + (r.industry ? ', ' + esc(r.industry) : '') + ' · ' + money(r.cap) + ' market value · ' + price(r.price) + ' a share</div>' + diveLine(r);
+  let h = '<div style="display:flex;flex-direction:column;gap:10px"><div><b>' + esc(r.sym) + '</b> · ' + esc(r.name || '') + ' · ' + esc(r.sector || '') + (r.industry ? ', ' + esc(r.industry) : '') + ' · ' + money(r.cap) + ' market value · ' + price(r.price) + ' a share</div>' + diveLine(r) + chatBox(r);
   if (!r.scored) h += '<div class="dbox"><h4><span class="pill mute">Set aside</span>' + ASIDE[r.aside] + '</h4><p class="note">' + ASIDE_WHY[r.aside] + '</p></div>' + aBox(r) + priceBox(r) + signBox(r) + runBox(r) + ownBox(r) + standBox(r);
   else {
     h += aBox(r) + priceBox(r) + signBox(r) + runBox(r) + ownBox(r) + standBox(r);
@@ -3066,6 +3208,8 @@ function drawHow() {
       'On the first day the figure a year before is worked out from the file\'s own growth columns. After that Prism keeps the figures of each report: ' + C.sign_keep + ' reports for a company you follow or have given a sign of your own, ' + C.sign_keep_other + ' for the rest of the A-list. You can add signs from the company\'s own report, which no download carries, and type their figures in. ' +
       'The figures are the file\'s trailing-twelve-month ones, so they move slowly, and sales growth is as reported, with acquisitions and currency in it. Prism does not add the signs up or forecast from them, and they play no part in any test, list or order.</div>' +
     '<div><b>Research from the filings.</b> Prism reads no filing and has no AI. A research file, made outside this page by a reader working from the annual report and the proxy statement that a company files with the regulator, adds what a download cannot: who its rivals are and what their reports say of it, what its managers did with its cash over ten years, and how they pay themselves. Each finding carries the passage it rests on and a link to the filing, and a program threw away any finding whose passage was not in the filing. The ten-year figures are the company\'s own reported ones. Prism works the same without a research file. With one, it is still a reading by an AI of documents written by the company: evidence to weigh, not a verdict, and not advice.</div>' +
+    '<div><b>Take it to a chat.</b> Prism has no AI. An opened company can hand itself over to one that you use: a box at the top holds a brief in plain words, with what Prism found, the company\'s figures from your file, and the questions a file cannot answer, chosen by what was found (a price that fell after results, a quarter that turned down, a profit lifted by a tax credit, heavy stock pay). You copy it and paste it into a chat. Prism sends nothing anywhere, and the brief leaves out your verdict and notes. Nothing checks what a chat says back.</div>' +
+    '<div><b>Two cautions a year\'s figures hide.</b> "Profit lifted by a tax credit" is shown when the tax rate is below zero in a year of profit. "Latest quarter down" is shown when operating profit fell ' + pct(C.flag_q) + ' or more in the latest quarter while the year as a whole still looks fine. Both are cautions only: they hide no row and change no test, list or order.</div>' +
     '<div><b>Rising or falling.</b> "Falling" means the price is below its 50-day average and lower than a month ago. "Rising" means it is above its 50-day average. A cheap share that is still falling often gets cheaper.</div>' +
     '<div><b>Moonshots.</b> Companies worth up to ' + money(C.moon_max) + ' with sales of at least ' + money(C.moon_rev) + ', growing ' + pct(C.moon_growth) + ' or more (' + pct(C.moon_growth3) + ' over three years and expected next year, where the file says), a gross margin of at least ' + pct(C.moon_gm) + ', more cash than debt, at least ' + C.moon_runway + ' years of cash at today\'s spending, and a share count growing no more than ' + pct(C.moon_dil) + ' a year. Cyclical industries are left out. Most companies like these disappoint: the tests check that a company can survive, not that its story is true.</div>' +
     '<div><b>Scorecard.</b> With each newer file, Prism notes the companies that have joined each list and their price that day, and how far the typical large company (the middle one) moved since the file before. Later it shows how each list has done against that typical company over the same days. Nothing here has been tested against the past, so this is how the lists earn or lose your trust.</div>' +
@@ -3107,6 +3251,14 @@ document.addEventListener('click', e => {
   if (t.id === 'pgPrev' || t.id === 'pgNext') { S.ui.page += t.id === 'pgNext' ? 1 : -1; OPEN = null; render(); $('tblTitle').scrollIntoView({block: 'start'}); return; }
   const dv = t.closest('[data-dive]');
   if (dv) { queueSet(dv.dataset.dive, !dv.dataset.off); return; }
+  /* the brief for a chat: copy it (the browser's own way first, then the older one, then left selected), or save it */
+  const bc = t.closest('[data-briefcopy]'), bs = t.closest('[data-briefsave]');
+  if (bc || bs) { const box = (bc || bs).closest('[data-chat]'), ta = box.querySelector('textarea[data-brief]'), msg = box.querySelector('[data-briefmsg]');
+    if (bs) { offer('prism-brief-' + box.dataset.chat.replace(/[^A-Za-z0-9]+/g, '-') + '-' + (DATA.meta.date || today()) + '.txt', ta.value); return; }
+    const done = ok => { msg.textContent = ok ? 'Copied. Paste it into your chat.' : 'The brief is selected. Copy it from your keyboard or the Copy menu.'; };
+    const byHand = () => { ta.focus(); ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} done(ok); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(() => done(true), byHand); else byHand();
+    return; }
   if (vs) { const box = vs.closest('[data-vform]'), p = {}; box.querySelectorAll('[data-vf]').forEach(el => { p[el.dataset.vf] = el.value.trim(); }); setVerdict(vs.dataset.vsave, p); return; }
   const tr = t.closest('tr.main');
   if (tr && (t.closest('.symb') || !t.closest('select,button,input,textarea,a'))) { if (tr.dataset.look) { $('look').value = tr.dataset.sym; drawLook(); $('look').scrollIntoView({block: 'center'}); } else { OPEN = OPEN === tr.dataset.sym ? null : tr.dataset.sym; render(); } }
@@ -3322,7 +3474,7 @@ if (SHOW) { const v = SHOW.list;
   save(); }
 function showFromGuide(go) {
   /* a box inside an opened company: the part's name, the mark that finds it, and the key that keeps it open */
-  const BOX = {signs: ['[data-signs]', 'sg:'], run: ['[data-run]', 'run:'], owners: ['[data-own-box]', 'own:'], stand: ['[data-stand]', 'stand:'], price: ['[data-price]', 'px:']}[go.el];
+  const BOX = {signs: ['[data-signs]', 'sg:'], run: ['[data-run]', 'run:'], owners: ['[data-own-box]', 'own:'], stand: ['[data-stand]', 'stand:'], price: ['[data-price]', 'px:'], chat: ['[data-chat]', 'chat:']}[go.el];
   if (go.open === 'first') { const tr = document.querySelector('#tbl tr.main'); if (tr) { OPEN = tr.dataset.sym; if (BOX) KEEP[BOX[1] + OPEN] = true; render(); } }
   const part = go.el === 'detail' ? document.querySelector('#tbl tr.detail > td') : go.el === 'vform' ? document.querySelector('#tbl tr.detail [data-vform]') : BOX ? document.querySelector('#tbl tr.detail ' + BOX[0]) : null;
   const el = part || (typeof go.el === 'string' ? $(go.el) : null);
