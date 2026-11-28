@@ -15,7 +15,7 @@ no AI behind it; every number is computed in the browser by the engine in `index
 | `tools/cheatsheet.js`, `tools/cheatsheet.css` | Builds Prism's two-page cheat sheet as a PDF (see "The cheat sheet" under Prism). Not part of the checks or the workflow. |
 | `tools/guide-pdf.js`, `tools/guide-print.css` | Prints a guide as a PDF, from the guide's own lessons (see "A guide on paper" under "The guides"). Not part of the checks or the workflow. |
 | `tests/check-rules.js` | Checks against hand-worked answers, a scan for typed-in rule figures, checks that the guide names only what is on the page, and checks that every line of the answers has its note (125 in all). Run `node tests/check-rules.js` after any change to the engine, the rules, or a name on the page. |
-| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (507 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
+| `tests/check-prism.js` | Prism's engine checks on invented companies, and checks that Prism's guide names only what is on the page, and checks of the research tools (573 in all). Run `node tests/check-prism.js` after any change to Prism's engine or to a name on its page. |
 
 Inside `index.html`:
 - `<script id="engine">` holds all calculations: the `RULES` block (every tax and Social Security
@@ -158,11 +158,12 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
     first lesson tells a reader who already has numbers to press Show example, which keeps them (see the section
     above).
   - Prism: look around with the made-up companies, load your own file, read a row; the A-list, on sale (with
-    holding up or slipping), the entry ceiling, the put desk, the five questions, the nine named lists, moonshots,
+    holding up or slipping), the entry ceiling, what a price is counting on (added 2026-11-28), the put desk, the
+    five questions, the nine named lists, moonshots,
     whether the management is any good, what its filings say, why a company isn't listed; then "A company's page,
     line by line" (what each of the six tests asks, the lines of "Is the price low?" and "Is the business
-    slipping?", the figures behind the five questions), which the owner asked for on 2026-11-24 as "a more detailed
-    guide"; verdicts (and how to note a put), the signs that a business is winning, what changed, the scorecard;
+    slipping?", the lines of "What is the price counting on?", the figures behind the five questions), which the
+    owner asked for on 2026-11-24 as "a more detailed guide"; verdicts (and how to note a put), the signs that a business is winning, what changed, the scorecard;
     options and settings, saving, a routine for each new file.
 - **It shows where things are and leaves the figures to the page.** No tax or benefit figure goes in Runway's guide,
   and no pass mark or price in Prism's (each check scans its guide), so nothing in a guide needs the yearly update
@@ -183,8 +184,9 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   calculator and the id of a part of the page. Prism: `{"list", "sort", "open", "el", "box"}`: a list of the Show
   menu (`""` is the five-question list, `"near"` the near misses), an order, `"open":"first"` to open the first
   company, and a part of the page (`"detail"` and `"vform"` are the opened company's detail and its verdict form;
-  `"signs"`, `"run"`, `"owners"` and `"stand"` are its boxes "Is the business winning?", "How well is it run?",
-  "How does it treat its owners?" and, when research is loaded, "Where does it stand?";
+  `"price"`, `"signs"`, `"run"`, `"owners"` and `"stand"` are its boxes "What is the price counting on?", "Is the
+  business winning?", "How well is it run?", "How does it treat its owners?" and, when research is loaded, "Where
+  does it stand?";
   `"box":"self"` outlines the part itself and not the panel around it). Any may be left out. On a tap the guide
   writes this as a note in `localStorage` key `ftol-show`, with the tool's name. The tool reads its own note once
   as it loads (`ftolShow`, while it is under a minute old), sets its view, and calls `ftolSpot`, which opens any
@@ -214,7 +216,8 @@ tutorial. He then asked for a similar one for Prism, and said Open This First's 
   copy cannot say something else. Left out: the "Show me" links and the notes about them, which need the page.
   - It needs Playwright. The page numbers on the first page need `pdftotext`: the guide is printed once, each
     lesson's label ("Lesson 12") is looked up in the result, and it is printed again with the numbers filled in.
-  - Prism's came to 20 US Letter pages (sent 2026-11-24). Runway's came to 17 once it had its line-by-line part
+  - Prism's came to 20 US Letter pages (sent 2026-11-24), and to more once it had the two lessons on the price box
+    (sent again 2026-11-28). Runway's came to 17 once it had its line-by-line part
     (sent 2026-11-25).
   - Offered and not built: a two-page cheat sheet for Runway, like Prism's.
   - The PDF is never committed. **He keeps the copy he was sent: after a change to the guide that matters to a
@@ -231,7 +234,7 @@ format as the other tools; no AI, no live data.
 
 - **Never commit screener data or results from the owner's data.** The download is licensed to the owner. The
   built-in example is generated in the page (`exampleData`): invented companies whose symbols end in `.X`.
-  `tests/check-prism.js` (507 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
+  `tests/check-prism.js` (573 checks) also uses invented companies. `.gitignore` blocks `*.csv`, `*.xlsx`, `*.tsv`.
 - **It lists companies to research. It never recommends.** Keep that wording, and keep "not advice" in view.
 - `<script id="engine">` is pure (no page references; the test asserts it). Main pieces: `FIELDS` (columns and
   header spellings), `mapTable`, `run` (lanes, share classes, sector percentiles, the five questions, blocks, data
@@ -571,10 +574,13 @@ format as the other tools; no AI, no live data.
   five verdict names come from his case-notes headings: don't add trade types as verdicts. Separate strike and
   expiry boxes, with each file showing the distance from the strike, were offered and are not built.
 - `CONTROLS` are editable starting points, none tested against later returns: say so wherever results are shown.
-- `FIELDS`: the first spelling of each of the 93 columns was checked against the owner's real downloads (a
-  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 93 headings.
-  The last twenty-seven were added on 2026-11-24: eight dividend columns, eleven for the signs, and eight for the
-  banks' tests, the record against rivals and the use of cash.
+- `FIELDS`: the first spelling of each of the 102 columns was checked against the owner's real downloads (a
+  20-column file dated 2026-11-04 and the full 336-column file dated 2026-11-20); a check holds the 102 headings.
+  Twenty-seven were added on 2026-11-24: eight dividend columns, eleven for the signs, and eight for the
+  banks' tests, the record against rivals and the use of cash. Nine more on 2026-11-28, for "What is the price
+  counting on?": the year's low and high with their dates, the 50- and 200-day averages, and analysts' forecasts
+  for this financial year (sales, profit per share) and the next (profit per share; next year's sales was read
+  already).
   Later spellings are guesses for other files, and a match on one is reported on the page as "matched by name
   only". What the full file taught us, so nobody has to find it twice:
   - Statement figures are already in US dollars, whatever currency the company reports in.
@@ -598,14 +604,14 @@ format as the other tools; no AI, no live data.
   It holds headings only, never figures, so the owner can send it when asking for more columns to be read.
 - State: `localStorage` key `prism-v1` (settings, verdicts, A-list choices, the scorecard, last two list
   memberships, the three parts of the signs: `track`, `kind`, `own`, `rivals`, his own choice of companies to
-  set a company beside, and `queue` with `qd`, the companies waiting to be read; `v: 2` marks state saved since the A-list
+  set a company beside, `myp`, the prices of his own for a company, and `queue` with `qd`, the companies waiting to be read; `v: 2` marks state saved since the A-list
   became the opening view); IndexedDB `prism` keeps the last file in that browser only, and the research with the
   mark of each brief that came from the store (`RESEARCH.at`); `ftol-summary-prism` feeds the home page. The vault copy holds the same things except the file: the scorecard carries entry prices and the
   last prices of the large companies, and the record of signs a few figures per report for the A-list and the
   followed companies. On the owner's file the saved state is about 90 KB on the first day (the scorecard is two
   thirds of it) and the record of signs grows to about 50 KB.
 - The built-in example carries made-up values for the newer columns too. Each batch of columns has its own random
-  stream (four so far), so every earlier figure stays as it was. It includes a few young fast growers so the
+  stream (six so far), so every earlier figure stays as it was. It includes a few young fast growers so the
   moonshot list has something to show, and a made-up record of five earlier reports for every company
   (`DATA.track`, built by running the real `trackStep` on made-up earlier figures), so the signs have a history to
   show. Adding an operating margin moved one company off one named list; the main lists did not change.
@@ -631,24 +637,73 @@ format as the other tools; no AI, no live data.
   research brief" button. Offered on 2026-11-20 and not chosen then: put arithmetic (he types strike, expiry and
   premium; Prism works out the return on cash, the breakeven and what it assumes), a one-line market thermometer
   (share of the A-list on sale, tracked across files), and a "heavily shorted" caution tag.
-- **Further down the price (the owner's wish, 2026-11-28; offered, not built).** After reading two companies with the
-  sheets (one he owns that is priced above its entry ceiling and below his cost, one he would buy at a lower price),
-  he wrote: "Wish Prism could do deeper analysis and take me further down each direction before I go manual." Of the
-  directions Prism opens, the business and its management have something further behind them (the notes, the signs,
-  "Deeper dive"); the price has only the entry ceiling and one line on what today's price implies. Worked for him in
-  chat from his file, and offered as a build:
-  - **What each price counts on**, under "What the price implies": a short ladder of prices (the year's high,
-    today's price, the entry ceiling, the year's low, and **a price of his own**: his cost, or a put strike less its
-    premium). For each, the growth it needs (`impliedGrowth` on the yields scaled by price) and what he would earn a
-    year at that price if spare cash grows only at the cautious rate (the entry ceiling's sum turned round).
-  - **Where the price stands**: the year's low and high with their dates, and the 50- and 200-day averages.
-  - Beside what the price needs: what analysts expect for sales and profit over the next year and the next three.
-  - The file has the columns (`52W Low`, `52W Low Date`, `52W High Date`, `200 MA`, `Rev Gr. Next 3Y`,
-    `EPS Gr. Next Y`, `EPS Gr. Next 3Y`); Prism does not read them yet, so he would load his file again once.
-  - What stays out: the provider's own "fair value" figures and analysts' price targets. On the company he owns, three
-    such figures in his own file ran from under half the price to well above it: a single "valuation" is fragile,
-    and a ladder of "what must be true at this price" is Prism's way.
-  Wait for his word before building. Put arithmetic (below) would sit naturally beside it.
+- **What is the price counting on? (`needsAt`, `earnAt`, `priceLadder`, `priceStand`, `forecastRead`; `priceBox`,
+  `pricePatch`, `S.myp`).** On 2026-11-28, after reading two companies with the sheets (one he owns that is priced
+  above its entry ceiling and below his cost, one he would buy at a lower price), he wrote: "Wish Prism could do
+  deeper analysis and take me further down each direction before I go manual." Of the directions Prism opens, the
+  business and its management had something further behind them (the notes, the signs, "Deeper dive"); the price
+  had only the entry ceiling and one line on what today's price implies. He said "go ahead" to three additions, and
+  they are one box in a company's detail, the second, right after the A-list box. It took the place of the small box
+  "What the price implies", which is gone. It is open for a company he follows or has typed a price for, and closed,
+  with the gist in its heading, for any other.
+  - **The ladder ("What each price counts on").** A line for each price, from the highest down: the year's high,
+    today's price, the entry ceiling, the year's low, and up to four **prices of his own** (`S.myp`: what he paid,
+    a price to buy at, a put's strike less its premium). Three columns. "Growth it needs" is the sum behind "Price
+    implies" at that price (`needsAt`: at today's price it is exactly the row's figure, a check holds it). "You
+    would earn" is the entry ceiling's sum turned round (`earnAt`: at the ceiling it is the hurdle, a check holds
+    it). "Counting stock pay" is the same on spare cash after stock pay.
+  - **Stock pay.** The entry ceiling is worked out on plain spare cash. On the company he would buy, stock pay took a
+    large part of the spare cash, and counting it moved the most to pay from above the price to well below it,
+    close to where his own reading had landed. So when counting it lowers the ceiling by `lad_pay` or more, the
+    ladder has a line "Ceiling counting stock pay", a sentence under the table says it in words, and the box's
+    heading says "above it once stock pay is counted" when the price sits between the two. On his file, 160 large
+    scored companies are under their ceiling and 45 of them are not once stock pay is counted. **The entry ceiling
+    itself, the Entry ceiling column and the order "Most under the entry ceiling" still use plain spare cash:
+    changing that moves a quarter of those companies, so it waits for his word.**
+  - "You would earn" is left out wherever there is no entry ceiling (a bank, a cyclical industry, a data warning, no
+    spare cash, a price that assumes very fast growth): where that sum cannot be trusted, this one cannot either.
+    A bank is read on earnings alone. A company that is set aside gets no sums, only where its price stands.
+  - **Cash in hand, or debt**, is said beside the sums when it is `lad_cash` of the market value or more: the sums
+    count what the business makes in a year, not what it already holds or owes.
+  - **What analysts expect**: sales and profit per share, this financial year and the next, beside the company's
+    usual pace and what today's price needs. A forecast under the cautious growth that "You would earn" supposes
+    is said to make that column too kind. "Thin" when fewer than three analysts follow it. Forecasts are shown and
+    used in no sum. **The three-year forecast columns are not read**: on the two companies checked they only add up
+    if counted from the last full year, so they take in the year that is nearly over, and the profit figure then
+    misleads (a large rise "over three years" beside a fall next year).
+  - **Where the price stands**: the year's range with its days, the 50- and 200-day averages, the change over a
+    week, a month and a year. A low set within `res_days` days after the latest results is pointed out, in the
+    ladder and in the line: the results are then the first thing to read. A stored file from before these columns
+    still gets the high and the 50-day average, worked back from the two "change" columns, and the box says "Load
+    your file again".
+  - **Typing a price redraws only that box** (`pricePatch`), wherever it is on show, so a verdict being written
+    lower down is not lost. One box to a price, because a phone's number pad has no space or comma.
+  - Every line and column has its note (the `x_` notes, and `pricebox`); the ladder's hidden names (column heads on
+    a phone, the inline names on a wide screen) are `display: none`, not clipped, so the keyboard never lands on
+    one. A browser test that opens every note must take only the visible ones.
+  - Rules: no fair value, no price target, no price or strike suggested (checks hold the three), and nothing in the
+    box feeds a test, a list or an order (a check asserts it). The provider's own "fair value" figures stay out: on
+    the company he owns, three of them in his own file ran from under half the price to well above it.
+  - **What he showed next (2026-11-28): a chat with another AI about one of the two companies**, as "how I worked
+    ... to drill it down further". Ten parts: what the company does, where its sales come from, why the price fell,
+    its rivals and its moat, a technology that could replace it, the quality of its figures, its managers, what
+    would make it win or lose, a valuation in three cases with prices to buy at and put strikes to look at, and a
+    grade. Where each part stands in Prism:
+    - *From the file, now in the box*: the fall and when it came (the low was set right after the results), what
+      analysts expect next year, the sums at his own prices, stock pay counted as a cost, cash in hand.
+    - *In a Deeper dive today*: what the company does, who its rivals are and what they say, what worries it, ten
+      years of its cash, how its managers are paid. From the annual report and the proxy statement only.
+    - *Nowhere yet*: **why the price fell.** In that chat the answer came from the latest quarter's results and the
+      company's outlook for the next year, which are in the quarterly report and the results release, not in the
+      annual report. Offered: have the Deeper dive read those two as well (the regulator has both).
+    - *Not Prism's to give*: news and press from the web, a grade for the managers, a single fair value. The chat's
+      own figures were not checked here.
+  - Offered on 2026-11-28 and not built: reading the latest quarterly report and results release in a Deeper dive;
+    two cautions that the chat caught and the file also shows (a profit lifted by a tax credit: the file's tax rate
+    is below zero for about 94 large companies in profit; and the latest quarter's operating profit falling while
+    the year's is up, which "Is the business slipping?" does not see: 15 of 141 on the A-list); working the entry
+    ceiling itself on spare cash after stock pay; a mark under "What changed" when a followed company's price
+    crosses one of his own prices. Put arithmetic (above) would sit beside the box.
 - Deliberately left out, and said so to the owner: estimated option premiums (not in the file; a guess would
   mislead), analyst ratings and price targets, more chart indicators, any combined score.
 

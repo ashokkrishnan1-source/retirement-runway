@@ -52,6 +52,11 @@ touching the network. That includes the queue of companies waiting to be read: t
 reading list holds names and the regulator's numbers only, and what comes back
 from the online store is cleaned like any research file. And it checks that every
 test, sign and measure in a company's detail has a note that explains it.
+The sums of "What is the price counting on?" are worked by hand too: the growth a
+price needs, what a buyer at that price would earn, the same with stock pay
+counted as a cost, where the price stands against the year's low and high, and
+what analysts expect. A check holds that none of it moves a company on or off
+any list.
 
 ## After the yearly update
 

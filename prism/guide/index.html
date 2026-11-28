@@ -174,7 +174,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span><b class="k s">Entry ceiling</b></span><span>The most to pay. The line under it gives today's price and how far that is under or over the ceiling. A later lesson explains it.</span></li>
             <li><span><b class="k s">Verdict</b></span><span>Your own decision about the company. Prism never sets one.</span></li>
           </ul>
-          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the dividend, the signs that the business is winning, two boxes on its management, the five questions and a place for your verdict.</p>
+          <p>Tap the row to open it. The detail shows the six tests of the business, the signs of a low price, the signs of slipping, the dividend, what the price is counting on, the signs that the business is winning, two boxes on its management, the five questions and a place for your verdict.</p>
           <div class="go"><a class="btn" data-go='{"list":"sale","el":"tblBox","box":"self"}' href="#">Show me the rows →</a><a class="btn" data-go='{"list":"sale","open":"first","el":"detail"}' href="#">Show me a row opened →</a></div>
         </div>
       </details>
@@ -245,9 +245,33 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
           <ol class="steps">
             <li><span>Tap the ceiling in any row. A note explains it in plain words, with that company's own figures.</span></li>
             <li><span>To put first the companies whose price is furthest below their ceiling, set <b class="k s">Order</b> to <b class="k">Most under the entry ceiling</b>. Companies with no ceiling go last.</span></li>
+            <li><span>The ceiling is one price. To see what other prices would be counting on, your own among them, open the company and tap <b class="k">What is the price counting on?</b>. The next lesson goes through it.</span></li>
           </ol>
           <p class="tip"><b>Good to know.</b> It is a "don't pay more than this" line. It is not what the share is worth, and it is not a forecast. The ceiling is cautious on purpose, so a price above it is not a reason to sell.</p>
           <div class="go"><a class="btn" data-go='{"list":"sale","el":"sort"}' href="#">Show me the Order menu →</a></div>
+        </div>
+      </details>
+
+      <details class="lesson" id="price">
+        <summary><span class="t"><span class="q">What is this price counting on?</span><span class="where">What is the price counting on? · Prices of your own</span></span></summary>
+        <div class="body">
+          <p>The entry ceiling is one price. This box takes the same sums to several: the year's high and low, today's price, the ceiling, and any price you type yourself. For each it says what that price is betting on.</p>
+          <ol class="steps">
+            <li><span>Open a company and tap <b class="k">What is the price counting on?</b>. It is the second box. Its heading already gives the gist.</span></li>
+            <li><span>Read down the table. Each line is a price, from the highest to the lowest.</span></li>
+            <li><span><b class="k s">Growth it needs</b> is how fast the company's cash and profit must grow, year after year, for a buyer at that price to do well. The lower the price, the less it needs.</span></li>
+            <li><span><b class="k s">You would earn</b> is what a buyer at that price would make a year if the company's spare cash grows only slowly. At the entry ceiling it is the return the ceiling is set for. Below the ceiling it is more.</span></li>
+            <li><span>Under the table, type a price in <b class="k s">Prices of your own</b>: what you paid, a price you would buy at, or a put's strike less its premium. It gets a line of its own, <b class="k s">Your price</b>. You can keep up to four for a company. Clear a box to remove one.</span></li>
+          </ol>
+          <ul class="points">
+            <li><span><b class="k s">Counting stock pay</b></span><span>Many companies pay their staff partly in new shares. No cash leaves the company, so the spare cash does not show it, but the owners bear it. This column is "You would earn" with that cost taken out. Where it changes the answer a lot, the box adds a line, <b class="k">Ceiling counting stock pay</b>, and says so in words under the table.</span></li>
+            <li><span><b class="k s">What analysts expect</b></span><span>The growth in sales and in profit per share that analysts expect this financial year and the next, set beside what today's price needs.</span></li>
+            <li><span><b class="k s">Where the price stands</b></span><span>The year's low and high with their days, two averages of the price, and the change over a week, a month and a year. When the low was set right after the company's results, the box says so: read those results first.</span></li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> A company with no entry ceiling gets no "You would earn": a bank, a cyclical industry, a data warning. The growth each price needs is still shown wherever Prism can work it out.</p>
+          <p class="tip warn"><b>What it is not.</b> These are sums on one year's figures. Prism does not forecast, does not say what a share is worth, and suggests no price or strike. Nothing in the box plays a part in any list.</p>
+          <p class="tip"><b>If lines are missing.</b> The box says <b class="k">Load your file again</b> when the copy of your file that this browser kept is from before Prism read these columns. Load the file once more and they appear.</p>
+          <div class="go"><a class="btn" data-go='{"list":"sale","open":"first","el":"price"}' href="#">Show me the box →</a></div>
         </div>
       </details>
 
@@ -264,6 +288,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
           </ol>
           <p class="tip"><b>Good to know.</b> Prism never suggests a strike. It has no option prices, and a guess would mislead.</p>
           <p class="tip"><b>Good to know.</b> The lesson "Record what you decided" shows how to note a put you have sold.</p>
+          <p class="tip"><b>Trying a strike.</b> Prism never suggests one. To see what a strike of your own would mean, open the company, tap <b class="k">What is the price counting on?</b> and type the strike less the premium under <b class="k s">Prices of your own</b>. The line shows what that price is counting on and what you would earn if the shares were put to you.</p>
           <div class="go"><a class="btn" data-go='{"list":"put","el":"tblTitle"}' href="#">Show me in Prism →</a></div>
         </div>
       </details>
@@ -434,6 +459,41 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
         </div>
       </details>
 
+      <details class="lesson" id="pricelines">
+        <summary><span class="t"><span class="q">What is the price counting on? Line by line</span><span class="where">The ladder of prices · stock pay · forecasts · where the price stands</span></span></summary>
+        <div class="body">
+          <p>The box opens with two sentences: what today's price needs, and the entry ceiling. Then comes a table with a line for each price. Every name in the box opens a note with the company's own figures.</p>
+          <p><b class="k">What each price counts on</b>, from the highest price down.</p>
+          <ul class="points">
+            <li><span><b class="k s">The year's high</b></span><span>The most anyone paid in the past year, and the day. The line shows how much growth that price was counting on.</span></li>
+            <li><span><b class="k s">Today's price</b></span><span>The price in your file. It is marked with a bar at the side, and every other line says how far it is above or below it.</span></li>
+            <li><span><b class="k s">Entry ceiling</b></span><span>The most to pay. On this line "You would earn" is exactly the return the ceiling is set for.</span></li>
+            <li><span><b class="k">Ceiling counting stock pay</b></span><span>The ceiling worked out again with stock pay counted as a cost. It appears only when that lowers the ceiling noticeably. Prism's lists use the plain ceiling.</span></li>
+            <li><span><b class="k s">The year's low</b></span><span>The least anyone paid in the past year, and the day. It is not a floor: a price can go lower.</span></li>
+            <li><span><b class="k s">Your price</b></span><span>A price you typed. For a put, type the strike less the premium: that is what the shares would cost you if they were put to you.</span></li>
+          </ul>
+          <p>Under the table, in words:</p>
+          <ul class="points">
+            <li><span><b class="k s">Stock pay</b></span><span>What the staff were paid in new shares over the year, and how much of the spare cash that is. It is large in many young technology and health companies, and small in most old ones.</span></li>
+            <li><span><b class="k s">Cash in hand</b> or <b class="k s">Debt</b></span><span>The sums count the cash the business makes each year. Cash already in the bank comes on top of that, and debt is counted only through its interest. This line says how much there is for each share.</span></li>
+          </ul>
+          <p><b class="k">What analysts expect</b></p>
+          <ul class="points">
+            <li><span><b class="k s">Sales</b></span><span>The growth expected this financial year and the next, beside the company's usual pace.</span></li>
+            <li><span><b class="k s">Profit per share</b></span><span>The same for profit. A fall expected next year after a big rise this year is worth a look: this year may have been helped by something that will not repeat.</span></li>
+            <li><span><b class="k s">Beside the price</b></span><span>Whether next year's sales forecast is above or below the growth today's price needs. <b class="k s">Thin</b> marks a company that hardly any analyst follows.</span></li>
+          </ul>
+          <p><b class="k">Where the price stands</b></p>
+          <ul class="points">
+            <li><span><b class="k s">The year's range</b></span><span>The low and the high with their days, and how far today's price is from each. A low set in the past few weeks is a fresh fall. A low set right after results points at the results.</span></li>
+            <li><span><b class="k s">50-day average</b> and <b class="k s">200-day average</b></span><span>The average price over about ten weeks, and over about ten months. A price well under both is out of favour. The first is what the tags <b class="k s">Falling</b> and <b class="k s">Rising</b> are read from.</span></li>
+            <li><span><b class="k s">Change</b></span><span>The move over a week, a month and a year. A fall that is nearly all in the past month is one event: find out what happened.</span></li>
+          </ul>
+          <p class="tip"><b>Good to know.</b> A forecast is a guess, and Prism uses it in no sum. It is there to set beside the price.</p>
+          <div class="go"><a class="btn" data-go='{"list":"sale","open":"first","el":"price"}' href="#">Show me these lines →</a></div>
+        </div>
+      </details>
+
       <details class="lesson" id="measures">
         <summary><span class="t"><span class="q">What are the figures behind the five questions?</span><span class="where">Sector rank, and each measure in plain words</span></span></summary>
         <div class="body">
@@ -582,6 +642,7 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <li><span>Read the line that begins <b class="k s">Since your last file</b>: what joined, what left, and what needs attention among the companies you follow.</span></li>
             <li><span>Read <b class="k s">A-list on sale</b>, starting with the businesses that are holding up.</span></li>
             <li><span>If you sell puts, look at the <b class="k s">Put desk</b>.</span></li>
+            <li><span>Before you act on a company, open it, tap <b class="k">What is the price counting on?</b> and type the price you have in mind.</span></li>
             <li><span>Record a verdict on what you read, with a review date.</span></li>
             <li><span>When a company you follow has reported, open it, read <b class="k">Is the business winning?</b> and type in your own signs from its report.</span></li>
             <li><span>Now and then, open the scorecard, and have the filings of the companies you care about read again.</span></li>
@@ -605,6 +666,8 @@ dl.words dd{margin:2px 0 0;color:var(--fg2)}
             <div><dt>Spare cash</dt><dd>What a company has left each year after running the business and investing in it. Analysts call it free cash flow.</dd></div>
             <div><dt>Entry ceiling</dt><dd>The most to pay: the price at which you would still earn a good return each year if the spare cash grows only slowly.</dd></div>
             <div><dt>Price implies</dt><dd>The yearly growth today's price needs to be fair.</dd></div>
+            <div><dt>Stock pay</dt><dd>What a company pays its staff in new shares instead of cash. Reports call it stock-based compensation. The owners bear it, because every new share makes their slice smaller.</dd></div>
+            <div><dt>Financial year</dt><dd>The twelve months a company keeps its accounts for. It need not end in December.</dd></div>
             <div><dt>Return on capital</dt><dd>What a business earns each year on the money invested in it.</dd></div>
             <div><dt>P/E</dt><dd>The share price divided by a year's profit per share. A low P/E means the price expects little.</dd></div>
             <div><dt>Sector rank</dt><dd>Where a company stands among the companies of its own sector, from 0 to 100.</dd></div>

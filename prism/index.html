@@ -169,6 +169,19 @@ details.fold>summary .hlp{vertical-align:2px}
 .fold ul.find .bq{display:block;margin-top:2px;padding-left:10px;border-left:2px solid var(--line);font-size:12.5px;color:var(--fg2)}
 .fold ul.find a,.fold .srcs a{color:var(--accent)}
 .fold .srcs{font-size:12.5px;color:var(--fg2);max-width:86ch}
+/* "What is the price counting on?": a short ladder of prices, one row each, with what that price needs and what it
+   would earn. On a phone each row stacks, and each figure carries its own name. */
+.ladw{max-width:880px}
+.lad{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:2px 14px;padding:7px 0 7px 9px;border-top:1px solid var(--line);font-size:13px;align-items:start}
+.lad.c2{grid-template-columns:minmax(0,1.7fr) repeat(2,minmax(0,1fr))}.lad.c3{grid-template-columns:minmax(0,1.7fr) repeat(3,minmax(0,1fr))}
+.lad.h{border-top:0;padding:0 0 4px 9px;font:600 11.5px var(--body);letter-spacing:.05em;text-transform:uppercase;color:var(--fg2)}
+.lad .p{font:600 14px var(--mono);font-variant-numeric:tabular-nums;color:var(--fg);margin-right:6px}
+.lad .n{min-width:0;color:var(--fg2)}.lad .n i{display:block;font-style:normal;font-size:12.5px;color:var(--fg3)}
+.lad .f{min-width:0;color:var(--fg2)}.lad .fig{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--fg)}
+.lad .lab{display:none}
+.lad.me{box-shadow:inset 3px 0 0 var(--accent)}
+.lad small{font:400 12px var(--body);color:var(--fg3)}
+.fold .myp input[type=text]{width:88px;text-align:right}
 /* a note the reader must not miss: the stored copy of the file is older than what Prism can read now */
 .older{background:var(--warn-bg);color:var(--fg);border-radius:8px;padding:9px 12px;font-size:14px;max-width:none}
 @media (max-width:760px){
@@ -191,6 +204,9 @@ details.fold>summary .hlp{vertical-align:2px}
   .sgq>.n{max-width:128px}
   .sgr input[type=text]{max-width:92px}
   .sgr .lab{position:static;width:auto;height:auto;overflow:visible;clip-path:none}
+  .lad,.lad.c2,.lad.c3{grid-template-columns:minmax(0,1fr)}
+  .lad.h{display:none}
+  .lad .lab{display:inline}
 }
 </style>
 
@@ -384,7 +400,14 @@ var CONTROLS = {
   a_equity: 0.07,  /* the owners' money as a share of everything it holds, at least */
   /* "How well is it run?": a company is set against its industry only when the file has at least this many
      companies in it, and beside this many of its nearest rivals */
-  peer_min: 5, rivals_n: 4
+  peer_min: 5, rivals_n: 4,
+  /* "What is the price counting on?": the entry ceiling worked out again with stock pay counted as a cost gets a
+     line of its own when it is at least lad_pay lower than the entry ceiling; a year's low set within res_days days
+     after the latest results is said to have followed them; a price within low_near of the year's low is "at" it;
+     a forecast within fc_tol of what the price needs counts as about the same */
+  lad_pay: 0.05, res_days: 3, low_near: 0.02, fc_tol: 0.01,
+  /* ... and cash in hand, or debt, is mentioned beside the sums when it is at least this share of the market value */
+  lad_cash: 0.02
 };
 
 /* Columns the engine understands: [name used here, kind, header spellings with letters and digits only].
@@ -435,7 +458,13 @@ var FIELDS = [
   /* for the tests of a bank or an insurer, for the record against rivals and for where a year's cash went */
   ['roa', 'p', 'roa'], ['equity', 'n', 'equity', 'totalequity', 'shareholdersequity'], ['assets', 'n', 'assets', 'totalassets'],
   ['capex', 'n', 'capex', 'capitalexpenditures'], ['invcf', 'n', 'investingcf', 'investingcashflow'], ['debtg', 'p', 'debtgrowthyoy'],
-  ['goodwill', 'n', 'goodwill'], ['tenk', 'd', '10kdate']
+  ['goodwill', 'n', 'goodwill'], ['tenk', 'd', '10kdate'],
+  /* for "What is the price counting on?": the year's low and high with their days, the 50- and 200-day averages, and
+     what analysts expect of sales and of profit per share this financial year and the next (revgn, above, is next
+     year's sales). Shown in a company's detail; never used in a test, a list or an order. */
+  ['low52', 'n', '52wlow'], ['low52d', 'd', '52wlowdate'], ['high52', 'n', '52whigh'], ['high52d', 'd', '52whighdate'],
+  ['ma50v', 'n', '50ma'], ['ma200v', 'n', '200ma'],
+  ['revgt', 'p', 'revgrthisy'], ['epsgt', 'p', 'epsgrthisy'], ['epsgn', 'p', 'epsgrnexty']
 ];
 var VERIFIED = FIELDS.length;   /* how many columns have a checked first spelling: all of them */
 
@@ -591,6 +620,113 @@ function impliedGrowth(y, C) {
   return (lo + hi) / 2;
 }
 function bucketOf(g, C) { return g == null ? null : g < 0 ? 'decline' : g < 0.04 ? 'stagnation' : g < 0.10 ? 'moderate' : g <= C.exp_perf ? 'high' : 'perfection'; }
+/* The cautious growth the entry ceiling supposes: the slowest of the company's recent sales growth, never more than
+   exp_cap and never less than exp_floor. */
+function cautiousGrowth(r, C) { return Math.max(C.exp_floor, Math.min(C.exp_cap, r.histg == null ? 0 : r.histg)); }
+
+/* ---------- what each price counts on ----------
+   The owner's wish of 2026-11-28, after reading two companies with the lists: to be taken further down the price
+   before working by hand. "Price implies" is one figure and the entry ceiling one price; these carry the same two sums
+   over a short ladder of prices: the year's high, today's price, the entry ceiling, the year's low and prices of the
+   reader's own (what was paid, or a put's strike less its premium). Nothing here feeds a test, a list or an order.
+   needsAt  the yearly growth, held for exp_N years, that a price P needs to be fair for a return of exp_r: the sum
+            behind "price implies", on the yields as they would stand at that price. A scored company is read on its
+            spare cash, on its earnings and on its spare cash after stock pay, whichever the file has; a bank or an
+            insurer on its earnings alone. At today's price it is the row's own figure.
+   earnAt   the yearly return of someone who pays P for a share whose spare cash is `cash` a share and grows g a year
+            for exp_N years, then exp_gT: the entry ceiling's sum turned round. At the entry ceiling it is exp_hurdle.
+            It is never shown below exp_gT + 0.5% or above 60%: beyond those the sum says little. */
+function needsAt(r, P, C) {
+  if (!(P > 0) || !(r.price > 0)) return null;
+  var ys = r.scored ? [r.fcfy, r.ey, r.owner] : (r.a && r.a.lender ? [r.ey] : []), k = r.price / P, s = 0, n = 0;
+  for (var i = 0; i < ys.length; i++) { var g = impliedGrowth(ys[i] == null ? null : ys[i] * k, C); if (g != null) { s += g; n++; } }
+  return n ? s / n : null;
+}
+function earnAt(cash, P, g, C) {
+  if (!(cash > 0) || !(P > 0)) return null;
+  var mult = P / cash, lo = C.exp_gT + 0.005, hi = 0.6;
+  if (annuity(g, lo, C.exp_gT, C.exp_N) <= mult) return lo;
+  if (annuity(g, hi, C.exp_gT, C.exp_N) >= mult) return hi;
+  for (var i = 0; i < 50; i++) { var m = (lo + hi) / 2; if (annuity(g, m, C.exp_gT, C.exp_N) > mult) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+/* The ladder for one company. mine: the reader's own prices.
+   rungs, from the highest price down, each {k, p, d, needs, earn, pay, gap}:
+     k     'high' the year's high, 'now' today's price, 'ceil' the entry ceiling, 'ceilpay' the entry ceiling worked out
+           again with stock pay counted as a cost (only when that is at least lad_pay lower), 'low' the year's low,
+           'mine' a price of the reader's own
+     d     the day a high or a low was set, when the file gives it
+     needs needsAt; earn earnAt on the spare cash; pay earnAt on the spare cash after stock pay; gap the price against
+           today's
+   earn and pay are worked out only for a company that has an entry ceiling: where that sum cannot be trusted (a
+   cyclical industry, a data warning, no spare cash, a price that assumes very fast growth) this one cannot either.
+   Beside the rungs: basis says what "needs" was read from ('three' readings, 'earnings' alone, or null when there is
+   nothing to read); g the cautious growth; cash and payCash the spare cash a share before and after stock pay;
+   payShare the stock pay as a share of the spare cash; payAll when it takes all of it; ceilPay the entry ceiling
+   after stock pay, whether or not it has a rung. */
+function priceLadder(r, C, mine) {
+  var out = {rungs: [], basis: null, canEarn: false, g: null, cash: null, payCash: null, payShare: null, payAll: false, ceilPay: null};
+  if (!(r.price > 0)) return out;
+  if (needsAt(r, r.price, C) != null) out.basis = r.scored ? 'three' : 'earnings';
+  var can = !!r.ceiling && r.fcfy > 0, list = [], i;
+  out.canEarn = can;
+  if (can) {
+    out.g = cautiousGrowth(r, C); out.cash = r.price * r.fcfy;
+    if (r.sbc != null && r.fcf > 0) {
+      out.payShare = Math.abs(r.sbc) / r.fcf;
+      if (r.owner > 0) { out.payCash = r.price * r.owner; out.ceilPay = out.payCash * annuity(out.g, C.exp_hurdle, C.exp_gT, C.exp_N); }
+      else out.payAll = true;
+    }
+  }
+  var high = r.high52 > 0 ? r.high52 : (r.dd != null && r.dd > -1 && r.dd <= 0 ? r.price / (1 + r.dd) : null);
+  if (high != null) list.push({k: 'high', p: high, d: r.high52 > 0 && r.high52d ? r.high52d : null});
+  list.push({k: 'now', p: r.price, d: null});
+  if (r.ceiling) list.push({k: 'ceil', p: r.ceiling, d: null});
+  if (out.ceilPay != null && out.ceilPay <= r.ceiling * (1 - C.lad_pay)) list.push({k: 'ceilpay', p: out.ceilPay, d: null});
+  if (r.low52 > 0) list.push({k: 'low', p: r.low52, d: r.low52d || null});
+  for (i = 0; i < (mine || []).length; i++) if (mine[i] > 0 && isFinite(mine[i])) list.push({k: 'mine', p: +mine[i], d: null});
+  for (i = 0; i < list.length; i++) list[i].i = i;
+  list.sort(function (a, b) { return b.p - a.p || a.i - b.i; });
+  for (i = 0; i < list.length; i++) {
+    var x = list[i]; delete x.i;
+    x.needs = needsAt(r, x.p, C); x.earn = can ? earnAt(out.cash, x.p, out.g, C) : null;
+    x.pay = can && out.payCash != null ? earnAt(out.payCash, x.p, out.g, C) : null; x.gap = x.p / r.price - 1;
+  }
+  out.rungs = list;
+  return out;
+}
+/* Where today's price stands: against the year's high and low, with the days they were set, and against the 50- and
+   200-day averages. below: how far under the high; above: how far over the low; atLow: within low_near of it.
+   highAgo and lowAgo: days from that day to the day of the file. afterResults: the low was set that many days after
+   the company's latest results came out (0 to res_days), which usually means the results did it. Without the newer
+   columns the high and the 50-day average are worked back from the two "change" columns an older file has. */
+function priceStand(r, C, today) {
+  var s = {high: null, highD: null, highAgo: null, below: null, low: null, lowD: null, lowAgo: null, above: null, atLow: false, afterResults: null, ma50: null, vs50: null, ma200: null, vs200: null};
+  if (!(r.price > 0)) return s;
+  if (r.high52 > 0) { s.high = r.high52; s.highD = r.high52d || null; s.below = 1 - r.price / r.high52; }
+  else if (r.dd != null && r.dd > -1 && r.dd <= 0) { s.high = r.price / (1 + r.dd); s.below = -r.dd; }
+  if (r.low52 > 0) { s.low = r.low52; s.lowD = r.low52d || null; s.above = r.price / r.low52 - 1; s.atLow = s.above <= C.low_near; }
+  if (today && s.highD) s.highAgo = daysBetween(s.highD, today);
+  if (today && s.lowD) s.lowAgo = daysBetween(s.lowD, today);
+  if (s.lowD && r.lastearn) { var d = daysBetween(r.lastearn, s.lowD); if (d >= 0 && d <= C.res_days) s.afterResults = d; }
+  if (r.ma50v > 0) { s.ma50 = r.ma50v; s.vs50 = r.price / r.ma50v - 1; }
+  else if (r.ma50 != null && r.ma50 > -1) { s.ma50 = r.price / (1 + r.ma50); s.vs50 = r.ma50; }
+  if (r.ma200v > 0) { s.ma200 = r.ma200v; s.vs200 = r.price / r.ma200v - 1; }
+  return s;
+}
+/* What analysts expect, to set beside what the price needs. salesNow and salesNext: the growth in sales they expect
+   in the company's current financial year and in the one after; epsNow and epsNext: the same for the profit for each
+   share; n: how many analysts follow it. needs: what today's price needs. vsNeeds: next year's sales forecast against
+   that, 'more', 'less' or 'same' (within fc_tol). underCautious: next year's sales forecast is below the cautious
+   growth that "you would earn" supposes. Forecasts are shown; they are used in no sum here. */
+function forecastRead(r, C) {
+  var nz = function (x) { return x == null || !isFinite(x) ? null : x; };
+  var f = {salesNow: nz(r.revgt), salesNext: nz(r.revgn), epsNow: nz(r.epsgt), epsNext: nz(r.epsgn), n: nz(r.analysts), needs: needsAt(r, r.price, C), vsNeeds: null, underCautious: false};
+  f.any = f.salesNow != null || f.salesNext != null || f.epsNow != null || f.epsNext != null;
+  if (f.needs != null && f.salesNext != null) f.vsNeeds = f.salesNext > f.needs + C.fc_tol ? 'more' : (f.salesNext < f.needs - C.fc_tol ? 'less' : 'same');
+  if (r.ceiling && f.salesNext != null) f.underCautious = f.salesNext < cautiousGrowth(r, C) - 0.0005;
+  return f;
+}
 
 /* ---------- scoring ---------- */
 function derive(r) {
@@ -728,7 +864,7 @@ function run(rows, controls, opt) {
     r.gap = r.histg != null && r.impg != null ? r.histg - r.impg : null;
     r.ceiling = null; r.vp = null;
     if (r.fcfy > 0 && r.price > 0 && !r.hold && !r.cyc && r.bucket !== 'perfection') {
-      var gc = Math.max(C.exp_floor, Math.min(C.exp_cap, r.histg == null ? 0 : r.histg));
+      var gc = cautiousGrowth(r, C);
       r.ceiling = r.price * r.fcfy * annuity(gc, C.exp_hurdle, C.exp_gT, C.exp_N);
       r.vp = r.fcfy * annuity(gc, C.exp_r, C.exp_gT, C.exp_N);
     }
@@ -763,7 +899,9 @@ function run(rows, controls, opt) {
     /* signs: the file says which reported period its figures cover, so a record can be kept from one report to the next */
     signs: has('lastrep'),
     /* lender: the file has what a bank or an insurer is graded on. cash: it says where a year's cash went. */
-    lender: has('roe5') && has('roa') && has('equity') && has('assets'), cash: has('ocf') && has('capex')};
+    lender: has('roe5') && has('roa') && has('equity') && has('assets'), cash: has('ocf') && has('capex'),
+    /* stand: the file gives the year's low and the averages, for "What is the price counting on?" */
+    stand: has('low52') && has('ma200v')};
   return {rows: rows, C: C, avail: avail, scored: ref.length, can: can};
 }
 
@@ -1426,7 +1564,8 @@ const FLABEL = {sym: 'Symbol', name: 'Company name', sector: 'Sector', industry:
   ret1w: 'Return 1 week', ret1m: 'Return 1 month', ma50: '50-day average change', atr: 'Average daily range', opt: 'Options', earn: 'Next earnings', revgn: 'Revenue growth next year', revgq: 'Revenue growth latest quarter', oig: 'Operating income growth', epsgq: 'EPS growth latest quarter',
   dy: 'Dividend yield', div: 'Dividend per share', dyrs: 'Dividend years', dgyrs: 'Dividend growth years', fpay: 'FCF payout', dg1: 'Dividend growth', exdiv: 'Ex-dividend date', dfreq: 'Payout frequency',
   rpe: 'Revenue per employee', emplg: 'Employee growth', fcfps: 'FCF per share', gpg: 'Gross profit growth', ato: 'Asset turnover', invt: 'Inventory turnover', bvps: 'Book value per share', eps: 'EPS', roe5: 'ROE 5-year', lastrep: 'Last report date', lastearn: 'Last earnings date',
-  roa: 'ROA', equity: 'Shareholders\' equity', assets: 'Total assets', capex: 'Capital expenditures', invcf: 'Investing cash flow', debtg: 'Debt growth (1 year)', goodwill: 'Goodwill', tenk: 'Annual report date'};
+  roa: 'ROA', equity: 'Shareholders\' equity', assets: 'Total assets', capex: 'Capital expenditures', invcf: 'Investing cash flow', debtg: 'Debt growth (1 year)', goodwill: 'Goodwill', tenk: 'Annual report date',
+  low52: '52-week low', low52d: '52-week low date', high52: '52-week high', high52d: '52-week high date', ma50v: '50-day average', ma200v: '200-day average', revgt: 'Revenue growth this year (forecast)', epsgt: 'EPS growth this year (forecast)', epsgn: 'EPS growth next year (forecast)'};
 /* label, explanation, whether it hides the row by default */
 const FL = {
   fcf_hi: ['Cash yield looks too high', 'A free-cash-flow yield this high is usually a one-off, customer money, a cycle peak or a data error.'],
@@ -1459,9 +1598,11 @@ const CTL = [['gate', 'Sector rank needed for a yes (0 to 100)', 1], ['q_roic', 
      kind   the reader's own choice of what kind of business a company is, {symbol: kind};
      own    the signs the reader types in from a company's own report, {symbol: [{n, up, q}]} (the engine's readOwn).
    rivals: the companies the reader chose to set a company beside, {symbol: [symbols]}.
+   myp: prices of the reader's own for a company, {symbol: [prices]}: what was paid, a price to buy at, or a put's
+   strike less its premium. "What is the price counting on?" works its sums for each.
    queue: the companies waiting to have their filings read, {symbol: {at, e}} (see "the queue", further down); qd says
    that the queue was changed here and has not reached the online store yet. */
-const blank = () => ({v: 2, controls: {}, noMining: false, leaveOut: '', verdicts: {}, hist: null, mine: {}, tierB: false, card: null, track: {}, kind: {}, own: {}, rivals: {}, queue: {}, qd: false, ui: {pool: 'main', need: GK.slice(), slack: 0, list: 'sale', hideWarn: true, showRej: false, sort: 'auto', page: 0}});
+const blank = () => ({v: 2, controls: {}, noMining: false, leaveOut: '', verdicts: {}, hist: null, mine: {}, tierB: false, card: null, track: {}, kind: {}, own: {}, rivals: {}, myp: {}, queue: {}, qd: false, ui: {pool: 'main', need: GK.slice(), slack: 0, list: 'sale', hideWarn: true, showRej: false, sort: 'auto', page: 0}});
 let S = blank(), DATA = null, RES = null, BY = {}, NEW = new Set(), OPEN = null, FIND = '', C = CONTROLS;
 let PEERS = {};        /* the companies of each industry, for "How well is it run?" (the engine's peerGroups) */
 /* What a reader found in companies' filings: {made, briefs: {symbol: brief}}, from a research file. Prism has no AI
@@ -1476,7 +1617,7 @@ let OLDER = false;     /* the file on show was stored in this browser before Pri
 function load() { try { const o = JSON.parse(localStorage.getItem(STORE)); if (o && o.ui) { S = Object.assign(blank(), o); S.ui = Object.assign(blank().ui, o.ui);
   /* a browser that last saved before the A-list existed opens on it once; after that the reader's own choice is kept */
   if (!(o.v >= 2)) { S.v = 2; S.ui.list = 'sale'; S.ui.slack = 0; }
-  ['track', 'kind', 'own', 'rivals', 'queue'].forEach(k => { if (!S[k] || typeof S[k] !== 'object') S[k] = {}; }); } } catch (e) {} }
+  ['track', 'kind', 'own', 'rivals', 'queue', 'myp'].forEach(k => { if (!S[k] || typeof S[k] !== 'object') S[k] = {}; }); } } catch (e) {} }
 function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
 
 /* the last file is kept in this browser so the page reopens where you left off */
@@ -1530,7 +1671,8 @@ function exampleData() {
     'ROIC (5Y)', 'Profit Years', 'Rev. Growth 3Y', 'Rev. Growth 5Y', 'Rev. Growth 10Y', 'Net Income', 'Operating CF', 'ND / EBITDA', 'Int. Cov.', 'PE (5Y)', 'PE (10Y)', '52W High Chg', 'Return 1W', 'Return 1M', '50MA Chg %', 'ATR', 'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Gross Margin', 'FCF', 'Rev. Growth (Q)', 'OpInc Growth',
     'Div. Yield', 'Dividend', 'Payout Freq.', 'Div. Years', 'Div. Gr. Years', 'Div. Growth', 'FCF Payout', 'Ex-Div Date',
     'Rev / Employee', 'Empl. Growth', 'FCF / Share', 'GP Growth', 'Asset Turnover', 'Inv. Turnover', 'BV / Share', 'EPS', 'ROE', 'ROE (5Y)', 'Shares', 'Oper. Margin', 'Last Report Date', 'Last Earnings',
-    'ROA', 'Equity', 'Assets', 'CapEx', 'Investing CF', 'Debt Growth (YoY)', 'Goodwill', '10K Date', 'Shares Insiders', 'Buyback Yield', 'SBC'];
+    'ROA', 'Equity', 'Assets', 'CapEx', 'Investing CF', 'Debt Growth (YoY)', 'Goodwill', '10K Date', 'Shares Insiders', 'Buyback Yield', 'SBC',
+    '52W High', '52W High Date', '52W Low', '52W Low Date', '50 MA', '200 MA', 'Rev Gr. This Y', 'EPS Gr. This Y', 'EPS Gr. Next Y'];
   /* a second stream of made-up numbers for the newer columns, so the first twenty stay as they were */
   let a2 = 20261120; const rnd2 = () => { a2 |= 0; a2 = a2 + 0x6D2B79F5 | 0; let t = Math.imul(a2 ^ a2 >>> 15, 1 | a2); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const n2 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd2(); return (u - 3) / 0.7071; };
@@ -1548,6 +1690,9 @@ function exampleData() {
   /* a fifth stream, for what a bank is graded on, where a year's cash went and what the insiders own */
   let a5 = 20261126; const rnd5 = () => { a5 |= 0; a5 = a5 + 0x6D2B79F5 | 0; let t = Math.imul(a5 ^ a5 >>> 15, 1 | a5); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const n5 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd5(); return (u - 3) / 0.7071; };
+  /* a sixth stream, for where the price stands and what analysts expect */
+  let a6 = 20261128; const rnd6 = () => { a6 |= 0; a6 = a6 + 0x6D2B79F5 | 0; let t = Math.imul(a6 ^ a6 >>> 15, 1 | a6); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const n6 = () => { let u = 0; for (let i = 0; i < 6; i++) u += rnd6(); return (u - 3) / 0.7071; };
   const IX = h => headers.indexOf(h);
   const data = [], names = {}, syms = {};
   SEC.forEach(sec => { for (let n = 0; n < sec[5]; n++) {
@@ -1593,7 +1738,16 @@ function exampleData() {
       const roa = bank ? roe * (0.075 + 0.04 * rnd5()) : roic * (0.45 + 0.3 * rnd5()), assets = bank ? (ni > 0 && roa > 0 ? ni / roa : cap * 8) : rev / ato, equity = bank && roe > 0 ? assets * roa / roe : assets * (0.3 + 0.3 * rnd5());
       const capex = -Math.max(0.03 * Math.abs(ocf), ocf - fcf), deals = rnd5() < 0.3 ? 0.1 + 0.5 * rnd5() : 0.06 * rnd5();
       d.push(+roa.toFixed(4), Math.round(equity), Math.round(assets), Math.round(capex), Math.round(capex - Math.abs(ocf) * deals), debt > 0 ? +(0.02 + 0.1 * n5()).toFixed(4) : null, Math.round(assets * 0.3 * rnd5() * rnd5()),
-        iso(base.getTime() - (30 + Math.floor(300 * rnd5())) * 864e5), +(young ? 0.05 + 0.2 * rnd5() : 0.002 + 0.02 * Math.abs(n5())).toFixed(4), +(-sh * (0.8 + 0.4 * rnd5()) + 0.002 * n5()).toFixed(4), Math.round(rev * (sec[0] === 'Technology' ? 0.03 + 0.08 * rnd5() : 0.003 + 0.015 * rnd5()))); }
+        iso(base.getTime() - (30 + Math.floor(300 * rnd5())) * 864e5), +(young ? 0.05 + 0.2 * rnd5() : 0.002 + 0.02 * Math.abs(n5())).toFixed(4), +(-sh * (0.8 + 0.4 * rnd5()) + 0.002 * n5()).toFixed(4), Math.round(rev * (sec[0] === 'Technology' ? 0.03 + 0.08 * rnd5() : 0.003 + 0.015 * rnd5())));
+      /* Where the price stands, made to agree with the figures above: the year's high follows from how far the price is
+         below it, the 50-day average from the change against it. A share that has fallen hard sometimes set its low
+         right after its latest results. Analysts expect this year to land between the past year and the next. */
+      const dd = d[IX('52W High Chg')], m50 = d[IX('50MA Chg %')], r1 = d[IX('Return 1Y')], gn = d[IX('Rev Gr. Next Y')], out = d[IX('Last Earnings')], ago = n => iso(base.getTime() - n * 864e5);
+      const high = px / (1 + dd), onRes = zt < -0.6 && rnd6() < 0.45, lowBy = onRes ? 0.02 + 0.1 * rnd6() : dd > -0.05 ? 0.12 + 0.3 * rnd6() : 0.03 + 0.25 * rnd6(), gt = 0.6 * revg + 0.4 * gn + 0.012 * n6();
+      d.push(+high.toFixed(2), ago(dd > -0.03 ? Math.floor(8 * rnd6()) : 25 + Math.floor(330 * rnd6())), +(px * (1 - lowBy)).toFixed(2),
+        onRes ? iso(Math.min(Date.parse(out) + Math.floor(3 * rnd6()) * 864e5, base.getTime())) : ago(lowBy < 0.05 ? Math.floor(9 * rnd6()) : 20 + Math.floor(335 * rnd6())),
+        +(px / (1 + m50)).toFixed(2), +(px / Math.max(0.4, 1 + 0.45 * r1 + 0.03 * n6())).toFixed(2), +gt.toFixed(4),
+        pe ? +(gt + 0.03 + 0.08 * n6()).toFixed(4) : null, pe ? +(rnd6() < 0.08 ? -0.04 - 0.14 * rnd6() : gn + 0.02 + 0.07 * n6()).toFixed(4) : null); }
   } });
   const m = mapTable(headers, data);
   /* A made-up record of the five reports before the latest, built the way the real one is: one earlier "file" at a
@@ -1854,7 +2008,7 @@ Object.assign(HELP, {
       'The sign is there when today\'s P/E is at least ' + pct(1 - C.sale_pe) + ' below that average.' + (z.own === true ? ' It is there.' : z.own === false ? ' It is not there.' : '') + '</p>' +
       '<p>Prism takes the lower of the company\'s five- and ten-year averages, and counts no average above ' + C.sale_pecap + ', because a few years of thin profit can blow an average up. The company is compared with itself and not with others: some businesses always carry a high P/E.</p>'; },
   p_implied: b => { const r = rowOf(b), z = r && r.sale; if (!z) return '';
-    return '<p><b>Against its growth.</b> Prism works out the growth a year that today\'s price needs to be fair. "What the price implies", lower down, shows the sum.</p>' +
+    return '<p><b>Against its growth.</b> Prism works out the growth a year that today\'s price needs to be fair. "What is the price counting on?", the next box, shows the sum for today\'s price and a few others.</p>' +
       '<p>' + (z.imp != null && z.rec != null ? 'For ' + esc(r.sym) + ' that is ' + gtxt(z.imp) + '. Its sales have grown ' + pct(z.rec) + ' a year, taking the slower of its five- and ten-year pace. ' : 'The file does not give what is needed to work it out for ' + esc(r.sym) + '. ') +
       'The sign is there when the price needs growth at least ' + Math.round(C.sale_gap * 100) + ' points below what the company has delivered.' + (z.implied === true ? ' It is there.' : z.implied === false ? ' It is not there.' : '') + '</p>' +
       '<p>Then the price expects much less of the business than it has done so far.</p>'; },
@@ -1925,6 +2079,84 @@ Object.keys(TERM).forEach(k => { HELP['m_' + k] = b => { const t = TERM[k], r = 
     : k === 'sh' ? ' "' + GQ.S[0] + '" allows growth of up to ' + pct(C.s_dil) + ' a year.' : '';
   return '<p><b>' + t[0] + '.</b> ' + t[1] + '</p><p>' + t[2] + more + '</p>' +
     (!r ? '' : fig == null ? '<p>The file has no figure for ' + esc(r.sym) + '.</p>' : k === 'ndlev' && v < 0 ? '<p>' + esc(r.sym) + ' has more cash than debt, so its figure is below zero.</p>' : '<p>' + esc(r.sym) + ': ' + fig + '.' + (rk != null ? ' On this measure it ranks ' + rk + ' of 100 in its sector, where 100 is the best for the question.' : '') + '</p>'); }; });
+/* ---------- a note for every line of "What is the price counting on?" ----------
+   The three columns of the ladder, each of its lines, the forecasts and the lines on where the price stands. Each is
+   written for the company it was opened on, with its own figures. */
+Object.assign(HELP, {
+  pricebox: () => '<p><b>What is the price counting on?</b> A share price is a bet on what the company will do. This box turns a price into the two things it is betting on.</p>' +
+    '<p><b>Growth it needs</b>: how fast the company\'s cash and profit must grow, every year for ' + C.exp_N + ' years, for a buyer at that price to make ' + pct(C.exp_r) + ' a year.</p>' +
+    '<p><b>You would earn</b>: what a buyer at that price makes a year if the company\'s spare cash grows only slowly. It is the entry ceiling\'s sum turned round.</p>' +
+    '<p>The lines are prices worth knowing: the year\'s high and low, today\'s price, the entry ceiling, and any price you type yourself, such as what you paid, or a put\'s strike less its premium.</p>' +
+    '<p>Below them: what analysts expect, and where the price stands. These are sums on one year\'s figures. They are not forecasts, and Prism does not say what a share is worth.</p>',
+  x_needs: b => { const r = rowOf(b); if (!r) return ''; const g = needsAt(r, r.price, C), pace = r.slip ? r.slip.pace : null, lender = !!(r.a && r.a.lender);
+    return '<p><b>Growth it needs.</b> Say you want ' + pct(C.exp_r) + ' a year from a share. For a price to give you that, the company\'s ' + (lender ? 'profit' : 'cash and profit') + ' must grow this much every year for ' + C.exp_N + ' years, and then keep growing slowly.</p>' +
+      '<p>The lower the price, the less growth it needs. A price that needs less than the company has shown is asking little of it. A price that needs more is counting on it to speed up. A figure below zero means the price is fair even if they shrink that much a year.</p>' +
+      (g == null ? '<p>Prism cannot work it out for ' + esc(r.sym) + ': the file shows no positive cash flow or profit.</p>'
+        : '<p>' + esc(r.sym) + ' at today\'s price: ' + gtxt(g) + '.' + (pace != null ? ' Its sales have grown ' + pct(pace) + ' a year, taking the slower of its five- and ten-year pace.' : '') + '</p>') +
+      '<p>' + (lender ? 'A bank or an insurer is read on its profit alone.' : 'Prism works it out up to three ways, on spare cash, on profit and on spare cash after stock pay, and shows the average.' + (r.impgSpread > 0.1 ? ' For ' + esc(r.sym) + ' they are far apart: ' + [['spare cash', r.impg_f], ['profit', r.impg_e], ['after stock pay', r.impg_o]].filter(x => x[1] != null).map(x => gtxt(x[1]) + ' on ' + x[0]).join(', ') + '. Find out why before trusting the average.' : '')) + '</p>'; },
+  x_earn: b => { const r = rowOf(b); if (!r) return ''; const L = priceLadder(r, C, []), now = L.rungs.find(x => x.k === 'now');
+    if (!L.canEarn) return '<p><b>You would earn.</b> What a buyer at each price would make a year if the company\'s spare cash grew only slowly.</p><p>It is not worked out for ' + esc(r.sym) + ', because ' + noCeil(r)[1] + '.</p>';
+    return '<p><b>You would earn.</b> What you would make a year, as an owner, if you paid that price and the company\'s spare cash ' + cautiousWords(L.g) + ' for ' + C.exp_N + ' years.</p>' +
+      '<p>Spare cash is what is left after running the business and investing in it. ' + esc(r.sym) + ' makes about ' + price(L.cash) + ' a share a year.</p>' +
+      '<p>' + (L.g >= C.exp_cap - 1e-9 ? pct(L.g) + ' a year is the most growth Prism will count on, however fast the company has grown.' : 'That is the slowest of its recent sales growth. Prism counts on no more.') + ' So this is a cautious figure, not a forecast.</p>' +
+      '<p>At the entry ceiling the answer is ' + pct(C.exp_hurdle) + ', because that is how the ceiling is set. Pay less and you earn more.' + (now ? ' At today\'s price: ' + earnTxt(now.earn) + ' a year.' : '') + '</p>' +
+      '<p>If the cash shrinks instead, you earn less than this.</p>'; },
+  x_pay: b => { const r = rowOf(b); if (!r) return ''; const L = priceLadder(r, C, []);
+    const what = '<p><b>Counting stock pay.</b> Many companies pay their staff partly in new shares. No cash leaves the company, so the spare-cash figure does not show it. But the owners bear it: every new share makes their slice smaller.</p>';
+    if (!L.canEarn || L.payShare == null) return what + '<p>' + (L.canEarn ? 'The file has no figure for it for ' + esc(r.sym) + '.' : 'It is not worked out for ' + esc(r.sym) + ', because ' + noCeil(r)[1] + '.') + '</p>';
+    return what + '<p>' + esc(r.sym) + ' paid ' + money(Math.abs(r.sbc)) + ' that way over the year, ' + p0(L.payShare) + ' of its spare cash.</p>' +
+      (L.payAll ? '<p>That is more than all its spare cash. Counted as a cost, it leaves nothing for the owners.</p>'
+        : '<p>Take it out and the spare cash is ' + price(L.payCash) + ' a share, not ' + price(L.cash) + '. This column is "You would earn" worked out on that.</p>' +
+          '<p>On this count the most to pay would be ' + price(L.ceilPay) + ', against an entry ceiling of ' + price(r.ceiling) + '.</p>') +
+      '<p>Prism\'s lists and its Entry ceiling column use the plain spare cash. This column shows what changes when stock pay is counted as a cost.</p>'; },
+  x_cash: b => { const r = rowOf(b); if (!r || r.netcash == null || !(r.cap > 0)) return ''; const ps = Math.abs(r.netcash) / r.cap * r.price;
+    return r.netcash > 0 ? '<p><b>Cash in hand.</b> What the company holds in cash, less everything it has borrowed. ' + esc(r.sym) + ': ' + money(r.netcash) + ', which is ' + price(ps) + ' for each share.</p>' +
+        '<p>The entry ceiling and the sums in this box are worked out from the cash the business makes each year. Cash already in the bank comes on top. Seen that way, a buyer at today\'s price pays about ' + price(Math.max(0, r.price - ps)) + ' a share for the business itself.</p>' +
+        '<p>Prism does not add it to the ceiling: some of it may be needed to run the business, and the rest is worth only what the managers do with it.</p>'
+      : '<p><b>Debt.</b> What the company has borrowed, less the cash it holds. ' + esc(r.sym) + ': ' + money(-r.netcash) + ', which is ' + price(ps) + ' for each share.</p>' +
+        '<p>The interest on it is already taken out of the spare cash, so the sums in this box count that. They do not count the debt itself, which has to be repaid or renewed one day.</p>' +
+        '<p>Whether the company can carry it is the debt test in the first box, "Is it an A-class business?".</p>'; },
+  x_ceilpay: b => { const r = rowOf(b); if (!r) return ''; const L = priceLadder(r, C, []);
+    return '<p><b>Ceiling counting stock pay.</b> The entry ceiling worked out again, with what was paid to staff in new shares taken out of the spare cash first.</p>' +
+      (L.ceilPay != null ? '<p>' + esc(r.sym) + ': ' + price(L.ceilPay) + ', against an entry ceiling of ' + price(r.ceiling) + '. Stock pay took ' + p0(L.payShare) + ' of its spare cash.</p><p>Pay ' + price(L.ceilPay) + ' and you would earn about ' + pct(C.exp_hurdle) + ' a year on cautious growth, even with stock pay counted as a cost.</p>' : '') +
+      '<p>The line is shown when counting stock pay lowers the ceiling by ' + pct(C.lad_pay) + ' or more. Prism\'s lists use the plain entry ceiling.</p>'; },
+  x_high: b => { const r = rowOf(b); if (!r) return ''; const st = priceStand(r, C, DATA.meta.date);
+    return '<p><b>The year\'s high.</b> The highest price of the past 52 weeks' + (st.high != null ? ': ' + price(st.high) + (st.highD ? ', on ' + day(st.highD) : '') : '') + '.</p>' +
+      '<p>Somebody paid that. The line shows what that price was counting on.</p>' + (st.below != null ? '<p>Today\'s price is ' + pct(Math.max(0, st.below)) + ' below it.</p>' : ''); },
+  x_low: b => { const r = rowOf(b); if (!r) return ''; const st = priceStand(r, C, DATA.meta.date);
+    return '<p><b>The year\'s low.</b> The lowest price of the past 52 weeks' + (st.low != null ? ': ' + price(st.low) + (st.lowD ? ', on ' + day(st.lowD) : '') : '') + '.</p>' +
+      (st.afterResults != null ? '<p>That was ' + afterWords(st.afterResults) + (r.lastearn ? ', on ' + day(r.lastearn) : '') + '. A low set right after results usually means the results, or what the company said about the year ahead, did it. Read them before anything else.</p>' : '') +
+      (st.above != null ? '<p>Today\'s price is ' + pct(Math.max(0, st.above)) + ' above it.</p>' : '') +
+      '<p>It is the least anyone paid all year. It is not a floor: a price can go lower.</p>'; },
+  x_now: () => '<p><b>Today\'s price.</b> The price in ' + (DATA.meta.example ? 'the example' : 'your file' + (DATA.meta.dateFrom === 'price' ? ', dated ' + day(DATA.meta.date) : '')) + '.</p><p>The other lines are set against it.</p>',
+  x_mine: b => { const r = rowOf(b), a = r ? myPrices(r.sym) : [];
+    return '<p><b>Your price.</b> A price you typed under the table' + (a.length ? ': ' + a.map(p => price(p)).join(', ') : '') + '.</p>' +
+      '<p>The line shows what that price would be counting on, and what you would earn at it.</p>' +
+      '<p>For a put, type the strike less the premium: that is what the shares would cost you if they were put to you.</p>'; },
+  x_myp: () => '<p><b>Prices of your own.</b> Type a price to see what it would be counting on: what you paid, a price you would buy at, or a put\'s strike less its premium.</p>' +
+    '<p>You can keep up to four for a company. Clear a box to remove a price. They are remembered from file to file, and saved in your encrypted copy.</p>' +
+    '<p>Prism does not suggest a price or a strike. It only does the sum for the one you type.</p>',
+  x_fsales: b => { const r = rowOf(b), f = r ? forecastRead(r, C) : null;
+    return '<p><b>Sales forecast.</b> How much analysts expect sales to grow in the company\'s current financial year, and in the one after.' + (f && f.n != null && f.n >= 1 ? ' It is the average of the ' + (f.n === 1 ? 'one analyst who follows ' : f.n + ' analysts who follow ') + esc(r.sym) + '.' : '') + '</p>' +
+      '<p>Set it beside the growth today\'s price needs. A forecast well under that means the price is counting on more than the people who follow the company expect.</p>' +
+      '<p>A forecast is a guess. Analysts are wrong most often when a business turns.</p>'; },
+  x_feps: () => '<p><b>Profit forecast.</b> How much analysts expect the profit for each share to change in the company\'s current financial year, and in the one after.</p>' +
+    '<p>A fall expected next year, after a big rise this year, can mean this year was helped by something that will not repeat, such as a tax credit, or that costs are about to rise. The company\'s results say which.</p>' +
+    '<p>A forecast is a guess. Prism uses it in no sum.</p>',
+  x_range: b => { const r = rowOf(b); if (!r) return ''; const st = priceStand(r, C, DATA.meta.date);
+    return '<p><b>The year\'s range.</b> The lowest and the highest price of the past 52 weeks, and the day each was set.</p>' +
+      (st.lowAgo != null && st.highAgo != null ? '<p>' + esc(r.sym) + ': the low was ' + (st.lowAgo <= 0 ? 'on the day of this file' : st.lowAgo + (st.lowAgo === 1 ? ' day' : ' days') + ' before this file') + ', the high ' + (st.highAgo <= 0 ? 'on the day of this file' : st.highAgo + (st.highAgo === 1 ? ' day' : ' days') + ' before') + '.</p>' : '') +
+      '<p>A low set in the past few weeks means the fall is fresh, and may not be over. A low set months ago, with the price well above it since, means buyers have come back.</p>' +
+      '<p>When the low falls right after the company\'s results, the line says so: the results are then the first thing to read.</p>'; },
+  x_ma50: b => { const r = rowOf(b), st = r ? priceStand(r, C, DATA.meta.date) : null;
+    return '<p><b>50-day average.</b> The average closing price of the past 50 trading days, about ten weeks' + (st && st.ma50 != null ? ': ' + price(st.ma50) + ' for ' + esc(r.sym) : '') + '.</p>' +
+      '<p>A price under this average, and lower than a month ago, is what Prism tags <b>Falling</b>. A price over it is tagged <b>Rising</b>.</p>'; },
+  x_ma200: b => { const r = rowOf(b), st = r ? priceStand(r, C, DATA.meta.date) : null;
+    return '<p><b>200-day average.</b> The average closing price of the past 200 trading days, about ten months' + (st && st.ma200 != null ? ': ' + price(st.ma200) + ' for ' + esc(r.sym) : '') + '.</p>' +
+      '<p>Many investors read it as the line between a share that is in favour and one that is out of favour. Prism uses it in no test.</p>'; },
+  x_chg: () => '<p><b>Change.</b> How far the price has moved over a week, a month and a year. The year\'s figure counts dividends.</p>' +
+    '<p>A fall that is nearly all in the past month is one event: find out what happened. A fall spread over the year is a slow loss of favour.</p>'
+});
 const pop = document.createElement('div'); pop.id = 'helpPop'; pop.hidden = true; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Help note'); document.body.appendChild(pop);
 let popFor = null;
 const hideHelp = () => { pop.hidden = true; popFor = null; };
@@ -2330,6 +2562,102 @@ function ownBox(r) {
     : '<p class="note">How the managers pay themselves, and what that pay is tied to, is in the company\'s proxy statement. No download carries it. ' + (b ? 'The research file found nothing on it for this company.' : 'A research file can: see "Research from the filings", lower on the page.') + '</p>';
   return h + '</details>';
 }
+/* ---------- what is the price counting on ---------- */
+/* One box in a company's detail for everything about its price: what each of a few prices would be counting on (the
+   engine's priceLadder), what analysts expect (forecastRead) and where the price stands (priceStand). It took the
+   place of the small box "What the price implies". It is open for a company the reader follows or has typed a price
+   for, and closed, with the gist in its heading, for any other. Nothing in it feeds a list. */
+const myPrices = sym => (Array.isArray(S.myp[sym]) ? S.myp[sym] : []).filter(p => typeof p === 'number' && p > 0 && isFinite(p)).slice(0, 4);
+/* one decimal always, as for the signs: down a ladder the small differences are the point */
+const p1 = x => (x < 0 ? '−' : '') + (Math.abs(x) * 100 + 1e-9).toFixed(1) + '%';
+const needTxt = g => g == null ? '–' : g >= 0.4 ? 'over 40%' : g <= -0.15 ? 'under −15%' : p1(g);
+const earnTxt = e => e == null ? '–' : e >= 0.6 ? 'over 60%' : e <= C.exp_gT + 0.005 + 1e-9 ? 'under ' + p1(C.exp_gT + 0.005) : p1(e);
+const aYear = t => t === '–' ? t : t + ' <small>a year</small>';
+/* the lines of the ladder: the note each name opens, and the name */
+const RUNG = {high: ['x_high', 'The year\'s high'], now: ['x_now', 'Today\'s price'], ceil: ['t_ceil', 'Entry ceiling'], ceilpay: ['x_ceilpay', 'Ceiling counting stock pay'], low: ['x_low', 'The year\'s low'], mine: ['x_mine', 'Your price']};
+const LADCOL = [['x_needs', 'Growth it needs'], ['x_earn', 'You would earn'], ['x_pay', 'Counting stock pay']];
+const cautiousWords = g => g > 0.0005 ? 'grows ' + pct(g) + ' a year' : g < -0.0005 ? 'shrinks ' + pct(-g) + ' a year' : 'stays the same';
+/* today's price against the entry ceiling, as a clause */
+const ceilWords = (r, it) => r.price <= r.ceiling ? pct(1 - r.price / r.ceiling) + ' below ' + it : r.price >= 2 * r.ceiling ? (r.price / r.ceiling).toFixed(1) + ' times ' + it : pct(r.price / r.ceiling - 1) + ' above ' + it;
+/* "the day its latest results came out", "the day after ...", "3 days after ..." */
+const afterWords = n => (n === 0 ? 'the day' : n === 1 ? 'the day after' : n + ' days after') + ' its latest results came out';
+/* "grow 16.5% this financial year and 7.4% the next", "rise 8% this financial year and fall 3% the next" */
+function twoYears(now, next, up, down) {
+  const w = x => (x < 0 ? down : up) + ' ' + pct(Math.abs(x));
+  if (now != null && next != null) return w(now) + ' this financial year and ' + ((now < 0) === (next < 0) ? pct(Math.abs(next)) : w(next)) + ' the next';
+  return now != null ? w(now) + ' this financial year' : w(next) + ' next financial year';
+}
+function priceBox(r) {
+  if (!(r.price > 0)) return '';
+  const sym = esc(r.sym), key = 'px:' + r.sym, mine = myPrices(r.sym), L = priceLadder(r, C, mine), st = priceStand(r, C, DATA.meta.date), f = forecastRead(r, C);
+  const now = L.rungs.find(x => x.k === 'now'), lender = !!(r.a && r.a.lender), sums = !!L.basis || L.canEarn, gist = [];
+  if (L.basis) gist.push(now.needs < -0.0005 ? 'Needs no growth' : 'Needs growth of ' + needTxt(now.needs) + ' a year');
+  if (r.ceiling) gist.push(ceilWords(r, 'the entry ceiling') + (L.ceilPay != null && L.ceilPay <= r.ceiling * (1 - C.lad_pay) && r.price <= r.ceiling && r.price > L.ceilPay ? ', above it once stock pay is counted' : ''));
+  if (st.atLow) gist.push('at the year\'s low');
+  let h = '<details class="dbox fold" data-price="' + sym + '" data-keep="' + esc(key) + '"' + keepOpen(key, followed(r.sym) || mine.length > 0) + '><summary>What is the price counting on?' + hb('pricebox') + '<span style="margin-left:6px;font:400 13px var(--body);color:var(--fg2)">' + esc(gist.join(' · ')) + '</span></summary>';
+  if (OLDER && !RES.can.stand) h += '<p class="note"><span class="pill warn">Load your file again</span> The copy of your file that this browser kept is from before Prism read the year\'s low, the two averages and what analysts expect of profit. Until you do, those lines are missing here.</p>';
+  if (L.basis) { const g = now.needs;
+    h += '<p class="note">Today\'s price of ' + price(r.price) + ' is fair only if ' + (lender ? 'its earnings ' : 'its cash flow and earnings ') + (g >= 0.4 ? 'grow more than 40%' : g <= -0.15 ? 'shrink more than 15%' : (g < 0 ? 'shrink ' : 'grow ') + 'about <b>' + pct(Math.abs(g)) + '</b>') + ' a year for ' + C.exp_N + ' years, for a ' + pct(C.exp_r) + ' yearly return.' + (lender ? ' A bank or an insurer is read on its earnings alone.' : '') + '</p>';
+    if (r.impgSpread > 0.1) h += '<p class="note"><span class="pill warn">Readings differ</span> Judged on cash flow alone the figure is ' + gtxt(r.impg_f) + '; on earnings alone, ' + gtxt(r.impg_e) + '. When they are this far apart, find out why before trusting the average.</p>'; }
+  else h += '<p class="note">' + (r.scored || lender ? 'The file shows no positive cash flow or earnings for this company, so Prism cannot say what its price is counting on.' : 'Prism does not work out what the price is counting on for a company it sets aside. Where the price stands is below.') + '</p>';
+  if (r.ceiling) h += '<p class="note"><b>Entry ceiling ' + price(r.ceiling) + ': the most to pay.</b> At that price you would earn about ' + pct(C.exp_hurdle) + ' a year if spare cash ' + (L.g > 0.0005 ? 'grows only ' + pct(L.g) + ' a year' : L.g < -0.0005 ? 'shrinks ' + pct(-L.g) + ' a year' : 'does not grow') + '. Today\'s price is ' + (r.price >= 2 * r.ceiling ? 'about ' : '') + ceilWords(r, 'it') + '. It is a "don\'t pay more than this" line, not what the share is worth.</p>';
+  else if (r.scored || lender) h += '<p class="note">No entry ceiling is shown because ' + noCeil(r)[1] + '.</p>';
+  if (sums) {
+    const cols = L.canEarn ? (L.payCash != null ? 3 : 2) : 1, head = LADCOL.slice(0, cols);
+    const cell = (i, t) => '<div class="f"><span class="lab">' + tipFor(r, head[i][0], head[i][1]) + ': </span><span class="fig">' + aYear(t) + '</span></div>';
+    h += '<h5>What each price counts on</h5><div class="ladw"><div class="lad h c' + cols + '"><span>Price</span>' + head.map(c => '<span>' + tipFor(r, c[0], c[1]) + '</span>').join('') + '</div>';
+    L.rungs.forEach(x => { const R = RUNG[x.k], sub = [];
+      if (x.d) sub.push(day(x.d));
+      if (x.k === 'low' && st.afterResults != null) sub.push(afterWords(st.afterResults));
+      if (x.k === 'now') sub.push(DATA.meta.example ? 'in the example' : 'in your file of ' + day(DATA.meta.date));
+      else sub.push(Math.abs(x.gap) < 0.0005 ? 'the same as today\'s price' : pct(Math.abs(x.gap)) + (x.gap > 0 ? ' above' : ' below') + ' today\'s price');
+      h += '<div class="lad c' + cols + (x.k === 'now' ? ' me' : '') + '" data-rung="' + x.k + '"><div class="n"><span class="p">' + price(x.p) + '</span>' + tipFor(r, R[0], R[1]) + '<i>' + esc(sub.join(' · ')) + '</i></div>' +
+        cell(0, needTxt(x.needs)) + (cols > 1 ? cell(1, earnTxt(x.earn)) : '') + (cols > 2 ? cell(2, earnTxt(x.pay)) : '') + '</div>'; });
+    h += '</div><div class="rv myp"><span>Prices of your own' + hbs('x_myp', r.sym) + '</span>' + mine.concat(mine.length < 4 ? [null] : []).map((p, i) => '<input type="text" inputmode="decimal" data-myp="' + sym + '" value="' + (p == null ? '' : p.toFixed(2)) + '" placeholder="' + (i ? 'Another' : 'A price') + '" aria-label="A price of your own for ' + sym + '" autocomplete="off">').join('') + '</div>';
+    h += '<p class="note">' + (L.basis ? '"Growth it needs" is for the next ' + C.exp_N + ' years, for a return of ' + pct(C.exp_r) + ' a year. ' : '') +
+      (L.canEarn ? '"You would earn" supposes that spare cash, now about ' + price(L.cash) + ' a share, ' + cautiousWords(L.g) + '. ' : lender ? 'A bank or an insurer has no spare-cash figure, so what you would earn is not worked out. ' : r.scored ? 'What you would earn is not worked out, because ' + noCeil(r)[1] + '. ' : '') + 'Tap a name for what it means.</p>';
+    /* stock pay: said in words as well, because it can move the most to pay a long way */
+    if (L.canEarn && L.payShare != null) { const paid = esc(r.sym) + ' paid its staff ' + money(Math.abs(r.sbc)) + ' in new shares over the year, ';
+      h += '<p class="note"><b>' + tipFor(r, 'x_pay', 'Stock pay') + '.</b> ' + (L.payAll ? paid + 'more than all the spare cash it made. Counted as a cost, it leaves nothing for the owners, so no figure is worked out on that count.'
+        : paid + p0(L.payShare) + ' of its spare cash. ' + (L.ceilPay <= r.ceiling * (1 - C.lad_pay) ? 'Count that as a cost and the most to pay comes down from ' + price(r.ceiling) + ' to <b>' + price(L.ceilPay) + '</b>.' + (r.price <= r.ceiling && r.price > L.ceilPay ? ' Today\'s price is under the first and over the second.' : '') : 'Counting that as a cost changes the sums little.')) + '</p>'; }
+    else if (L.canEarn && RES.rows.some(x => x.sbc != null)) h += '<p class="note"><b>' + tipFor(r, 'x_pay', 'Stock pay') + '.</b> The file has no figure for it for this company, so it is not counted here.</p>';
+    /* cash already in the bank, or debt: the sums count what the business makes in a year, so this is said beside them */
+    if (!lender && r.netcash != null && r.cap > 0 && Math.abs(r.netcash) >= C.lad_cash * r.cap) { const ps = price(Math.abs(r.netcash) / r.cap * r.price);
+      h += '<p class="note"><b>' + tipFor(r, 'x_cash', r.netcash > 0 ? 'Cash in hand' : 'Debt') + '.</b> ' + (r.netcash > 0 ? esc(r.sym) + ' holds ' + money(r.netcash) + ' more cash than debt: ' + ps + ' a share, ' + p0(r.netcash / r.cap) + ' of today\'s price. The sums above count the cash the business makes each year, not the cash it already holds.'
+        : esc(r.sym) + ' owes ' + money(-r.netcash) + ' more than it holds in cash: ' + ps + ' a share. The sums above count the interest it pays, not the debt itself.') + '</p>'; }
+  }
+  h += '<h5>What analysts expect</h5>';
+  if (!f.any) h += '<p class="note">' + (OLDER && !RES.can.stand ? 'Load your file again to see it.' : 'The file has no forecast for this company.') + '</p>';
+  else { const a = [], pace = r.slip ? r.slip.pace : null;
+    if (f.salesNow != null || f.salesNext != null) a.push(tipFor(r, 'x_fsales', 'Sales') + ': they expect sales to ' + twoYears(f.salesNow, f.salesNext, 'grow', 'fall') + '.' + (pace != null ? ' Its usual pace is ' + pct(pace) + ' a year.' : ''));
+    if (f.epsNow != null || f.epsNext != null) a.push(tipFor(r, 'x_feps', 'Profit per share') + ': they expect it to ' + twoYears(f.epsNow, f.epsNext, 'rise', 'fall') + '.');
+    if (f.vsNeeds) a.push('<b>Beside the price:</b> today\'s price needs growth of ' + gtxt(f.needs) + '. Next year\'s sales forecast is ' + (f.vsNeeds === 'more' ? 'above that' : f.vsNeeds === 'less' ? '<b>below that</b>' : 'about the same') + '.' +
+      (f.underCautious ? ' It is also below the ' + pct(L.g) + ' a year that "You would earn" supposes, so read that column as too kind.' : ''));
+    h += '<ul class="plain">' + a.map(x => '<li>' + x + '</li>').join('') + '</ul><p class="note">' + (f.n == null ? '' : f.n < 3 ? '<span class="pill mute">Thin</span> ' + (f.n < 1 ? 'The file counts no analyst for this company' : f.n === 1 ? 'Only one analyst follows it' : 'Only ' + f.n + ' analysts follow it') + ', so these figures rest on very little. ' : 'The average of ' + f.n + ' analysts. ') + 'A forecast is a guess. Analysts are wrong most often when a business turns.</p>'; }
+  h += '<h5>Where the price stands</h5>';
+  { const a = [], ud = x => '<b>' + pct(Math.abs(x)) + '</b> ' + (x < 0 ? 'below' : 'above');
+    if (st.low != null && st.high != null) a.push(tipFor(r, 'x_range', 'The year\'s range') + ': from ' + price(st.low) + (st.lowD ? ' on ' + day(st.lowD) : '') + ' to ' + price(st.high) + (st.highD ? ' on ' + day(st.highD) : '') + '. Today\'s price is <b>' + pct(Math.max(0, st.above)) + '</b> above the low and <b>' + pct(Math.max(0, st.below)) + '</b> below the high.' +
+      (st.afterResults != null ? ' The low was set ' + afterWords(st.afterResults) + (r.lastearn ? ', on ' + day(r.lastearn) : '') + '.' : ''));
+    else if (st.high != null) a.push(tipFor(r, 'x_range', 'The year\'s range') + ': the high was ' + price(st.high) + ', and today\'s price is <b>' + pct(Math.max(0, st.below)) + '</b> below it.' + (RES.can.stand ? '' : ' The file does not give the low.'));
+    if (st.ma50 != null) a.push(tipFor(r, 'x_ma50', '50-day average') + ': ' + price(st.ma50) + '. Today\'s price is ' + ud(st.vs50) + ' it.');
+    if (st.ma200 != null) a.push(tipFor(r, 'x_ma200', '200-day average') + ': ' + price(st.ma200) + '. Today\'s price is ' + ud(st.vs200) + ' it.');
+    const ch = [[r.ret1w, 'a week'], [r.ret1m, 'a month'], [r.ret1y, 'a year']].filter(x => x[0] != null).map(x => (x[0] < 0 ? 'down ' : 'up ') + pct(Math.abs(x[0])) + ' in ' + x[1]);
+    if (ch.length) a.push(tipFor(r, 'x_chg', 'Change') + ': ' + ch.join(', ') + '.');
+    h += a.length ? '<ul class="plain">' + a.map(x => '<li>' + x + '</li>').join('') + '</ul>' : '<p class="note">The file has no price history for this company.</p>'; }
+  h += '<p class="note">These are sums and facts from one file. Prism does not forecast and does not say what a share is worth. Nothing in this box plays a part in any list.</p>';
+  return h + '</details>';
+}
+/* After the reader types a price of their own: only that company's price box is drawn again, wherever it is on show
+   (in the list, and under "Look up any stock"). The rest of the company's detail is left alone, so a verdict being
+   written is not lost. If the reader had moved on to another of the price boxes, the cursor is put back in it. */
+function pricePatch(sym) {
+  const r = BY[sym]; if (!r) return; hideHelp();
+  document.querySelectorAll('details[data-price]').forEach(box => { if (box.dataset.price !== sym) return;
+    const act = document.activeElement, at = act && box.contains(act) && act.dataset.myp != null ? Array.from(box.querySelectorAll('[data-myp]')).indexOf(act) : -1;
+    const tmp = document.createElement('div'); tmp.innerHTML = priceBox(r); const nb = tmp.firstElementChild; if (!nb) return;
+    nb.open = true; box.replaceWith(nb);
+    if (at >= 0) { const ins = nb.querySelectorAll('[data-myp]'); if (ins.length) ins[Math.min(at, ins.length - 1)].focus(); } });
+}
 /* ---------- research from the filings ---------- */
 /* A research file is made outside this page (tools/research in the repository): filings fetched from the regulator,
    read by an AI, every passage checked against the filing by a program. The page treats it as text from elsewhere:
@@ -2599,18 +2927,12 @@ function gateBox(r, k) {
 function detailHTML(r) {
   const v = S.verdicts[r.sym] || {};
   let h = '<div style="display:flex;flex-direction:column;gap:10px"><div><b>' + esc(r.sym) + '</b> · ' + esc(r.name || '') + ' · ' + esc(r.sector || '') + (r.industry ? ', ' + esc(r.industry) : '') + ' · ' + money(r.cap) + ' market value · ' + price(r.price) + ' a share</div>' + diveLine(r);
-  if (!r.scored) h += '<div class="dbox"><h4><span class="pill mute">Set aside</span>' + ASIDE[r.aside] + '</h4><p class="note">' + ASIDE_WHY[r.aside] + '</p></div>' + aBox(r) + signBox(r) + runBox(r) + ownBox(r) + standBox(r);
+  if (!r.scored) h += '<div class="dbox"><h4><span class="pill mute">Set aside</span>' + ASIDE[r.aside] + '</h4><p class="note">' + ASIDE_WHY[r.aside] + '</p></div>' + aBox(r) + priceBox(r) + signBox(r) + runBox(r) + ownBox(r) + standBox(r);
   else {
-    h += aBox(r) + signBox(r) + runBox(r) + ownBox(r) + standBox(r);
+    h += aBox(r) + priceBox(r) + signBox(r) + runBox(r) + ownBox(r) + standBox(r);
     if (r.blocks.length) { const B = {lev: 'debt is more than ' + C.blk_lev + ' times EBITDA', dil: 'the share count grew more than ' + pct(C.blk_dil) + ' in a year', shrink: 'sales fell more than ' + pct(C.blk_shrink), burn: 'free cash flow is negative'};
       h += '<div class="dbox"><h4><span class="pill bad">Not now</span>Kept off the five-question lists</h4><p class="note">Reason: ' + r.blocks.map(b => B[b]).join('; ') + '. This is re-tested with every file, so it means "not now", not "never".</p></div>'; }
-    h += '<div class="dgrid">' + GK.map(k => gateBox(r, k)).join('');
-    const gc = Math.max(C.exp_floor, Math.min(C.exp_cap, r.histg == null ? 0 : r.histg));
-    h += '<div class="dbox"><h4>What the price implies</h4>' + (r.impg == null ? '<p class="note">The company has no positive cash flow or earnings to work from.</p>' :
-      '<p class="note">Today\'s price is fair only if cash flow and earnings ' + (r.impg >= 0.4 ? 'grow more than 40%' : r.impg <= -0.15 ? 'shrink more than 15%' : (r.impg < 0 ? 'shrink ' : 'grow ') + 'about <b>' + pct(Math.abs(r.impg)) + '</b>') + ' a year for ' + C.exp_N + ' years, for a ' + pct(C.exp_r) + ' yearly return. ' + (r.histg != null ? 'Sales ' + (r.histg < 0 ? 'fell ' : 'grew ') + pct(Math.abs(r.histg)) + ' over the past year.' : '') + '</p>' +
-      (r.impgSpread > 0.1 ? '<p class="note"><span class="pill warn">Readings differ</span> Judged on cash flow alone the figure is ' + gtxt(r.impg_f) + '; on earnings alone, ' + gtxt(r.impg_e) + '. When they are this far apart, find out why before trusting the average.</p>' : '')) +
-      (r.ceiling ? '<p class="note"><b>Entry ceiling ' + price(r.ceiling) + ': the most to pay.</b> At that price you would earn about ' + pct(C.exp_hurdle) + ' a year if spare cash ' + (gc > 0.0005 ? 'grows only ' + pct(gc) : gc < -0.0005 ? 'shrinks ' + pct(-gc) : 'stays the same') + ' a year. Today\'s price of ' + price(r.price) + ' is ' + (r.price <= r.ceiling ? pct(1 - r.price / r.ceiling) + ' below it' : r.price >= 2 * r.ceiling ? 'about ' + (r.price / r.ceiling).toFixed(1) + ' times it' : pct(r.price / r.ceiling - 1) + ' above it') + '. It is a "don\'t pay more than this" line, not what the share is worth.</p>' :
-        '<p class="note">No entry ceiling is shown because ' + noCeil(r)[1] + '.</p>') + '</div></div>';
+    h += '<div class="dgrid">' + GK.map(k => gateBox(r, k)).join('') + '</div>';
     const fl = r.flags.filter(f => f !== 'cyc' || !r.flags.includes('peak'));
     if (fl.length) h += '<div class="dbox"><h4>Check before trusting the numbers</h4>' + fl.map(f => '<p class="note"><span class="pill ' + (SEVERE[f] ? 'warn' : 'mute') + '">' + FL[f][0] + '</span> ' + FL[f][1] + '</p>').join('') + '</div>';
     if (r.lists.length) h += '<div class="dbox"><h4>Ways in</h4>' + r.lists.map(id => '<p class="note"><b>' + LI[id][0] + '.</b> ' + LI[id][1] + ' <b>First check:</b> ' + LI[id][2] + ' <b>Wrong if:</b> ' + LI[id][3] + '</p>').join('') + '</div>';
@@ -2750,7 +3072,9 @@ function drawHow() {
     '<div><b>The five questions.</b> Quality, price, progress and timing are each a rank from 0 to 100 against other companies in the same sector worth ' + money(C.size_min) + ' or more. A yes needs a rank of ' + C.gate + ' or better. Quality also needs a return on capital of at least ' + pct(C.q_roic) + ', and price a free-cash-flow yield of at least ' + pct(C.v_fcf) + '. Strength is a plain test: more cash than debt, or debt of at most ' + C.s_lev + ' times EBITDA, and a share count growing no more than ' + pct(C.s_dil) + ' a year.</div>' +
     '<div><b>Near misses and named lists.</b> Under "Show" you can swap the short list for the companies that miss just one question, or for one of nine named situations that are often worth a look, such as a good business at a low price. A named list shows every company in that situation, and each row says how it answered the five questions.</div>' +
     '<div><b>Why five answers and not one score.</b> A single score lets a very cheap price make up for a weak business. Here a company must pass each question on its own, and the default order puts first the companies whose weakest answer is strongest.</div>' +
-    '<div><b>What the price implies.</b> Instead of calling a stock cheap, Prism works out the growth today\'s price needs. It assumes a ' + pct(C.exp_r) + ' yearly return, ' + C.exp_N + ' years of steady growth, then ' + pct(C.exp_gT) + ' a year. On those terms a yield of ' + pct(y0) + ' needs no growth at all, and a yield of ' + pct(y10) + ' needs 10% a year. The result is the average of the cash-flow and earnings readings.</div>' +
+    '<div><b>What the price implies.</b> Instead of calling a stock cheap, Prism works out the growth today\'s price needs. It assumes a ' + pct(C.exp_r) + ' yearly return, ' + C.exp_N + ' years of steady growth, then ' + pct(C.exp_gT) + ' a year. On those terms a yield of ' + pct(y0) + ' needs no growth at all, and a yield of ' + pct(y10) + ' needs 10% a year. The result is the average of the readings the file allows: spare cash, earnings, and spare cash after stock pay. A bank or an insurer is read on its earnings alone.</div>' +
+    '<div><b>What is the price counting on.</b> A box in a company\'s detail carries those two sums over a short ladder of prices: the year\'s high, today\'s price, the entry ceiling, the year\'s low and up to four prices you type yourself. For each it gives the growth that price needs, and what a buyer at that price would earn a year if spare cash grows only at the cautious rate the entry ceiling uses (it is the ceiling\'s sum turned round, so at the ceiling the answer is ' + pct(C.exp_hurdle) + '). A second column works the same sum on spare cash after stock pay, and the ceiling on that count gets its own line when it is ' + pct(C.lad_pay) + ' or more lower. What you would earn is left out wherever there is no entry ceiling. ' +
+      'Under the ladder the box shows what analysts expect of sales and of profit per share this financial year and the next, as the file gives them, and where the price stands: the year\'s range with its dates, the 50- and 200-day averages, and the change over a week, a month and a year. A low set within ' + C.res_days + ' days after the latest results is pointed out. Forecasts are shown and used in no sum, and nothing in the box plays a part in any test, list or order.</div>' +
     '<div><b>Free-cash-flow yield.</b> Prism divides a company\'s free cash flow by its whole market value. A download\'s own yield column can be worked out on one class of share, which overstates it for companies with several, so Prism uses its own figure whenever the file has both numbers and says so in the row\'s detail.</div>' +
     '<div><b>Entry ceiling: the most to pay.</b> The price at which you would earn about ' + pct(C.exp_hurdle) + ' a year if the company\'s spare cash (its free cash flow) grows no faster than ' + pct(C.exp_cap) + ' a year for ' + C.exp_N + ' years, and ' + pct(C.exp_gT) + ' a year after that. Slower growth is used when recent sales growth was slower.</div>' +
     '<div><b>Where the multiple comes from.</b> On those terms each $1 a year of spare cash is worth $' + annuity(C.exp_cap, C.exp_hurdle, C.exp_gT, C.exp_N).toFixed(2) + ' today, so the ceiling is ' + annuity(C.exp_cap, C.exp_hurdle, C.exp_gT, C.exp_N).toFixed(1) + ' times the spare cash per share. Pay that, and the first year\'s cash is ' + pct(1 / annuity(C.exp_cap, C.exp_hurdle, C.exp_gT, C.exp_N)) + ' of your money; the growth on top brings the yearly return to about ' + pct(C.exp_hurdle) + '. With no growth at all the multiple would be ' + annuity(0, C.exp_hurdle, C.exp_gT, C.exp_N).toFixed(1) + '. It is a "don\'t pay more than this" line, not what the share is worth and not a forecast.</div>' +
@@ -2791,6 +3115,13 @@ document.addEventListener('change', e => { const t = e.target;
   if (t.classList && t.classList.contains('vsel')) setVerdict(t.dataset.sym, {v: t.value});
   else if (t.dataset && t.dataset.mine != null) { if (t.value) S.mine[t.dataset.mine] = t.value; else delete S.mine[t.dataset.mine]; save(); compute(); }
   else if (t.dataset && t.dataset.rv != null) { const a = t.value.toUpperCase().split(/[\s,;]+/).filter(x => x && x !== t.dataset.rv).slice(0, 8); if (a.length) S.rivals[t.dataset.rv] = a; else delete S.rivals[t.dataset.rv]; save(); render(); }
+  /* prices of the reader's own: every box of that company is read again, so that clearing one removes it */
+  else if (t.dataset && t.dataset.myp != null) { const sym = t.dataset.myp, box = t.closest('[data-price]'), a = []; let bad = false;
+    box.querySelectorAll('[data-myp]').forEach(el => { const raw = el.value.trim(); el.classList.remove('bad'); if (!raw) return; const v = toNumber(raw);
+      if (v != null && v > 0 && v < 1e7) { const x = +v.toFixed(4); if (!a.includes(x)) a.push(x); } else { bad = true; el.classList.add('bad'); el.title = 'Type a price, such as 62.50.'; } });
+    if (bad) return;
+    const next = a.slice(0, 4); if (JSON.stringify(next) === JSON.stringify(myPrices(sym))) return;
+    if (next.length) S.myp[sym] = next; else delete S.myp[sym]; KEEP['px:' + sym] = true; save(); setTimeout(() => pricePatch(sym), 0); }
   else if (t.dataset && t.dataset.sgkind != null) { if (t.value) S.kind[t.dataset.sgkind] = t.value; else delete S.kind[t.dataset.sgkind]; save(); compute(); }
   /* a figure or a judgement for one of the reader's own signs: kept at once, and the readings around it redrawn */
   else if (t.dataset && t.dataset.own != null) { const sym = t.dataset.sym, ok = ownSet(sym, +t.dataset.own, t.dataset.per, t.value); t.classList.toggle('bad', !ok);
@@ -2970,11 +3301,11 @@ function ftolSpot(el,go,around,top){
 }
 /* VAULT:END */
 makeVault({mount: $('vault'), app: 'prism', what: 'your verdicts, A-list choices, signs, settings and scorecard', download: offer,
-  getState: () => ({v: 1, controls: S.controls, noMining: S.noMining, leaveOut: S.leaveOut, verdicts: S.verdicts, hist: S.hist, mine: S.mine, tierB: S.tierB, card: S.card, track: S.track, kind: S.kind, own: S.own, rivals: S.rivals, queue: S.queue}),
+  getState: () => ({v: 1, controls: S.controls, noMining: S.noMining, leaveOut: S.leaveOut, verdicts: S.verdicts, hist: S.hist, mine: S.mine, tierB: S.tierB, card: S.card, track: S.track, kind: S.kind, own: S.own, rivals: S.rivals, myp: S.myp, queue: S.queue}),
   setState: o => { if (!o || o.v !== 1 || !o.verdicts) throw 0; S.controls = o.controls || {}; S.noMining = !!o.noMining; S.leaveOut = o.leaveOut || ''; S.verdicts = o.verdicts; S.hist = o.hist || null;
     S.mine = o.mine || {}; S.tierB = !!o.tierB; S.card = o.card || null;
     /* a copy made before the signs existed has none: what this browser holds is then left as it is */
-    ['track', 'kind', 'own', 'rivals'].forEach(k => { if (o[k] && typeof o[k] === 'object') S[k] = o[k]; });
+    ['track', 'kind', 'own', 'rivals', 'myp'].forEach(k => { if (o[k] && typeof o[k] === 'object') S[k] = o[k]; });
     /* the queue of a copy is taken only where no queue is kept online: there the store's own is the newer one */
     if (o.queue && typeof o.queue === 'object' && !DESK) { S.queue = {}; Object.keys(o.queue).slice(0, 200).forEach(k => { const q = o.queue[k], e = q && cleanEntry(q.e); if (e && e.sym === k && typeof q.at === 'string') S.queue[k] = {at: q.at.slice(0, 30), e}; }); }
     save(); drawControls(); compute(); }});
@@ -2991,7 +3322,7 @@ if (SHOW) { const v = SHOW.list;
   save(); }
 function showFromGuide(go) {
   /* a box inside an opened company: the part's name, the mark that finds it, and the key that keeps it open */
-  const BOX = {signs: ['[data-signs]', 'sg:'], run: ['[data-run]', 'run:'], owners: ['[data-own-box]', 'own:'], stand: ['[data-stand]', 'stand:']}[go.el];
+  const BOX = {signs: ['[data-signs]', 'sg:'], run: ['[data-run]', 'run:'], owners: ['[data-own-box]', 'own:'], stand: ['[data-stand]', 'stand:'], price: ['[data-price]', 'px:']}[go.el];
   if (go.open === 'first') { const tr = document.querySelector('#tbl tr.main'); if (tr) { OPEN = tr.dataset.sym; if (BOX) KEEP[BOX[1] + OPEN] = true; render(); } }
   const part = go.el === 'detail' ? document.querySelector('#tbl tr.detail > td') : go.el === 'vform' ? document.querySelector('#tbl tr.detail [data-vform]') : BOX ? document.querySelector('#tbl tr.detail ' + BOX[0]) : null;
   const el = part || (typeof go.el === 'string' ? $(go.el) : null);

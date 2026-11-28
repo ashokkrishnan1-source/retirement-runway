@@ -163,13 +163,13 @@ const row =
   '</div>';
 const boxes = [
   [k('Is it an A-class business?'), 'The six tests, with the company\'s own figures. Then ' + k('Is the price low?') + ' and ' + k('Is the business slipping?') + '. ' + k('My A-list') + ' lets you overrule Prism.'],
-  [k('Is the business winning?'), 'Signs that fit its kind of business, each set against a year before: ' + k('Better') + ', ' + k('Worse') + ', ' + k('The same') + ' or ' + k('Too early') + '. ' + k('Report by report') +
-    ' shows them side by side. ' + k('Read it as') + ' changes the kind of business. ' + k('Your own signs') + ' are figures you type from its report.'],
+  [k('What is the price counting on?'), 'What each price is betting on: ' + k('Growth it needs') + ', ' + k('You would earn') + '. Type what you paid, or a strike less its premium, under ' + k('Prices of your own') + '.'],
+  [k('Is the business winning?'), 'Signs that fit its kind of business, each set against a year before: ' + k('Better') + ', ' + k('Worse') + ', ' + k('The same') + ' or ' + k('Too early') + '. ' +
+    k('Read it as') + ' changes the kind of business. ' + k('Your own signs') + ' are figures you type from its report.'],
   [k('How well is it run?'), 'Six measures beside the typical company of its industry and its nearest rivals: ' + k('Ahead') + ', ' + k('Middle') + ' or ' + k('Behind') + '. Then ' + k('Where a year\'s cash went') + '.'],
   [k('How does it treat its owners?'), 'What insiders own, the share count, dividends and buybacks, pay in new shares.'],
   [k('Where does it stand?'), 'Only after its filings were read: what they, and its rivals\', say about it.'],
-  ['<b>The five questions</b>', GK.map(q => k(GQ[q][0])).join(' ') + ' Each gets its own yes or no. There is no combined score. A bank or an insurer is not asked them.'],
-  [k('What the price implies') + ' and ' + k('Ways in'), 'The growth the price needs. Then a first check for each named list the company is on.'],
+  ['<b>The five questions</b>', GK.map(q => k(GQ[q][0])).join(' ') + ' Each gets its own yes or no, with no combined score. Not asked of a bank or an insurer. Then ' + k('Ways in') + ': a first check for each named list.'],
   [k('Your verdict'), 'Your decision and your notes.']
 ];
 const inside = '<ol class="boxes">' + boxes.map(b => '<li><span class="bh">' + b[0] + '</span> ' + b[1] + '</li>').join('') + '</ol>' +

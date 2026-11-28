@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'prism', 'index.html'), 'utf8');
 const eng = html.match(/<script id="engine">([\s\S]*?)<\/script>/)[1];
-const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes,dividendOf,SIGNS,KINDS,KIND_OF,kindOf,signNow,signAgo,signsFor,signKeys,monthsBack,trackStep,signSeries,signCompare,readSign,signFromFile,readOwn,ownYearKey,signTally,signsRead,A_TESTS,L_TESTS,gradeLender,RUN_MEASURES,runFig,debtFig,peerKey,peerGroups,standing,rivalsOf,runRead,cashUse,paidOut,ownersRead};')();
+const E = new Function(eng + '\nreturn {CONTROLS,FIELDS,VERIFIED,LENS,LISTS,MINING,normHeader,parseCSV,toNumber,toDate,mapTable,derive,strengthOf,annuity,impliedGrowth,bucketOf,laneOf,rankGroup,run,memberships,gradeOf,saleOf,moonOf,judge,daysBetween,median,cardStep,cardStats,slipOf,slipState,crowd,changes,dividendOf,SIGNS,KINDS,KIND_OF,kindOf,signNow,signAgo,signsFor,signKeys,monthsBack,trackStep,signSeries,signCompare,readSign,signFromFile,readOwn,ownYearKey,signTally,signsRead,A_TESTS,L_TESTS,gradeLender,RUN_MEASURES,runFig,debtFig,peerKey,peerGroups,standing,rivalsOf,runRead,cashUse,paidOut,ownersRead,cautiousGrowth,needsAt,earnAt,priceLadder,priceStand,forecastRead};')();
 let pass = 0, fail = 0;
 const check = (name, actual, expected, tol) => {
   const ok = typeof expected === 'number' ? Math.abs(actual - expected) <= (tol == null ? 1e-6 : tol) : JSON.stringify(actual) === JSON.stringify(expected);
@@ -54,7 +54,7 @@ check('date: text date', E.toDate('2026-11-04'), '2026-11-04');
 }
 
 console.log('--- The provider\'s full download ---');
-// The headings of the 93 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
+// The headings of the 102 columns Prism reads, spelled as the provider's full download (336 columns, 2026-11-20) spells
 // them. Headings only: the values below are invented.
 { const FULL = ['Symbol', 'Company Name', 'Sector', 'Industry', 'Stock Price', 'Market Cap', 'Avg. Volume', 'Revenue', 'PE Ratio', 'EV/EBITDA',
     'Debt / EBITDA', 'Total Cash', 'Total Debt', 'Net Cash', 'FCF Yield', 'ROIC', 'Rev. Growth', 'FCF Growth', 'Shares Ch. (YoY)', 'Return 1Y',
@@ -65,12 +65,14 @@ console.log('--- The provider\'s full download ---');
     'Options', 'Next Earnings', 'Rev Gr. Next Y', 'Rev. Growth (Q)', 'OpInc Growth', 'EPS Growth (Q)',
     'Div. Yield', 'Dividend', 'Div. Years', 'Div. Gr. Years', 'FCF Payout', 'Div. Growth', 'Ex-Div Date', 'Payout Freq.',
     'Rev / Employee', 'Empl. Growth', 'FCF / Share', 'GP Growth', 'Asset Turnover', 'Inv. Turnover', 'BV / Share', 'EPS', 'ROE (5Y)', 'Last Report Date', 'Last Earnings',
-    'ROA', 'Equity', 'Assets', 'CapEx', 'Investing CF', 'Debt Growth (YoY)', 'Goodwill', '10K Date'];
+    'ROA', 'Equity', 'Assets', 'CapEx', 'Investing CF', 'Debt Growth (YoY)', 'Goodwill', '10K Date',
+    '52W Low', '52W Low Date', '52W High', '52W High Date', '50 MA', '200 MA', 'Rev Gr. This Y', 'EPS Gr. This Y', 'EPS Gr. Next Y'];
   // look-alike headings that are also in the download and must not be mistaken for the ones above
   const DECOYS = ['Shares Ch. (QoQ)', 'FCF Growth 3Y', 'EPS Growth 3Y', 'Rev. Growth (QoQ)', 'OpInc Growth (Q)', 'EPS Growth (QoQ)', 'Return 3M', 'PE (3Y)', 'Short % Shares', 'FCF / EV', 'ND / Equity', '200MA Chg %', 'Rev Gr. Next Q', 'Earnings Date',
     'Div. Growth 3Y', 'Div. Growth 5Y', 'Div. Growth 10Y', 'Payout Ratio', 'Payment Date', 'Last Div.', 'Shareh. Yield',
     'Prof / Employee', 'Empl. Change', 'Employees', 'FCF Growth (Q)', 'GP Growth 3Y', 'GP Growth (Q)', 'WC Turnover', 'TBV / Share', 'EPS Growth (Qtrs)', 'Est. EPS', 'ROA (5Y)', 'Earnings Time',
-    'Debt Growth (QoQ)', 'Debt Growth (3Y)', 'Financing CF', 'LT Assets', 'Curr. Assets', 'Debt / Equity', 'ROCE', 'TBV'];
+    'Debt Growth (QoQ)', 'Debt Growth (3Y)', 'Financing CF', 'LT Assets', 'Curr. Assets', 'Debt / Equity', 'ROCE', 'TBV',
+    '52W Low Chg', 'ATH', 'ATH Date', 'ATL', '20 MA', '150 MA', '50vs200 MA', '20MA Chg %', 'Rev Gr. Next 3Y', 'Rev Gr. This Q', 'EPS Gr. Next 3Y', 'EPS Gr. Next Q', 'EPS Gr. This Q', 'Est. Rev. Growth', 'Est. EPS Growth'];
   const row = FULL.map(() => ''), set = (h, v) => { row[FULL.indexOf(h)] = v; };
   set('Symbol', 'zzz.x'); set('Stock Price', '40'); set('Market Cap', '2000000000'); set('FCF Yield', '9.00%'); set('FCF', '100000000'); set('ROIC', '12.50%');
   set('Shares Ch. (YoY)', '-0.21%'); set('CIK Code', '0000123456'); set('Price Date', '2026-11-19'); set('Ent. Value', '2500000000'); set('Int. Cov.', '-4.5');
@@ -79,6 +81,7 @@ console.log('--- The provider\'s full download ---');
   set('Div. Yield', '2.50%'); set('Dividend', '1'); set('Div. Years', '12'); set('Div. Gr. Years', '5'); set('FCF Payout', '40.00%'); set('Div. Growth', '-11.80%'); set('Ex-Div Date', '2026-12-01'); set('Payout Freq.', 'Semi-Annual');
   set('Rev / Employee', '250000'); set('Empl. Growth', '2.00%'); set('FCF / Share', '4.125'); set('GP Growth', '-3.50%'); set('Asset Turnover', '0.85'); set('Inv. Turnover', '6.2'); set('BV / Share', '18.75'); set('EPS', '-1.2'); set('ROE (5Y)', '14.00%'); set('Last Report Date', '2026-09-30'); set('Last Earnings', '2026-11-05');
   set('ROA', '1.25%'); set('Equity', '900'); set('Assets', '10000'); set('CapEx', '-200'); set('Investing CF', '-500'); set('Debt Growth (YoY)', '10.00%'); set('Goodwill', '300'); set('10K Date', '2026-02-13');
+  set('52W Low', '31.5'); set('52W Low Date', '2026-10-29'); set('52W High', '44.88'); set('52W High Date', '2026-05-14'); set('50 MA', '41.745'); set('200 MA', '38.2'); set('Rev Gr. This Y', '12.50%'); set('EPS Gr. This Y', '145.25%'); set('EPS Gr. Next Y', '-8.75%');
   const m = E.mapTable(FULL.concat(DECOYS), [row.concat(DECOYS.map(() => '99'))]), r = m.rows[0];
   check('full download: every column Prism reads is found', Object.keys(m.report.found).length, E.FIELDS.length);
   check('full download: none missing', m.report.missing, []);
@@ -95,7 +98,8 @@ console.log('--- The provider\'s full download ---');
   check('full download: the dividend columns', [r.dy, r.div, r.dyrs, r.dgyrs, r.fpay, Math.round(r.dg1 * 1e6) / 1e6, r.exdiv, r.dfreq], [0.025, 1, 12, 5, 0.4, -0.118, '2026-12-01', 'Semi-Annual']);
   check('full download: the columns behind the signs', [r.rpe, r.emplg, r.fcfps, Math.round(r.gpg * 1e6) / 1e6, r.ato, r.invt, r.bvps, r.eps, Math.round(r.roe5 * 1e6) / 1e6, r.lastrep, r.lastearn], [250000, 0.02, 4.125, -0.035, 0.85, 6.2, 18.75, -1.2, 0.14, '2026-09-30', '2026-11-05']);
   check('full download: the columns behind a bank\'s tests and the use of cash', [r.roa, r.equity, r.assets, r.capex, r.invcf, Math.round(r.debtg * 1e6) / 1e6, r.goodwill, r.tenk], [0.0125, 900, 10000, -200, -500, 0.1, 300, '2026-02-13']);
-  check('the engine reads 93 columns', E.FIELDS.length, 93);
+  check('full download: where the price stands and what analysts expect', [r.low52, r.low52d, r.high52, r.high52d, r.ma50v, r.ma200v, Math.round(r.revgt * 1e6) / 1e6, Math.round(r.epsgt * 1e6) / 1e6, Math.round(r.epsgn * 1e6) / 1e6], [31.5, '2026-10-29', 44.88, '2026-05-14', 41.745, 38.2, 0.125, 1.4525, -0.0875]);
+  check('the engine reads 102 columns', E.FIELDS.length, 102);
   // a spelling that is only a guess is reported as one: "Ticker" and "Enterprise Value" are not the provider's headings
   check('a guessed spelling is reported', E.mapTable(['Ticker', 'Enterprise Value'], [['x', '5']]).report.guessed, ['sym', 'ev']);
   // The yield is free cash flow over the whole company's market value: 100m / 2,000m = 5%, though the file's column says 9%
@@ -372,6 +376,120 @@ check('F0: weakest ordinary company fails quality', by.F0.g.Q, false);
   const rr = E.run(u, {}, {}).rows; check('repair list: weak returns, cash flow up 40%', rr.find(r => r.sym === 'FIXA').lists.includes('repair'), true);
   check('repair list: unknown sales growth is not a pass', rr.find(r => r.sym === 'FIXB').lists.includes('repair'), false); }
 check('engine has no reference to the page', /\b(document|window|localStorage)\b/.test(eng), false);
+
+console.log('--- What each price counts on ---');
+{ // Three values worked by hand above: 1 a year is worth 11.413659 with no growth at 10%, 23.666667 growing 10% at 10%,
+  // and 13.701243 growing 6% at 12% (the entry ceiling's own terms).
+  const A0 = 11.413659, A10 = 23.666667, A6 = 13.701243, C = E.CONTROLS, r6 = x => Math.round(x * 1e6) / 1e6;
+  // the growth a price needs: a scored company with $1 of spare cash a share and no other reading
+  const co = () => ({sym: 'ONE', scored: true, price: 20, cap: 1000, fcf: 50, fcfy: 0.05, ey: null, owner: null, sbc: null, histg: 0.10, ceiling: A6});
+  check('needs: at 23.67 times the cash, 10% a year', E.needsAt(co(), A10, C), 0.10, 1e-5);
+  check('needs: at 11.41 times the cash, none', E.needsAt(co(), A0, C), 0, 1e-5);
+  check('needs: a lower price needs less', E.needsAt(co(), 15, C) < E.needsAt(co(), 20, C) && E.needsAt(co(), 20, C) < E.needsAt(co(), 30, C), true);
+  // two readings are averaged, as in "price implies": at a price of 200, cash asks for 10% and earnings for none
+  const two = {scored: true, price: 100, fcfy: 2 / A10, ey: 2 / A0, owner: null};
+  check('needs: the readings the file has are averaged', E.needsAt(two, 200, C), 0.05, 1e-5);
+  check('needs: at today\'s price it is the row\'s own "price implies"', E.needsAt(two, 100, C), (E.impliedGrowth(2 / A10, C) + E.impliedGrowth(2 / A0, C)) / 2, 1e-12);
+  // a bank or an insurer is read on its earnings alone; a company that is set aside is not read at all
+  check('needs: a bank is read on earnings alone', E.needsAt({scored: false, a: {lender: true}, price: 50, fcfy: 1 / A0, ey: 1 / A10}, 50, C), 0.10, 1e-5);
+  check('needs: a company that is set aside has no answer', E.needsAt({scored: false, a: null, price: 50, fcfy: 0.05, ey: 0.05}, 50, C), null);
+  check('needs: no price, no answer', [E.needsAt(co(), 0, C), E.needsAt(Object.assign(co(), {price: null}), 20, C)], [null, null]);
+  // what you would earn: the same three values, turned round
+  check('earn: pay 11.41 for 1 a year that does not grow, and earn 10%', E.earnAt(1, A0, 0, C), 0.10, 1e-6);
+  check('earn: pay 23.67 for 1 a year growing 10%, and earn 10%', E.earnAt(1, A10, 0.10, C), 0.10, 1e-6);
+  check('earn: pay 13.70 for 1 a year growing 6%, and earn 12%', E.earnAt(1, A6, 0.06, C), 0.12, 1e-6);
+  check('earn: twice the cash at twice the price earns the same', E.earnAt(2, 2 * A6, 0.06, C), 0.12, 1e-6);
+  check('earn: a lower price earns more', E.earnAt(1, 10, 0.06, C) > E.earnAt(1, A6, 0.06, C), true);
+  check('earn: never shown under 3%', E.earnAt(1, 1e6, 0, C), 0.03, 1e-12); check('earn: or over 60%', E.earnAt(1, 0.5, 0, C), 0.6, 1e-12);
+  check('earn: no spare cash or no price, no answer', [E.earnAt(0, 10, 0, C), E.earnAt(-1, 10, 0, C), E.earnAt(1, 0, 0, C)], [null, null, null]);
+  check('cautious growth: the slowest recent growth, between -5% and 6%', [E.cautiousGrowth({histg: 0.10}, C), E.cautiousGrowth({histg: 0.03}, C), E.cautiousGrowth({histg: -0.2}, C), E.cautiousGrowth({histg: null}, C)], [0.06, 0.03, -0.05, 0]);
+  // the ladder: the year's high at 23.67, the entry ceiling at 13.70, the year's low at 11.41, a price of the reader's own at 10
+  const base = Object.assign(co(), {high52: A10, high52d: '2026-03-02', low52: A0, low52d: '2026-10-29', dd: 20 / A10 - 1});
+  let L = E.priceLadder(base, C, [10]);
+  check('ladder: from the highest price down', L.rungs.map(x => x.k), ['high', 'now', 'ceil', 'low', 'mine']);
+  check('ladder: the prices', L.rungs.map(x => r6(x.p)), [A10, 20, A6, A0, 10]);
+  check('ladder: the days of the high and the low', L.rungs.map(x => x.d), ['2026-03-02', null, null, '2026-10-29', null]);
+  check('ladder: the high needs 10% a year and the low none', [r6(L.rungs[0].needs), Math.abs(L.rungs[3].needs) < 1e-5], [0.1, true]);
+  check('ladder: at the entry ceiling you would earn 12%', L.rungs[2].earn, 0.12, 1e-6);
+  check('ladder: each price against today\'s', L.rungs.map(x => Math.round(x.gap * 1e4) / 1e4), [0.1833, 0, -0.3149, -0.4293, -0.5]);
+  check('ladder: $1 of spare cash a share, growing 6%', [L.cash, L.g, L.canEarn, L.basis], [1, 0.06, true, 'three']);
+  check('ladder: no stock pay in the file, no second column', [L.payShare, L.payCash, L.ceilPay, L.rungs.every(x => x.pay === null)], [null, null, null, true]);
+  // stock pay of 20 against spare cash of 50: 40% of it, which leaves 60 cents a share and a ceiling of 0.6 x 13.701243
+  const paid = Object.assign({}, base, {sbc: 20, owner: 0.03});
+  L = E.priceLadder(paid, C, [10]);
+  check('stock pay: its share of the spare cash, and what is left a share', [L.payShare, r6(L.payCash)], [0.4, 0.6]);
+  check('stock pay: the ceiling on that count', L.ceilPay, 8.220746, 1e-5);
+  check('stock pay: it gets its own line, below the reader\'s price of 10', L.rungs.map(x => x.k), ['high', 'now', 'ceil', 'low', 'mine', 'ceilpay']);
+  check('stock pay: at that line you would earn 12% with it counted', L.rungs[5].pay, 0.12, 1e-6);
+  check('stock pay: counted, every price earns less', L.rungs.every(x => x.pay < x.earn), true);
+  // stock pay of 2 is 4% of the spare cash: the ceiling moves by less than 5%, so it gets no line of its own
+  L = E.priceLadder(Object.assign({}, base, {sbc: -2, owner: 0.048}), C, []);
+  check('stock pay: a small one is counted but gets no line', [L.payShare, L.rungs.map(x => x.k), r6(L.ceilPay)], [0.04, ['high', 'now', 'ceil', 'low'], r6(0.96 * A6)]);
+  // stock pay larger than the spare cash leaves nothing
+  L = E.priceLadder(Object.assign({}, base, {sbc: 60, owner: -0.01}), C, []);
+  check('stock pay: more than all the spare cash leaves nothing to count', [L.payAll, L.payCash, L.ceilPay, L.payShare], [true, null, null, 1.2]);
+  // no entry ceiling (a cyclical industry, say): the growth each price needs is still given, what you would earn is not
+  L = E.priceLadder(Object.assign({}, base, {ceiling: null}), C, [10]);
+  check('no ceiling: no line for it and nothing earned', [L.canEarn, L.rungs.map(x => x.k), L.rungs.every(x => x.earn === null && x.pay === null), L.rungs.every(x => x.needs != null)], [false, ['high', 'now', 'low', 'mine'], true, true]);
+  // an older file has no high: it is worked back from how far the price is below it (50% below is twice the price)
+  L = E.priceLadder(Object.assign(co(), {dd: -0.5}), C, []);
+  check('older file: the high is worked back from the fall, with no day', [L.rungs[0].k, L.rungs[0].p, L.rungs[0].d, L.rungs.length], ['high', 40, null, 3]);
+  check('ladder: prices of the reader\'s own that are not prices are left out', E.priceLadder(base, C, [0, -5, NaN, 12, Infinity]).rungs.filter(x => x.k === 'mine').map(x => x.p), [12]);
+  check('ladder: no price in the file, no ladder', E.priceLadder(Object.assign(co(), {price: null}), C, [10]).rungs, []);
+  // a bank: what each price needs, read on earnings; no entry ceiling, so nothing earned
+  L = E.priceLadder({scored: false, a: {lender: true}, price: 50, ey: 1 / A10, ceiling: null, high52: 100, low52: 40}, C, []);
+  check('bank: read on earnings alone, with no "you would earn"', [L.basis, L.canEarn, r6(L.rungs[1].needs), L.rungs.map(x => x.k)], ['earnings', false, 0.1, ['high', 'now', 'low']]);
+  check('set aside: prices but no sums', [E.priceLadder({scored: false, price: 50, fcfy: 0.05, high52: 100}, C, []).basis, E.priceLadder({scored: false, price: 50, fcfy: 0.05, high52: 100}, C, []).rungs.map(x => x.needs)], [null, [null, null]]);
+
+  // where the price stands. 14 May to 12 November: 17 + 30 + 31 + 31 + 30 + 31 + 12 = 182 days. 29 October to 12 November: 14 days.
+  const sr = {price: 25, high52: 50, high52d: '2026-05-14', low52: 20, low52d: '2026-10-29', lastearn: '2026-10-28', ma50v: 40, ma200v: 50}, DAY = '2026-11-12';
+  let st = E.priceStand(sr, C, DAY);
+  check('stands: half below the high, a quarter above the low', [st.below, st.above, st.atLow], [0.5, 0.25, false]);
+  check('stands: the days since the high and the low', [st.highAgo, st.lowAgo], [182, 14]);
+  check('stands: the low was set the day after the results', st.afterResults, 1);
+  check('stands: against the two averages', [st.ma50, st.vs50, st.ma200, st.vs200], [40, -0.375, 50, -0.5]);
+  check('stands: a low set on the day of the results counts, and one set three days after', [E.priceStand(Object.assign({}, sr, {lastearn: '2026-10-29'}), C, DAY).afterResults, E.priceStand(Object.assign({}, sr, {lastearn: '2026-10-26'}), C, DAY).afterResults], [0, 3]);
+  check('stands: a low four days after the results, or before them, does not', [E.priceStand(Object.assign({}, sr, {lastearn: '2026-10-25'}), C, DAY).afterResults, E.priceStand(Object.assign({}, sr, {lastearn: '2026-11-03'}), C, DAY).afterResults, E.priceStand(Object.assign({}, sr, {lastearn: null}), C, DAY).afterResults], [null, null, null]);
+  // 24.6 against a low of 24.2 is 1.65% above it, inside the 2% that counts as "at the low"; 25 against 24.2 is 3.3%
+  check('stands: within 2% of the low is at the low', [E.priceStand(Object.assign({}, sr, {price: 24.6, low52: 24.2}), C, DAY).atLow, E.priceStand(Object.assign({}, sr, {low52: 24.2}), C, DAY).atLow], [true, false]);
+  // an older file: 20% below the high puts the high at 31.25; 10% below the 50-day average puts that at 27.78
+  st = E.priceStand({price: 25, dd: -0.2, ma50: -0.1}, C, DAY);
+  check('stands: an older file gives the high and the 50-day average, worked back', [st.high, st.below, Math.round(st.ma50 * 100) / 100, st.vs50, st.low, st.ma200, st.highD], [31.25, 0.2, 27.78, -0.1, null, null, null]);
+  check('stands: no price, nothing', E.priceStand({price: null, high52: 50}, C, DAY).high, null);
+
+  // what analysts expect, beside a price that needs 10% a year (cash at 1/23.67 of the price)
+  const fr = x => Object.assign({scored: true, price: A10, fcfy: 1 / A10, ey: null, owner: null, histg: 0.10, ceiling: A6, analysts: 7}, x);
+  let f = E.forecastRead(fr({revgt: 0.14, revgn: 0.12, epsgt: 0.45, epsgn: -0.09}), C);
+  check('forecast: the four figures and the count are passed on', [f.salesNow, f.salesNext, f.epsNow, f.epsNext, f.n, f.any], [0.14, 0.12, 0.45, -0.09, 7, true]);
+  check('forecast: 12% next year is more than the 10% the price needs', [r6(f.needs), f.vsNeeds], [0.1, 'more']);
+  check('forecast: 10.5% is about the same, 8% is less', [E.forecastRead(fr({revgn: 0.105}), C).vsNeeds, E.forecastRead(fr({revgn: 0.08}), C).vsNeeds], ['same', 'less']);
+  check('forecast: 4% next year is under the 6% that "you would earn" supposes; 8% is not', [E.forecastRead(fr({revgn: 0.04}), C).underCautious, E.forecastRead(fr({revgn: 0.08}), C).underCautious], [true, false]);
+  check('forecast: with no entry ceiling there is no cautious rate to fall under', E.forecastRead(fr({revgn: 0.04, ceiling: null}), C).underCautious, false);
+  check('forecast: none in the file', [E.forecastRead(fr({}), C).any, E.forecastRead(fr({}), C).vsNeeds], [false, null]);
+
+  // none of it plays a part in any test, list or order: the same companies, with and without the columns, land in the same places
+  const T = '2026-11-19', plain = E.run(universe(), {}, {today: T}), rich = E.run(universe().map((r, i) => Object.assign(r, {low52: r.price * 0.2, low52d: '2026-11-18', high52: r.price * 9, high52d: '2025-12-01', ma50v: r.price * (i % 2 ? 3 : 0.3), ma200v: r.price * 5, revgt: i % 2 ? -0.9 : 0.9, epsgt: 5, epsgn: -0.9, lastearn: '2026-11-17'})), {}, {today: T});
+  const key = r => [r.sym, r.Q, r.V, r.P, r.T, r.g, r.n5, r.lists, r.grade, r.alist, r.onSale, r.put, r.moon, r.slipping, r.trend, r.impg, r.ceiling, r.blocks, r.flags];
+  check('price box: every company is graded and listed the same with or without its columns', rich.rows.map(key), plain.rows.map(key));
+  check('price box: the lists are the same', E.memberships(rich.rows, ['Q', 'V', 'S', 'P', 'T']), E.memberships(plain.rows, ['Q', 'V', 'S', 'P', 'T']));
+  check('price box: the file is known to give the low and the averages, or not', [rich.can.stand, plain.can.stand], [true, false]);
+  // on every scored company of that file: the ladder agrees with the row. Today's price needs what "price implies" says,
+  // and the entry ceiling earns the 12% it is set for.
+  const withCeil = plain.rows.filter(r => r.ceiling), off = plain.rows.filter(r => r.scored && r.impg != null && Math.abs(E.needsAt(r, r.price, plain.C) - r.impg) > 1e-12);
+  check('price box: the invented file has companies with an entry ceiling', withCeil.length > 5, true);
+  check('price box: at today\'s price the ladder says what the row says', off.map(r => r.sym), []);
+  check('price box: at every entry ceiling the ladder earns the hurdle', withCeil.filter(r => { const L = E.priceLadder(r, plain.C, []), c = L.rungs.find(x => x.k === 'ceil'); return !c || Math.abs(c.earn - plain.C.exp_hurdle) > 1e-6; }).map(r => r.sym), []);
+  // the page: a note for each line and each column of the ladder, and for each of the lines under it
+  const ui = html.slice(html.indexOf('</script>', html.indexOf('<script id="engine">')));
+  const RUNG = new Function(ui.match(/const RUNG = \{[^\n]*\};/)[0] + '\nreturn RUNG;')(), LADCOL = new Function(ui.match(/const LADCOL = \[[^\n]*\];/)[0] + '\nreturn LADCOL;')();
+  check('page: the ladder has a name for each kind of line the engine makes', ['high', 'now', 'ceil', 'ceilpay', 'low', 'mine'].filter(k => !RUNG[k]), []);
+  const notes = Object.keys(RUNG).map(k => RUNG[k][0]).concat(LADCOL.map(c => c[0]), ['pricebox', 'x_myp', 'x_cash', 'x_fsales', 'x_feps', 'x_range', 'x_ma50', 'x_ma200', 'x_chg']);
+  check('page: every line and column of the price box has its note', notes.filter(k => !new RegExp('\\n  ' + k + ': (b|\\(\\)) =>').test(ui)), []);
+  check('page: and every one of those notes is used', ['x_fsales', 'x_feps', 'x_range', 'x_ma50', 'x_ma200', 'x_chg', 'x_myp', 'x_cash', 'pricebox'].filter(k => !new RegExp("(tipFor\\(r, |hbs?\\()'" + k + "'").test(ui)), []);
+  check('page: the reader\'s prices are kept, and saved in the encrypted copy', /myp: \{\}/.test(ui) && /myp: S\.myp/.test(ui) && /\['track', 'kind', 'own', 'rivals', 'myp'\]/.test(ui), true);
+  check('page: the box names no fair value and no price target', /fair value|price target|analysts' target/i.test(ui.slice(ui.indexOf('function priceBox'), ui.indexOf('/* ---------- research from the filings'))), false);
+  check('page: Prism suggests no price or strike of its own', /Prism does not suggest a price or a strike/.test(ui), true);
+}
 
 console.log('--- Dividends ---');
 { // What the file says about a dividend. Worked by hand; the companies are invented.
@@ -856,7 +974,7 @@ console.log('--- The guide keeps step with the page ---');
   const sorts = Object.keys(new Function(ui.match(/const SORTS = \{[\s\S]*?\n\};/)[0] + '\nreturn SORTS;')());
   check('guide: the page has nine named lists', Object.keys(LI).length, 9);
   check('guide: the engine and the page agree on the named lists', Object.keys(LI).slice().sort(), E.LISTS.slice().sort());
-  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs', 'run', 'owners', 'stand'];
+  const lists = ['sale', 'put', 'A', '', 'near', 'moon'].concat(Object.keys(LI)), parts = ['detail', 'vform', 'signs', 'run', 'owners', 'stand', 'price'];
   const gos = all(/<a\b[^>]*\bdata-go='([^']+)'[^>]*>([\s\S]*?)<\/a>/g, guide).map(x => [JSON.parse(x[1]), plain(x[2])]);
   const bad = gos.filter(([g]) => (g.list !== undefined && !lists.includes(g.list)) || (g.sort !== undefined && !sorts.includes(g.sort)) || (g.open !== undefined && g.open !== 'first') ||
     (g.box !== undefined && g.box !== 'self') || !g.el || !(parts.includes(g.el) || html.includes('id="' + g.el + '"')) || (parts.includes(g.el) && g.open !== 'first'));
